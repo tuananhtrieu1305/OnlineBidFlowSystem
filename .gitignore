@@ -1,0 +1,19 @@
+# Frontend
+node_modules/
+dist/
+
+# Java
+target/
+*.class
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
