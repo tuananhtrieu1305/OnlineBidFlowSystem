@@ -1,0 +1,66 @@
+@import '@fontsource/be-vietnam-pro/latin-400.css';
+@import '@fontsource/be-vietnam-pro/vietnamese-400.css';
+@import '@fontsource/be-vietnam-pro/latin-500.css';
+@import '@fontsource/be-vietnam-pro/vietnamese-500.css';
+@import '@fontsource/be-vietnam-pro/latin-600.css';
+@import '@fontsource/be-vietnam-pro/vietnamese-600.css';
+
+.guest-shell { background:#f6f5f1; color:#202824; font-family:'Be Vietnam Pro',sans-serif; min-height:100vh; }
+.guest-shell * { box-sizing:border-box; }
+.guest-shell a,.guest-shell button { transition:background-color .15s,color .15s; }
+.guest-shell :focus-visible { outline:3px solid #a66316; outline-offset:4px; }
+.guest-skip { position:fixed; top:-80px; left:240px; z-index:10; padding:12px; background:white; }
+.guest-skip:focus { top:12px; }
+.guest-sidebar { width:220px; position:fixed; inset:0 auto 0 0; display:flex; flex-direction:column; padding:30px 20px 22px; background:#eeeee7; border-right:1px solid #dedfd6; overflow-y:auto; }
+.guest-brand { display:flex; align-items:center; gap:9px; font-size:16px; font-weight:600; letter-spacing:-.7px; }
+.guest-brand>span { display:grid; place-items:center; background:#145c53; color:#fff; width:32px; height:36px; border-radius:8px; font-size:28px; letter-spacing:-3px; padding-right:3px; }
+.guest-nav-label { font-size:9px; letter-spacing:1.4px; color:#66716b; margin:51px 9px 16px; }
+.guest-nav { display:flex; align-items:center; gap:12px; padding:12px; border-radius:8px; font-size:13px; }
+.guest-nav>span { font-size:21px; line-height:1; }
+.guest-nav.active { background:#dce6df; color:#145c53; font-weight:600; }
+.guest-account { margin-top:auto; padding-top:40px; }
+.guest-mode { display:block; font-size:9px; letter-spacing:1.6px; color:#66716b; padding-top:22px; border-top:1px solid #d8dcd3; }
+.guest-account h2 { font-size:14px; font-weight:600; margin:12px 0 8px; line-height:1.6; }
+.guest-account p { font-size:11px; line-height:1.85; color:#66716b; margin-bottom:18px; }
+.guest-primary,.guest-secondary { display:flex; width:100%; align-items:center; justify-content:center; gap:18px; padding:11px 12px; border-radius:8px; font-size:12px; font-weight:500; }
+.guest-primary { background:#145c53; color:white; }
+.guest-primary:disabled { background:#dbe0d9; color:#5b665e; cursor:not-allowed; }
+.guest-secondary { border:1px solid #145c53; color:#145c53; margin-top:9px; }
+.guest-secondary:hover { background:#145c53; color:white; }
+.guest-account small { display:block; margin-top:10px; color:#66716b; font-size:9px; text-align:center; }
+.guest-workspace { margin-left:220px; }
+.guest-home { max-width:1440px; margin:auto; padding:0 40px; }
+.guest-topbar { display:flex; justify-content:space-between; align-items:center; min-height:88px; border-bottom:1px solid #e1e5df; font-size:13px; font-weight:500; }
+.guest-topnote { color:#66716b; font-size:11px; font-weight:400; }
+.guest-hero { display:grid; grid-template-columns:1.1fr 1fr; align-items:center; gap:32px; padding:36px 0; }
+.guest-kicker { font-size:9px; letter-spacing:1.7px; color:#145c53; font-weight:600; }
+.guest-hero h1 { font-size:clamp(28px,3.1vw,45px); letter-spacing:-1.8px; line-height:1.3; margin:18px 0; font-weight:500; }
+.guest-hero h1 em { font-style:normal; color:#145c53; }
+.guest-hero-copy>p:not(.guest-kicker) { font-size:12px; line-height:1.95; color:#66716b; max-width:370px; }
+.guest-text-link { display:inline-flex; align-items:center; gap:25px; font-size:12px; font-weight:500; color:#145c53; margin-top:23px; padding-bottom:7px; border-bottom:1px solid #a6b9ac; }
+.guest-hero-art { overflow:hidden; border-radius:12px; background:#e7e7dc; margin:0; }
+.guest-hero-art svg { width:100%; display:block; aspect-ratio:4/3; }
+.guest-hero-art figcaption { padding:11px 14px; display:flex; justify-content:space-between; align-items:center; gap:12px; color:#535e55; font-size:8px; }
+.guest-hero-art figcaption span:first-child { letter-spacing:1px; white-space:nowrap; }
+.guest-auctions { scroll-margin-top:24px; padding-top:18px; }
+.guest-section-heading { display:flex; justify-content:space-between; align-items:center; gap:15px; margin-bottom:20px; }
+.guest-section-heading h2 { font-size:19px; letter-spacing:-.5px; font-weight:500; }
+.guest-section-heading .guest-kicker { margin-bottom:8px; }
+.guest-section-heading>span { color:#66716b; font-size:10px; }
+.guest-public { padding:7px 10px; border:1px solid #dce1d8; border-radius:20px; }
+.guest-empty { border:1px solid #e1e5df; border-radius:12px; background:#fff; text-align:center; padding:27px 20px; }
+.guest-empty-icon { display:block; color:#145c53; font-size:31px; line-height:1; margin-bottom:12px; }
+.guest-empty h3 { font-size:14px; font-weight:500; margin-bottom:10px; }
+.guest-empty p { color:#66716b; font-size:11px; line-height:1.9; }
+.guest-guide { margin-top:34px; }
+.guest-guide .guest-section-heading h2 { font-size:16px; }
+.guest-guide ol { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; list-style:none; margin:0; padding:0; }
+.guest-guide li { display:flex; gap:12px; }
+.guest-guide li>span { color:#8a9589; font-size:12px; padding-top:2px; }
+.guest-guide h3 { font-size:12px; font-weight:500; margin-bottom:8px; }
+.guest-guide p { font-size:10px; line-height:1.8; color:#66716b; }
+.guest-footer { display:flex; justify-content:space-between; gap:16px; border-top:1px solid #e1e5df; padding:20px 0; margin-top:32px; color:#66716b; font-size:9px; }
+@media(max-width:1000px) { .guest-home { padding:0 26px; } .guest-hero { gap:20px; } .guest-hero h1 { font-size:30px; } .guest-hero-art figcaption { flex-wrap:wrap; } .guest-topnote { display:none; } }
+@media(max-width:760px) { .guest-sidebar { width:190px; padding:24px 14px; } .guest-workspace { margin-left:190px; } .guest-hero { grid-template-columns:1fr; } .guest-hero-art { max-width:380px; } .guest-guide ol { grid-template-columns:1fr; } .guest-section-heading { align-items:flex-start; flex-direction:column; } .guest-footer { flex-direction:column; } }
+@media(max-width:480px) { .guest-sidebar { position:static; width:auto; } .guest-workspace { margin-left:0; } .guest-nav-label { margin-top:20px; } .guest-account { padding-top:20px; } .guest-skip { left:20px; } }
+@media(prefers-reduced-motion:reduce) { .guest-shell a,.guest-shell button { transition:none; } }

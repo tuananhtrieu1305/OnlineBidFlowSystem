@@ -2,7 +2,7 @@ import { _electron as electron, expect, test } from '@playwright/test';
 import path from 'node:path';
 
 test('guest discovers the app and can register without diagnostic screens', async ({}, info) => {
-  const env = { ...process.env };
+  const env = Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined));
   delete env.ELECTRON_RUN_AS_NODE;
   delete env.ELECTRON_DEV_URL;
   const app = await electron.launch({ args: [path.resolve('.'), `--user-data-dir=${info.outputPath('profile')}`], env });

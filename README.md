@@ -65,7 +65,7 @@ npm run dev
 Lệnh này build main/preload, chạy Vite ở `http://localhost:5173`, rồi mở Electron.
 React hỗ trợ hot reload; khi sửa `electron/`, dừng và chạy lại `npm run dev`.
 Đóng ứng dụng hoặc nhấn Ctrl+C để dừng launcher và Vite.
-Chọn **Connection test**: REST API và WebSocket đều phải hiện **Connected**.
+Ứng dụng mở trang **Khám phá** ở chế độ khách. Chọn **Tạo tài khoản** ở cuối thanh bên để đăng ký. Trang kiểm tra server đã được gỡ khỏi giao diện. Danh sách phiên và đăng nhập chưa khả dụng trong phiên bản này.
 
 `npm run dev:web` là chế độ xem thử giao diện bằng trình duyệt, không phải ứng dụng desktop chính.
 Nếu chuyển từ base web cũ và còn container `auction_frontend`, có thể dùng `docker compose up -d --build --remove-orphans` để dọn container frontend cũ của cùng project.

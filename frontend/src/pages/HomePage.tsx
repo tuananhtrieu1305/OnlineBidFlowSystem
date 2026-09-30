@@ -1,30 +1,35 @@
-import { Link } from 'react-router-dom';
+import CollectionArtwork from '../features/auth/components/CollectionArtwork';
 
 export default function HomePage() {
   return (
-    <main className="mx-auto max-w-5xl px-8 py-16">
-      <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Online auction system</p>
-      <h1 className="mt-4 text-4xl font-bold tracking-tight">OnlineBidFlow Desktop</h1>
-      <p className="mt-5 max-w-2xl text-lg leading-relaxed text-slate-600">
-        The desktop foundation is ready. Check your server connection before building auction rooms, bidding and chat.
-      </p>
-      <Link to="/api-test" className="mt-8 inline-flex rounded-lg bg-indigo-600 px-5 py-3 font-medium text-white hover:bg-indigo-700">
-        Check server connection
-      </Link>
-      <Link to="/register" className="ml-4 inline-flex rounded-lg bg-[#145C53] px-5 py-3 font-medium text-white hover:bg-[#104b44]">Tạo tài khoản</Link>
-      <div className="mt-12 grid grid-cols-3 gap-5">
-        {[
-          ['Desktop', 'Electron + React', 'TypeScript and Tailwind CSS'],
-          ['Server', 'Spring Boot', 'REST API and WebSocket'],
-          ['Database', 'MySQL', 'Managed by the server']
-        ].map(([label, title, detail]) => (
-          <section key={label} className="rounded-xl border border-slate-200 bg-white p-6">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
-            <h2 className="mt-3 text-lg font-semibold">{title}</h2>
-            <p className="mt-2 text-sm text-slate-600">{detail}</p>
-          </section>
-        ))}
-      </div>
+    <main id="main-content" className="guest-home" tabIndex={-1}>
+      <header className="guest-topbar"><span>Khám phá</span><span className="guest-topnote">Những món đồ. Những câu chuyện.</span></header>
+      <section className="guest-hero" aria-labelledby="discovery-title">
+        <div className="guest-hero-copy">
+          <p className="guest-kicker">KHÁM PHÁ · LỰA CHỌN · SỞ HỮU</p>
+          <h1 id="discovery-title">Món đồ đặc biệt.<br /><em>Lựa chọn của bạn.</em></h1>
+          <p>Mỗi món đồ đều có một câu chuyện. Khám phá những phiên đấu giá và tìm điều xứng đáng với bộ sưu tập của bạn.</p>
+          <button className="guest-text-link" onClick={() => document.getElementById('auction-list')?.scrollIntoView()}>Khám phá các phiên <span aria-hidden="true">↓</span></button>
+        </div>
+        <figure className="guest-hero-art"><CollectionArtwork /><figcaption><span>GÓC SƯU TẦM</span><span>Âm thanh của thời gian · Ảnh minh họa</span></figcaption></figure>
+      </section>
+      <section id="auction-list" className="guest-auctions" aria-labelledby="auction-title">
+        <div className="guest-section-heading"><div><p className="guest-kicker">TÌM PHIÊN CỦA BẠN</p><h2 id="auction-title">Khám phá phiên đấu giá</h2></div><span className="guest-public">Dành cho cộng đồng</span></div>
+        <div className="guest-empty">
+          <span className="guest-empty-icon" aria-hidden="true">◇</span>
+          <h3>Danh sách phiên chưa sẵn sàng</h3>
+          <p>Các phiên đấu giá sẽ xuất hiện tại đây khi tính năng khám phá được mở.<br />Trong lúc chờ, bạn có thể tạo tài khoản và tìm hiểu cách tham gia.</p>
+        </div>
+      </section>
+      <section className="guest-guide" aria-labelledby="guide-title">
+        <div className="guest-section-heading"><h2 id="guide-title">Từ khám phá đến sở hữu</h2><span>Ba bước để bắt đầu</span></div>
+        <ol>
+          <li><span>01</span><div><h3>Tạo tài khoản</h3><p>Một tài khoản, một ví Coin riêng để bắt đầu hành trình.</p></div></li>
+          <li><span>02</span><div><h3>Chuẩn bị Coin</h3><p>Nạp Coin giả lập và theo dõi số dư trước khi tham gia.</p></div></li>
+          <li><span>03</span><div><h3>Chọn phiên, đặt giá</h3><p>Tìm hiểu sản phẩm và quy tắc đấu giá thường hoặc đấu giá kín.</p></div></li>
+        </ol>
+      </section>
+      <footer className="guest-footer"><span>OnlineBidFlow · Không gian đấu giá của bạn</span><span>Coin chỉ có giá trị trong hệ thống.</span></footer>
     </main>
   );
 }
