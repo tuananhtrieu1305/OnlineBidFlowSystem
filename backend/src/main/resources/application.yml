@@ -1,5 +1,14 @@
 server:
   port: 8080
+  servlet:
+    session:
+      timeout: 30m
+      tracking-modes: cookie
+      cookie:
+        name: OBFSESSION
+        http-only: true
+        secure: true
+        same-site: none
 
 spring:
   application:

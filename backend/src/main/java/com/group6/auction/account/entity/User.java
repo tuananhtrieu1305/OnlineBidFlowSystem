@@ -22,4 +22,7 @@ public class User {
     }
     public Long getId() { return id; }
     public String getUsername() { return username; }
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getPasswordHash() { return passwordHash; }
+    public String getRole() { return role; }
 }

@@ -7,4 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 @Profile("!probe")
 public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsername(String username);
+    java.util.Optional<User> findByUsername(String username);
 }
