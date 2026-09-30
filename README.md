@@ -1,174 +1,171 @@
-# Real-Time Online Auction System
+# OnlineBidFlow Desktop
 
-Initial project for the group assignment "He thong dau gia online thoi gian thuc".
+Base desktop cho bài tập lớn hệ thống đấu giá online thời gian thực.
 
-This repository is only the shared starting point. It includes a runnable React frontend, Spring Boot backend, MySQL schema, seed data, Docker setup, and shared system documentation. It intentionally does not implement authentication, bidding logic, wallet services, realtime sockets, chat runtime, replay, or leaderboard logic.
+## Công nghệ và phạm vi
 
-## Tech stack
-
-- Frontend: React 18.3.1, Vite 6.4.3, Tailwind CSS 3.4.15, axios 1.20.0, react-router-dom 7.18.3
-- Backend: Java 21, Spring Boot 3.3.5, Maven 3.9.9, Spring Web, Spring Data JPA, Validation, MySQL Connector/J
-- Database: MySQL 8.4.4
-- Runtime: Docker Compose
-
-## Folder structure
+- Desktop: Electron, React 18, TypeScript, Vite, Tailwind CSS.
+- Server: Java 21, Spring Boot 3.3.5, REST API, WebSocket, Spring Data JPA.
+- Database: MySQL 8.4, schema và dữ liệu mẫu trong `database/init.sql`.
+- Build: Maven, npm, electron-builder (Windows x64 / NSIS).
 
 ```text
-.
-|-- frontend/
-|-- backend/
-|-- database/
-|-- docker-compose.yml
-|-- README.md
-|-- SYSTEM_SPEC.md
-|-- .env.example
-`-- .gitignore
+Electron / React ── HTTP + WebSocket ── Spring Boot ── MySQL
 ```
 
-## Prerequisites
+Base có cửa sổ desktop, điều hướng, kiểm tra REST/WebSocket, cấu hình LAN và đóng gói Windows.
+Chưa triển khai đăng nhập, đấu giá, ví, phòng, chat, reconnect nghiệp vụ, replay hoặc leaderboard.
+`/ws/health` chỉ là kiểm tra kết nối PING/PONG, chưa phải kênh sự kiện đấu giá.
+Đọc `SYSTEM_SPEC.md` trước khi phát triển nghiệp vụ; schema và các quy tắc NORMAL/BLIND không thay đổi.
 
-- Git
-- Docker Desktop with Docker Compose
-- Optional for local-only runs: Node.js 22 LTS, Java 21, Maven 3.9.x, MySQL 8.4
+## Cấu trúc
 
-## Clone and configure
-
-```bash
-git clone <repository-url>
-cd OnlineBidFlowSystem
-cp .env.example .env
+```text
+frontend/
+  electron/             # Main process, sandboxed preload, local asset protocol
+  src/                  # React + TypeScript + Tailwind
+  scripts/              # Development, build và E2E backend launcher
+  tests/                # Kiểm tra URL server và đường dẫn tài nguyên desktop
+  e2e/                  # Kiểm tra Electron với Spring Boot thực
+  electron-builder.yml  # Windows installer
+backend/                # Spring Boot / Maven
+database/               # MySQL schema, seed
+docker-compose.yml      # Chỉ backend + MySQL; desktop chạy trên máy người dùng
 ```
 
-Do not commit the real `.env` file.
+## Yêu cầu
 
-If your computer already has a local MySQL server on port `3306`, set `MYSQL_HOST_PORT=3307` in `.env`. Inside Docker, the backend still connects to the MySQL service on port `3306`.
+- Node.js **22.12+** (khuyến nghị Node 22 LTS), npm.
+- Docker Desktop đang chạy để dùng backend + MySQL qua Compose.
+- JDK **21** và Maven **3.9.x** nếu chạy hoặc kiểm tra backend ngoài Docker.
+- Windows để tạo và kiểm tra bộ cài Windows; cấu hình đóng gói hiện chỉ nhắm Windows x64.
 
-## Run the full system with Docker
+## Chạy phát triển
 
-```bash
-docker compose up --build
+Tại thư mục gốc, tạo `.env` từ `.env.example` nếu chưa có:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d --build
 ```
 
-URLs:
+Không ghi đè `.env` đã cấu hình. Nếu cổng MySQL 3306 đã được sử dụng, đặt `MYSQL_HOST_PORT=3307` trong `.env`.
+Backend trong Docker vẫn dùng `mysql:3306`. Mật khẩu mẫu chỉ dành cho môi trường phát triển.
 
-- Frontend: http://localhost:5173
-- Routing test: http://localhost:5173/routing-test
-- API test page: http://localhost:5173/api-test
-- Backend health API: http://localhost:8080/api/health
-- MySQL: localhost:3306
+Mở terminal khác:
 
-Expected health response:
-
-```json
-{
-  "status": "UP",
-  "service": "auction-backend"
-}
-```
-
-## Stop Docker
-
-```bash
-docker compose down
-```
-
-## Reset development database
-
-MySQL stores data in the `mysql_data` Docker volume. The file `database/init.sql` is mounted into `/docker-entrypoint-initdb.d/01-init.sql`, and MySQL only runs it automatically the first time the database volume is created.
-
-If you edit `database/init.sql` while reusing an old volume, MySQL will not automatically rerun the script. To recreate the development database:
-
-```bash
-docker compose down -v
-docker compose up --build
-```
-
-Warning: `docker compose down -v` deletes the development database stored in the Docker volume.
-
-## Run frontend separately
-
-```bash
+```powershell
 cd frontend
-npm install
+Copy-Item .env.example .env
+npm ci
 npm run dev
 ```
 
-The Vite dev server listens on `0.0.0.0:5173`.
+Lệnh này build main/preload, chạy Vite ở `http://localhost:5173`, rồi mở Electron.
+React hỗ trợ hot reload; khi sửa `electron/`, dừng và chạy lại `npm run dev`.
+Đóng ứng dụng hoặc nhấn Ctrl+C để dừng launcher và Vite.
+Chọn **Connection test**: REST API và WebSocket đều phải hiện **Connected**.
 
-## Run backend separately
+`npm run dev:web` là chế độ xem thử giao diện bằng trình duyệt, không phải ứng dụng desktop chính.
+Nếu chuyển từ base web cũ và còn container `auction_frontend`, có thể dùng `docker compose up -d --build --remove-orphans` để dọn container frontend cũ của cùng project.
 
-Start MySQL first, then run:
+## Cấu hình server / LAN
 
-```bash
+Hai file cấu hình có nhiệm vụ khác nhau:
+
+| File | Nội dung |
+| --- | --- |
+| `.env` tại gốc | MySQL, thông tin kết nối database của backend, `FRONTEND_ORIGINS` |
+| `frontend/.env` | `VITE_API_BASE_URL`, địa chỉ server mà desktop sẽ kết nối |
+
+Ví dụ máy server có IP `192.168.1.10`, trên máy build/chạy desktop đặt:
+
+```dotenv
+VITE_API_BASE_URL=http://192.168.1.10:8080
+```
+
+Giá trị phải là HTTP(S) origin, không kèm `/api`, tài khoản, query hoặc fragment.
+URL WebSocket được suy ra tự động: HTTP → WS, HTTPS → WSS, đường dẫn `/ws/health`.
+Địa chỉ này được **nhúng lúc build**; sau khi đổi `.env`, khởi động lại dev hoặc build lại bộ cài.
+Các máy client cần truy cập được cổng 8080 trên máy server. `localhost` luôn chỉ chính máy đang chạy desktop.
+Không đặt mật khẩu database hoặc token trong `VITE_*`; các biến này công khai trong ứng dụng.
+
+Backend mặc định cho phép hai origin: `http://localhost:5173` (dev) và `app://auction` (desktop đã build).
+Override bằng `FRONTEND_ORIGINS`, danh sách phân cách bằng dấu phẩy, khi cần thêm origin cụ thể.
+Giữ `app://auction` để bản desktop đóng gói hoạt động. Không cần thêm IP server vào danh sách origin chỉ vì đổi địa chỉ API.
+Origin allowlist không thay thế xác thực người dùng; các chức năng nghiệp vụ sau này phải xác thực tại server.
+
+## Chạy backend ngoài Docker
+
+Khởi động MySQL (có thể dùng `docker compose up -d mysql`). Export các biến môi trường trước khi chạy Maven;
+Spring Boot không tự đọc `.env` tại gốc khi chạy trực tiếp:
+
+```powershell
+$env:JAVA_HOME = 'C:\path\to\jdk-21'
+$env:DB_HOST = 'localhost'
+$env:DB_PORT = '3306'
+$env:DB_NAME = 'auction_db'
+$env:DB_USERNAME = 'auction_user'
+$env:DB_PASSWORD = '<mat-khau-da-cau-hinh>'
 cd backend
 mvn spring-boot:run
 ```
 
-The backend reads database settings from:
+- REST: `GET http://localhost:8080/api/health` → `{"status":"UP","service":"auction-backend"}`.
+- WebSocket: `ws://localhost:8080/ws/health`; gửi text `PING`, nhận `PONG`.
+- Payload WebSocket khác `PING` bị đóng với mã 1007; giới hạn text message 128 byte.
+- API health xác nhận server HTTP hoạt động, không phải kiểm tra truy vấn database.
 
-- `DB_HOST`
-- `DB_PORT`
-- `DB_NAME`
-- `DB_USERNAME`
-- `DB_PASSWORD`
+MySQL Compose chỉ chạy `database/init.sql` khi volume được tạo lần đầu. Với MySQL tự cài, import file này trước khi chạy backend.
+`docker compose down` dừng dịch vụ nhưng giữ dữ liệu. `docker compose down -v` **xóa dữ liệu trong volume**, chỉ dùng khi chủ động muốn reset database.
 
-For local development outside Docker, set `DB_HOST=localhost`.
+## Build và đóng gói Windows
 
-## Import database manually with MySQL Workbench
+Trong `frontend/`:
 
-1. Open MySQL Workbench.
-2. Connect to a MySQL 8.4 server.
-3. Open `database/init.sql`.
-4. Run the full script from top to bottom.
+```powershell
+npm run build       # TypeScript, React assets, Electron main/preload
+npm start           # Chạy Electron với assets đã build, không cần Vite
+npm run pack:win    # Thư mục ứng dụng tại release/win-unpacked/
+npm run dist:win    # Bộ cài NSIS .exe trong release/
+```
 
-The script creates `auction_db`, selects it with `USE auction_db`, creates the 8 required tables, indexes, and development seed data.
+Các lệnh đóng gói tự build lại. Backend và MySQL chạy riêng; bộ cài chỉ chứa desktop client.
+Máy người dùng cài desktop không cần Node.js hoặc JDK; máy server cần môi trường chạy backend/MySQL.
+Bản local chưa được ký số, Windows có thể cảnh báo nhà phát hành chưa xác minh.
+Lệnh đóng gói không tự publish GitHub Release. `release/`, `dist/`, `dist-electron/` không được commit.
 
-## Development seed accounts
+Desktop dùng hash router và giao thức `app://auction` để tải tài nguyên local.
+Electron bật sandbox/context isolation, tắt Node integration, chặn cửa sổ mới và điều hướng ngoài.
+Preload chỉ cung cấp thông tin phiên bản/nền tảng, không cung cấp quyền truy cập file hoặc shell.
+Content Security Policy được tạo từ địa chỉ server; không tắt web security để xử lý CORS.
 
-These are development seed accounts only. The database stores BCrypt hashes, not plaintext passwords.
+## Kiểm tra
 
-- `admin` / `Password@123`
-- `alice` / `Password@123`
-- `bob` / `Password@123`
-- `charlie` / `Password@123`
-- `diana` / `Password@123`
-- `eric` / `Password@123`
-- `fiona` / `Password@123`
-- `george` / `Password@123`
-- `hana` / `Password@123`
-- `ivan` / `Password@123`
+```powershell
+cd backend
+mvn verify
+cd ../frontend
+npm ci
+npm run typecheck
+npm run test:coverage
+npm run test:e2e
+npm audit
+```
 
-## Database notes
+Backend integration tests kiểm tra REST CORS, WebSocket PING/PONG và origin bị từ chối.
+Unit tests frontend kiểm tra URL server/LAN/HTTPS và chặn truy cập file ngoài thư mục assets; coverage threshold 80% cho hai module này.
+E2E tự chạy JAR backend trên cổng 8080 rồi mở Electron, kiểm tra điều hướng/reload, REST/WebSocket,
+dịch vụ không truy cập được, thử lại và cách ly Node. Test cũng chạy Vite để kiểm tra chế độ dev.
+Cổng 8080 và 5173 cần trống; build JAR bằng `mvn verify` trước.
+Integration/E2E tests tắt auto-configuration database **chỉ trong tiến trình test**, nên không xác nhận MySQL/schema.
 
-The official schema is `database/init.sql`.
+Sau `npm run pack:win`, kiểm tra đúng executable đóng gói:
 
-The database has exactly 8 business tables:
+```powershell
+$env:E2E_EXECUTABLE = (Resolve-Path 'release/win-unpacked/OnlineBidFlow.exe').Path
+npx playwright test
+Remove-Item Env:E2E_EXECUTABLE
+```
 
-1. `users`
-2. `wallets`
-3. `products`
-4. `auctions`
-5. `auction_participants`
-6. `bids`
-7. `chat_messages`
-8. `coin_transactions`
-
-There are intentionally no `leaderboard`, `price_statistics`, `replays`, or `socket_connections` tables. Those features will be calculated or reconstructed from the core tables when their modules are implemented.
-
-## Initial-project boundaries
-
-Intentionally not implemented:
-
-- JWT authentication
-- Register/login flows
-- Auction bidding services
-- NORMAL auction business logic
-- BLIND auction business logic
-- Wallet lock/unlock/payment service
-- WebSocket/realtime infrastructure
-- Chat runtime
-- Replay
-- Leaderboard
-- Full CRUD APIs
-
-See `SYSTEM_SPEC.md` before adding business logic.
+GitHub Actions kiểm tra Java 21, frontend, E2E Electron và đóng gói trên Windows.

@@ -1,11 +1,12 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createHashRouter } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
 import AboutPage from '../pages/AboutPage';
 import RoutingTestPage from '../pages/RoutingTestPage';
 import ApiTestPage from '../pages/ApiTestPage';
 import NotFoundPage from '../pages/NotFoundPage';
+import AppLayout from '../AppLayout';
 
-const router = createBrowserRouter([
+const router = createHashRouter([{ element: <AppLayout />, children: [
   {
     path: '/',
     element: <HomePage />
@@ -26,6 +27,6 @@ const router = createBrowserRouter([
     path: '*',
     element: <NotFoundPage />
   }
-]);
+]}]);
 
 export default router;

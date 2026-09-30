@@ -1,24 +1,48 @@
 {
-  "name": "auction-frontend",
+  "name": "onlinebidflow-desktop",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "vite",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && vite build && node scripts/build-electron.mjs",
+    "start": "electron .",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "npm run build && playwright test",
+    "pack:win": "npm run build && electron-builder --win --x64 --dir",
+    "dist:win": "npm run build && electron-builder --win --x64 --publish never"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "4.7.0",
     "axios": "1.20.0",
-    "vite": "6.4.3",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router-dom": "7.18.3"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.4",
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7",
+    "@vitest/coverage-v8": "4.1.11",
     "autoprefixer": "10.4.20",
+    "electron": "44.5.1",
+    "electron-builder": "26.17.0",
+    "esbuild": "0.28.2",
     "postcss": "8.5.26",
-    "tailwindcss": "3.4.15"
+    "tailwindcss": "3.4.15",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11",
+    "vite": "6.4.3",
+    "@vitejs/plugin-react": "4.7.0"
+  },
+  "description": "Desktop client for the OnlineBidFlow auction system",
+  "author": "Group 6",
+  "main": "dist-electron/main.cjs",
+  "engines": {
+    "node": ">=22.12.0"
   }
 }
