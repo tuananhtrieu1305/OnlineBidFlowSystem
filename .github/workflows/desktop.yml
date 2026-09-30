@@ -36,7 +36,7 @@ jobs:
         env:
           MYSQL_PWD: registration_test_only
         run: mysql -h 127.0.0.1 -uroot < database/init.sql
-      - name: Registration integration tests
+      - name: Registration and login integration tests
         run: mvn -B -ntp -f backend/pom.xml -Pregistration-it verify
   verify:
     runs-on: windows-latest

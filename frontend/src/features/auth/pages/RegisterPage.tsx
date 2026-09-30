@@ -85,8 +85,8 @@ export default function RegisterPage() {
               <h1 id="registration-success" ref={successTitle} tabIndex={-1}>Chào mừng, {user.username}.</h1>
               <p>Tài khoản và ví Coin của bạn đã được tạo.</p>
               <div className="wallet-summary"><span>Coin khả dụng<strong>0 <small>Coin</small></strong></span><span>Coin đang khóa<strong>0 <small>Coin</small></strong></span></div>
-              <p className="success-note">Bạn chưa đăng nhập. Chức năng đăng nhập sẽ được bổ sung ở bước tiếp theo.</p>
-              <Link to="/" className="registration-submit">Về trang chủ <span aria-hidden="true">→</span></Link>
+              <p className="success-note">Tài khoản đã sẵn sàng. Đăng nhập để tiếp tục.</p>
+              <Link to="/login" className="registration-submit">Đăng nhập <span aria-hidden="true">→</span></Link>
             </div>
           ) : (
             <>
@@ -110,6 +110,7 @@ export default function RegisterPage() {
                 <button type="submit" className="registration-submit" disabled={pending}>{pending ? 'Đang tạo tài khoản…' : 'Tạo tài khoản'}<span aria-hidden="true">{pending ? '◌' : '→'}</span></button>
                 <div className="registration-assurance"><svg width="17" height="19" viewBox="0 0 20 22" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true"><path d="m10 2 7 3v6c0 4-4 7-7 9-3-2-7-5-7-9V5Z"/><path d="m6 10 3 3 5-6"/></svg><span>Mật khẩu được bảo vệ. Ví Coin được tạo tự động.</span></div>
               </form>
+              <p className="auth-switch">Đã có tài khoản? <Link to="/login">Đăng nhập</Link></p>
               <div className="registration-coin-note"><span className="coin-symbol" aria-hidden="true">C</span><p><strong>Khởi đầu với ví Coin của riêng bạn</strong><br/>Coin là đơn vị giả lập, chỉ sử dụng trong hệ thống.</p></div>
             </>
           )}

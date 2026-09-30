@@ -64,3 +64,7 @@
 @media(max-width:760px) { .guest-sidebar { width:190px; padding:24px 14px; } .guest-workspace { margin-left:190px; } .guest-hero { grid-template-columns:1fr; } .guest-hero-art { max-width:380px; } .guest-guide ol { grid-template-columns:1fr; } .guest-section-heading { align-items:flex-start; flex-direction:column; } .guest-footer { flex-direction:column; } }
 @media(max-width:480px) { .guest-sidebar { position:static; width:auto; } .guest-workspace { margin-left:0; } .guest-nav-label { margin-top:20px; } .guest-account { padding-top:20px; } .guest-skip { left:20px; } }
 @media(prefers-reduced-motion:reduce) { .guest-shell a,.guest-shell button { transition:none; } }
+
+.guest-primary:hover { background:#104b44; }
+.account-name,.admin-title { overflow-wrap:anywhere; }
+.admin-title { font-size:28px; margin:20px 0; }

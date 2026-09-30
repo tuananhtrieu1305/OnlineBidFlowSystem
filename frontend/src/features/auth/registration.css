@@ -67,3 +67,6 @@
 @media(max-width:1000px) { .registration-header { padding:0 32px; height:80px; } .registration-story { padding:30px 28px 20px 32px; } .registration-panel { padding:35px 32px; } .story-intro h2 { font-size:31px; } .registration-panel h1 { font-size:25px; } .registration-footer { padding:20px 32px; } .collection-caption { flex-wrap:wrap; gap:5px; } }
 @media(max-width:700px) { .registration-main { display:block; min-height:0; margin-top:0; } .registration-story { display:none; } .registration-panel { max-width:490px; margin:auto; padding:35px 24px 45px; } .registration-header { padding:0 24px; } .registration-brand { font-size:17px; } .registration-footer { flex-wrap:wrap; padding:20px 24px; } }
 @media(prefers-reduced-motion:reduce) { .registration-shell * { transition:none!important; } }
+
+.auth-switch { margin-top:24px; font-size:12px; color:#66716b; text-align:center; }
+.auth-switch a { color:#145c53; font-weight:600; text-decoration:underline; text-underline-offset:4px; }

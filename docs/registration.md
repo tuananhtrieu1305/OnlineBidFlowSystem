@@ -10,7 +10,7 @@ Form có username, password, confirm password; không yêu cầu email hoặc th
 Username chuẩn hóa lowercase/trim, 3–50 ký tự a-z, số, `.`, `_`, `-`.
 Password tối thiểu 12 Unicode code points, tối đa 72 byte UTF-8, không trim.
 Đăng ký thành công tạo role USER và ví USER 0/0 trong cùng transaction. Chưa đăng nhập tự động.
-Giao diện đăng nhập chưa triển khai; màn hình thành công có nút về trang chủ.
+Màn hình thành công có nút sang Đăng nhập. Xem [module đăng nhập](login.md).
 
 ## Thiết kế
 
@@ -18,7 +18,7 @@ Giao diện đăng nhập chưa triển khai; màn hình thành công có nút v
 - Be Vietnam Pro 400/500/600 được đóng gói local, không tải font từ mạng khi sử dụng.
 - Minh họa vector bộ sưu tập đĩa than, form riêng, góc bo 8/12px.
 - Có keyboard focus, label, hiện/ẩn mật khẩu, lỗi cạnh trường, trạng thái gửi và success.
-- Màn hình hẹp vẫn có thể cuộn; không tràn ngang. Không tạo link đăng nhập giả.
+- Màn hình hẹp vẫn có thể cuộn; không tràn ngang. Liên kết Đăng nhập mở biểu mẫu đăng nhập thật.
 
 ## API
 
@@ -79,4 +79,4 @@ Container test là môi trường dùng một lần; dừng/xóa đúng containe
 
 ## Ranh giới tiếp theo
 
-Tài khoản mới đã có hash tương thích PasswordEncoder để triển khai đăng nhập. AuthProvider, phiên đăng nhập, phân quyền API nghiệp vụ và ví/nạp Coin là các task tiếp theo.
+Đã triển khai AuthProvider, phiên đăng nhập và bảo vệ API bằng Spring Security. Ví/nạp Coin và các API nghiệp vụ cụ thể là các task tiếp theo.
