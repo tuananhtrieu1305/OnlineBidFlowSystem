@@ -7,6 +7,7 @@ if (!existsSync(jar)) throw new Error('Build backend first: cd backend && mvn ve
 const java = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, 'bin', process.platform === 'win32' ? 'java.exe' : 'java') : 'java';
 // Test only: connection probes do not use the database. Normal startup still requires MySQL.
 const child = spawn(java, ['-jar', jar, '--server.port=8080',
+  '--spring.profiles.active=probe',
   '--spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration'], { stdio: 'inherit' });
 child.once('exit', (code) => process.exit(code ?? 1));
 child.once('error', (error) => { console.error(error); process.exit(1); });

@@ -5,8 +5,9 @@ import RoutingTestPage from '../pages/RoutingTestPage';
 import ApiTestPage from '../pages/ApiTestPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import AppLayout from '../AppLayout';
+import RegisterPage from '../features/auth/pages/RegisterPage';
 
-const router = createHashRouter([{ element: <AppLayout />, children: [
+const router = createHashRouter([{ path: '/register', element: <RegisterPage /> }, { element: <AppLayout />, children: [
   {
     path: '/',
     element: <HomePage />

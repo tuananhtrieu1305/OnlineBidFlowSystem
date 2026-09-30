@@ -11,6 +11,7 @@ export default function HomePage() {
       <Link to="/api-test" className="mt-8 inline-flex rounded-lg bg-indigo-600 px-5 py-3 font-medium text-white hover:bg-indigo-700">
         Check server connection
       </Link>
+      <Link to="/register" className="ml-4 inline-flex rounded-lg bg-[#145C53] px-5 py-3 font-medium text-white hover:bg-[#104b44]">Tạo tài khoản</Link>
       <div className="mt-12 grid grid-cols-3 gap-5">
         {[
           ['Desktop', 'Electron + React', 'TypeScript and Tailwind CSS'],
