@@ -32,9 +32,13 @@ class RealtimeWebSocketTest {
     @MockBean private com.group6.auction.wallet.repository.WalletRepository wallets;
     @MockBean private org.springframework.jdbc.core.JdbcTemplate jdbc;
     @MockBean private com.group6.auction.product.repository.ProductRepository products;
+    @MockBean private com.group6.auction.auction.repository.AuctionRepository auctions;
     private final java.util.Map<Long, String> cookies = new java.util.HashMap<>();
     private static final String HASH = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(4).encode("test-password-123");
     @org.junit.jupiter.api.BeforeEach void accounts() {
+        org.mockito.Mockito.when(roomDataGateway.authorizeAndRegister(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.nullable(String.class)))
+            .thenAnswer(call -> new com.group6.auction.realtime.room.RoomAccessService(roomDataGateway)
+                .validateJoin(call.getArgument(0), call.getArgument(1), call.getArgument(2)));
         for (long id = 2; id <= 4; id++) {
             var user = org.mockito.Mockito.mock(com.group6.auction.account.entity.User.class);
             when(user.getId()).thenReturn(id);

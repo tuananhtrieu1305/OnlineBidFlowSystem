@@ -167,4 +167,12 @@ Hoàn thành mốc cấu hình khi Admin tạo/xem/sửa đúng điều kiện, 
 
 Tạo docs/auction-configuration.md ghi API, input mẫu, giờ UTC, mã phòng, lỗi, phạm vi edit, hợp đồng atomic join và dependency lifecycle. Cập nhật docs/TEAM_CONVENTIONS.md chỉ các quyết định đã chốt khi triển khai; không sửa SYSTEM_SPEC hoặc schema ngầm.
 
-Nguồn khảo sát: SYSTEM_SPEC.md, database/init.sql, docs/TEAM_CONVENTIONS.md, docs/products.md, docs/wallet.md, Auction.java, AuctionRepository.java, RoomAccessService.java, RoomMembershipService.java, JpaRoomDataGateway.java, AuctionRoomDetails.java. Không có thay đổi code nghiệp vụ trong lần lập plan này.
+Nguồn khảo sát: SYSTEM_SPEC.md, database/init.sql, docs/TEAM_CONVENTIONS.md, docs/products.md, docs/wallet.md, Auction.java, AuctionRepository.java, RoomAccessService.java, RoomMembershipService.java, JpaRoomDataGateway.java, AuctionRoomDetails.java.
+
+## 11. Kết quả triển khai — 01/10/2026
+
+Đã triển khai create/list/detail/update, UI Admin, ETag, productVersion, thời gian UTC và atomic join/update. Chi tiết hợp đồng trong [auction-configuration.md](../auction-configuration.md).
+
+Kiểm chứng: 66 backend unit + 32 MySQL integration tests; 34 frontend unit; 19 Electron regression; 1 live Electron scenario tạo đủ bốn tổ hợp, sửa/tải lại và JOIN_ROOM thật. JaCoCo package cấu hình đạt 76/81 dòng (93,8%); frontend validation helper đạt 100% trong báo cáo Vitest. Đây là coverage của phạm vi đo, không phải toàn ứng dụng. npm audit không có lỗ hổng được báo cáo.
+
+Không bao gồm scheduler hoặc đấu giá end-to-end của NORMAL/BLIND; không thay đổi schema/dữ liệu lịch sử. Những trường hợp E2E mở rộng trong tiêu chí gốc (toàn bộ lỗi offline/412 và mọi interleaving) chưa được kiểm thử riêng từng trường hợp; backend có kiểm tra stale version, capacity đồng thời, join trước edit và hai Admin cùng sửa.

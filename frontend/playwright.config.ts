@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  testIgnore: ['registration-live.spec.ts', 'login-live.spec.ts', 'products-live.spec.ts'],
+  testIgnore: ['registration-live.spec.ts', 'login-live.spec.ts', 'products-live.spec.ts', 'auctions-live.spec.ts'],
   workers: 1,
   timeout: 30_000,
   use: { trace: 'retain-on-failure' },

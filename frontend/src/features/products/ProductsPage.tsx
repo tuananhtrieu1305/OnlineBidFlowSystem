@@ -47,6 +47,7 @@ function ProductDetail({id,edit}:{id:string;edit:boolean}){
  if(!product)return <p role="status">Đang tải sản phẩm…</p>;
  if(edit&&product.editable)return <ProductForm product={product} reload={()=>setAttempt(v=>v+1)}/>;
  return <><div className="products-heading"><div><Link to="/admin/products">← Sản phẩm</Link><h1>{product.name}</h1><p>Mã sản phẩm #{product.id}</p></div>{product.editable&&<Link className="product-primary" to={'/admin/products/'+id+'/edit'}>Chỉnh sửa</Link>}</div>
+  <p className="product-info"><Link to={'/admin/auctions/new?productId='+product.id}>Tạo phiên từ sản phẩm này →</Link></p>
   {!product.editable&&<p className="product-info">Sản phẩm đã được dùng trong phiên đấu giá nên không thể chỉnh sửa.</p>}
   <section className="product-detail"><div className="product-large-photo"><Photo src={product.imageUrl} name={product.name}/></div><div><h2>Thông tin sản phẩm</h2><dl><dt>Số lượng</dt><dd>{product.quantity}</dd><dt>Giá ước tính · Chỉ Admin thấy</dt><dd>{price(product.estimatedPrice)}</dd></dl><h2>Mô tả</h2><p className="product-description">{product.description||'Chưa có mô tả.'}</p></div></section>
  </>;

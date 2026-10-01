@@ -46,6 +46,10 @@ public class RoomAccessService {
         return RoomAccessResult.success();
     }
 
+    public RoomAccessResult authorizeAndRegister(long userId, long auctionId, String roomCode) {
+        return roomDataGateway.authorizeAndRegister(userId, auctionId, roomCode);
+    }
+
     private String normalize(String roomCode) {
         return roomCode == null ? null : roomCode.trim();
     }

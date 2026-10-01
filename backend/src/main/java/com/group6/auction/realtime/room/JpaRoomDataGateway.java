@@ -17,6 +17,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @Primary
 public class JpaRoomDataGateway implements RoomDataGateway {
+    @Override
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public RoomAccessResult authorizeAndRegister(long userId, long auctionId, String roomCode) {
+        var auctions = auctionRepository.getIfAvailable();
+        if (auctions == null || auctions.findForUpdate(auctionId).isEmpty())
+            return RoomAccessResult.denied("AUCTION_NOT_FOUND", "Auction room was not found.");
+        var result = new RoomAccessService(this).validateJoin(userId, auctionId, roomCode);
+        if (result.allowed() && !participantExists(auctionId, userId)) ensureParticipant(auctionId, userId);
+        return result;
+    }
     private final ObjectProvider<AuctionRepository> auctionRepository;
     private final ObjectProvider<AuctionParticipantRepository> participantRepository;
 
@@ -61,7 +71,7 @@ public class JpaRoomDataGateway implements RoomDataGateway {
         }
         var id = new AuctionParticipantId(auctionId, userId);
         if (!repository.existsById(id)) {
-            repository.save(new AuctionParticipant(auctionId, userId, LocalDateTime.now()));
+            repository.saveAndFlush(new AuctionParticipant(auctionId, userId, LocalDateTime.now(java.time.ZoneOffset.UTC)));
         }
     }
 

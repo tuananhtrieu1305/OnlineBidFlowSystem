@@ -474,3 +474,9 @@ backend/target/
 ```
 
 Product images uploaded by admins belong in server-managed storage or a configured volume, not in `frontend/public`. The desktop app should not need to be rebuilt every time a product image changes.
+
+## 16. Auction Configuration and Join Coordination
+
+Admin configuration lives under `/api/admin/auctions`; see [auction-configuration.md](auction-configuration.md). Do not reuse its detail DTO in public or realtime responses: it includes private configuration.
+
+Runtime join must use `RoomDataGateway.authorizeAndRegister`. The JPA implementation locks the auction row and validates/registers the participant atomically. Configuration updates acquire the same row lock. Bid/lifecycle writers must coordinate through that lock before changing status or creating activity, with auction-before-wallet lock order. Store auction and participation DATETIME values as UTC; do not use the JVM local timezone.

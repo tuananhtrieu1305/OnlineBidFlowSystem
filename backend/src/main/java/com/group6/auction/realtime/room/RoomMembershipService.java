@@ -22,7 +22,8 @@ public class RoomMembershipService {
     }
 
     public RoomAccessResult join(String sessionId, RealtimePrincipal principal, long auctionId, String roomCode) {
-        var access = roomAccessService.validateJoin(principal.userId(), auctionId, roomCode);
+        // The persistence transaction completes before in-memory membership or events are updated.
+        var access = roomAccessService.authorizeAndRegister(principal.userId(), auctionId, roomCode);
         if (!access.allowed()) {
             return access;
         }
@@ -32,7 +33,6 @@ public class RoomMembershipService {
             return RoomAccessResult.unchangedSuccess();
         }
 
-        roomDataGateway.ensureParticipant(auctionId, principal.userId());
         sessionAuctions.add(auctionId);
         sessionsByAuction.computeIfAbsent(auctionId, ignored -> ConcurrentHashMap.newKeySet()).add(sessionId);
         return RoomAccessResult.success();

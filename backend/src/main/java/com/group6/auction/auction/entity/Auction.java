@@ -45,12 +45,15 @@ public class Auction {
     private Long minBidIncrement;
 
     @Column(name = "start_time", nullable = false)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.LOCAL_DATE_TIME)
     private LocalDateTime startTime;
 
     @Column(name = "end_time", nullable = false)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.LOCAL_DATE_TIME)
     private LocalDateTime endTime;
 
     @Column(name = "finished_at")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.LOCAL_DATE_TIME)
     private LocalDateTime finishedAt;
 
     @Enumerated(EnumType.STRING)
@@ -64,6 +67,28 @@ public class Auction {
     private Long winningPrice;
 
     protected Auction() {
+    }
+
+    public static Auction create(long productId, long createdBy, AuctionType type, AuctionAccessType access,
+            long price, Long increment, Integer capacity, String code, LocalDateTime start, LocalDateTime end) {
+        Auction auction = new Auction();
+        auction.productId = productId;
+        auction.createdBy = createdBy;
+        auction.status = AuctionStatus.UPCOMING;
+        auction.configure(type, access, price, increment, capacity, code, start, end);
+        return auction;
+    }
+
+    public void configure(AuctionType type, AuctionAccessType access, long price, Long increment,
+            Integer capacity, String code, LocalDateTime start, LocalDateTime end) {
+        this.auctionType = type;
+        this.accessType = access;
+        this.startingPrice = price;
+        this.minBidIncrement = increment;
+        this.maxParticipants = capacity;
+        this.roomCode = code;
+        this.startTime = start;
+        this.endTime = end;
     }
 
     public Long getId() {

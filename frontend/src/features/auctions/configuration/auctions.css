@@ -1,0 +1,23 @@
+.auctions-page select {display:block;width:100%;background:white;border:1px solid #ccd5ce;border-radius:8px;padding:11px;margin-top:8px;font-size:13px;}
+.auction-filters {display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:14px;margin-bottom:24px;}
+.auctions-page label {font-size:12px;display:block;}
+.auction-section,.auction-picker {background:white;border:1px solid #e1e5df;border-radius:12px;padding:24px;margin-bottom:22px;}
+.auction-section h2,.auction-picker h2 {font-size:18px;font-weight:500;margin-bottom:20px;}
+.auction-section p,.auction-picker p {font-size:12px;color:#66716b;line-height:1.7;margin:12px 0;}
+.auction-grid,.auction-info {display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+.auction-info dt {font-size:12px;color:#66716b;margin-bottom:9px;}
+.auction-info dd {font-size:15px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;}
+.auction-product-options {display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:250px;overflow:auto;margin-top:15px;}
+.auction-product-options button {text-align:left;padding:12px;border:1px solid #e1e5df;border-radius:8px;min-width:0;}
+.auction-product-options button[aria-pressed=true] {background:#e5efea;border-color:#145c53;}
+.auction-product-options strong {font-size:13px;font-weight:500;display:block;overflow-wrap:anywhere;}
+.auction-product-options span {font-size:11px;color:#66716b;}
+.auction-selected {display:flex;gap:15px;align-items:center;background:#edf2ed;padding:15px;border-radius:8px;margin-bottom:18px;}
+.auction-selected img {width:90px;height:68px;object-fit:cover;border-radius:6px;}
+.auction-selected strong {font-weight:500;overflow-wrap:anywhere;}
+.auction-room-code {margin-top:26px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:#edf2ed;border-radius:8px;padding:16px;font-size:13px;}
+.auction-room-code strong {font-variant-numeric:tabular-nums;letter-spacing:2px;}
+.auction-room-code button {text-decoration:underline;color:#145c53;}
+.auctions-page fieldset {min-width:0;}
+.auctions-page button:disabled {opacity:.5;cursor:not-allowed;}
+@media(max-width:1000px){.auction-filters {grid-template-columns:1fr 1fr;}.auction-grid,.auction-info{grid-template-columns:1fr;}.auction-product-options{grid-template-columns:1fr;}}

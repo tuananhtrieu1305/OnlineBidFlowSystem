@@ -14,6 +14,7 @@ public class AuctionParticipant {
     private AuctionParticipantId id;
 
     @Column(name = "joined_at", nullable = false)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.LOCAL_DATE_TIME)
     private LocalDateTime joinedAt;
 
     protected AuctionParticipant() {

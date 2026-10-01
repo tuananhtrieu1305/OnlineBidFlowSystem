@@ -1,0 +1,13 @@
+import { useEffect, useRef, useState } from 'react';
+import { getProduct, listProducts, imageSource, type Product } from '../../products/productApi';
+export default function ProductPicker({selected,onSelect,initialId,disabled}:{selected:Product|null;onSelect:(p:Product)=>void;initialId?:string|null;disabled:boolean}){
+ const [q,setQ]=useState(''),[page,setPage]=useState(0),[items,setItems]=useState<Product[]>([]),[total,setTotal]=useState(0),[loading,setLoading]=useState(false),[error,setError]=useState(''),[retry,setRetry]=useState(0);
+ const manualSelection=useRef(false);
+ function select(p:Product){manualSelection.current=true;onSelect(p);}
+ useEffect(()=>{if(!initialId)return;let alive=true;void getProduct(initialId).then(p=>{if(alive&&!manualSelection.current)onSelect(p);}).catch(()=>{if(alive&&!manualSelection.current)setError('Không tải được sản phẩm đã chọn. Hãy tìm và chọn lại.');});return()=>{alive=false;};},[initialId]);
+ useEffect(()=>{const abort=new AbortController();setLoading(true);const timer=setTimeout(()=>{void listProducts(q,page,abort.signal).then(data=>{if(!abort.signal.aborted){setItems(data.items);setTotal(data.totalPages);setError('');}}).catch(()=>{if(!abort.signal.aborted)setError('Chưa tải được danh sách sản phẩm.');}).finally(()=>{if(!abort.signal.aborted)setLoading(false);});},300);return()=>{abort.abort();clearTimeout(timer);};},[q,page,retry]);
+ return <section className="auction-picker"><h2>1. Chọn sản phẩm</h2>{selected&&<div className="auction-selected">{imageSource(selected.imageUrl)&&<img src={imageSource(selected.imageUrl)} alt="Ảnh sản phẩm đã chọn"/>}<div><strong>{selected.name}</strong><p>#{selected.id} · Số lượng {selected.quantity}</p></div></div>}
+  <label>Tìm sản phẩm<input value={q} disabled={disabled} maxLength={255} placeholder="Tên hoặc mã sản phẩm" onChange={e=>{setQ(e.target.value);setPage(0);}}/></label>
+  {error?<p role="alert">{error} <button type="button" onClick={()=>setRetry(v=>v+1)}>Thử lại</button></p>:loading?<p role="status">Đang tìm sản phẩm…</p>:<><div className="auction-product-options">{items.map(p=><button type="button" key={p.id} disabled={disabled} aria-pressed={selected?.id===p.id} onClick={()=>select(p)}><strong>{p.name}</strong><span>#{p.id} · Số lượng {p.quantity}</span></button>)}{!items.length&&<p>Không tìm thấy sản phẩm. Thêm sản phẩm ở mục Sản phẩm trước.</p>}</div><div className="product-pagination"><button type="button" disabled={disabled||page===0} onClick={()=>setPage(p=>p-1)}>Trước</button><span>{page+1}/{Math.max(total,1)}</span><button type="button" disabled={disabled||page+1>=total} onClick={()=>setPage(p=>p+1)}>Sau</button></div></>}
+ </section>;
+}
