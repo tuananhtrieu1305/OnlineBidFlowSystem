@@ -24,6 +24,7 @@ export default function AppLayout() {
         <nav aria-label="Điều hướng chính">
           <NavLink to="/" end className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}><span aria-hidden="true">▦</span> Khám phá</NavLink>
           {user?.role === 'ADMIN' && <NavLink to="/admin" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Quản trị</NavLink>}
+          {user?.role === 'USER' && <NavLink to="/wallet" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>◈ Ví Coin</NavLink>}
         </nav>
         <div className="guest-account">
           {loading ? <p role="status">Đang kiểm tra phiên đăng nhập…</p> : user ? <>

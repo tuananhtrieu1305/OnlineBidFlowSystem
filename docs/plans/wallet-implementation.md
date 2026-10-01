@@ -1,6 +1,6 @@
 # Implementation plan — Ví Coin
 
-Ngày: 2026-10-01. Trạng thái: kế hoạch, chưa triển khai.
+Ngày: 2026-10-01. Trạng thái: đã triển khai hai mốc; hợp đồng thực tế và giới hạn xem [wallet.md](../wallet.md).
 Baseline: pbtien sau merge 4857eaf. Chủ sở hữu: Phạm Bá Tiến.
 
 ## 1. Mục tiêu và phạm vi
@@ -55,7 +55,7 @@ Chia làm hai mốc bàn giao:
 - Không nhận userId, walletId, role hay balance từ client.
 - Số Coin và ID BIGINT trả dạng chuỗi thập phân để không mất chính xác trong JavaScript. Input amount cũng là chuỗi số nguyên chuẩn; frontend không chuyển qua Number để tính toán tiền.
 - GET /wallet trả walletId, availableBalance, lockedBalance, updatedAt. Không cần lưu totalBalance; UI có thể cộng bằng BigInt.
-- POST thành công trả 201 cùng transaction và snapshot ví sau commit. Từ chối amount vượt Long.MAX_VALUE hoặc làm tràn số dư. Hạn mức nạp nhỏ hơn nếu nhóm muốn sẽ là quyết định nghiệp vụ riêng, không tự thêm.
+- POST thành công trả 201 cùng snapshot ví sau commit; lịch sử tải qua endpoint riêng. Từ chối amount vượt Long.MAX_VALUE hoặc làm tràn số dư. Hạn mức nạp nhỏ hơn nếu nhóm muốn sẽ là quyết định nghiệp vụ riêng, không tự thêm.
 - Lịch sử dùng cursor, limit mặc định 20/tối đa 100; thứ tự created_at DESC, id DESC. Cursor chứa cặp mốc thời gian/ID, được validate và truy vấn luôn giới hạn wallet của người đang đăng nhập.
 - DTO lịch sử chỉ có ID, auctionId, loại, hai delta, thời gian. Không trả entity Auction/Product, bid hay giá bí mật. Không suy diễn số dư sau mỗi giao dịch vì schema không lưu snapshot.
 - Lỗi: 400 dữ liệu sai; 401 hết phiên; 403 sai quyền/CSRF; 404 không có ví; 409 số dư không đủ/xung đột nghiệp vụ; 429 vượt tần suất; 500 lỗi nội bộ an toàn.

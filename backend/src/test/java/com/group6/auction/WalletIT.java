@@ -45,6 +45,7 @@ class WalletIT {
   var initial=call("GET","/api/wallet",null);
   assertThat(initial.statusCode()).isEqualTo(200);
   assertThat(initial.body()).contains("\"availableBalance\":\"0\"");
+  assertThat(call("GET","/api/wallet?userId=1&walletId=1",null).body()).isEqualTo(initial.body());
   assertThat(call("POST","/api/wallet/deposits","{\"amount\":\"1250\"}").statusCode()).isEqualTo(201);
   assertThat(call("GET","/api/wallet",null).body()).contains("\"availableBalance\":\"1250\"");
   var history=call("GET","/api/wallet/transactions?limit=1",null);
@@ -55,7 +56,20 @@ class WalletIT {
   }
   assertThat(call("POST","/api/wallet/deposits","{\"amount\":\"10\",\"userId\":1}").statusCode()).isEqualTo(400);
   assertThat(call("GET","/api/wallet/transactions?type=INVALID",null).statusCode()).isEqualTo(400);
+  assertThat(call("POST","/api/wallet/deposits","{\"amount\":\"50\"}").statusCode()).isEqualTo(201);
+  var first=json.readTree(call("GET","/api/wallet/transactions?limit=1",null).body());
+  String cursor=first.get("nextCursor").asText();
+  var next=call("GET","/api/wallet/transactions?limit=1&cursor="+cursor,null);
+  assertThat(next.statusCode()).isEqualTo(200);
+  assertThat(json.readTree(next.body()).get("items").get(0).get("id").asText()).describedAs("first=%s next=%s", first, next.body()).isNotEqualTo(first.get("items").get(0).get("id").asText());
   csrf="";
   assertThat(call("POST","/api/wallet/deposits","{\"amount\":\"10\"}").statusCode()).isEqualTo(403);
+ }
+ @Test void adminCannotAccessPersonalWallet() throws Exception {
+  login();
+  jdbc.update("UPDATE users SET role='ADMIN' WHERE username=?",username);
+  assertThat(call("POST","/api/auth/login","{\"username\":\""+username+"\",\"password\":\"test-password-123\"}").statusCode()).isEqualTo(200);
+  assertThat(call("GET","/api/wallet",null).statusCode()).isEqualTo(403);
+  assertThat(call("GET","/api/wallet/transactions",null).statusCode()).isEqualTo(403);
  }
 }

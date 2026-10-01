@@ -31,6 +31,16 @@ test('real registration login cookie reload and logout in Electron', async ({}, 
     expect(await page.evaluate(() => localStorage.length)).toBe(0);
     await page.reload();
     await expect(page.getByRole('complementary').getByRole('heading', { name: username })).toBeVisible();
+    await page.getByRole('link', { name: 'Ví Coin' }).click();
+    await expect(page.getByText('Chưa có giao dịch', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: '＋ Nạp Coin' }).click();
+    await page.getByLabel('Số Coin muốn nạp').fill('1250');
+    await page.getByRole('button', { name: 'Xác nhận nạp' }).click();
+    await expect(page.getByLabel('Số dư ví')).toContainText('1.250');
+    await expect(page.getByRole('cell', { name: '+1.250', exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.getByLabel('Số dư ví')).toContainText('1.250');
+    await page.screenshot({ path: info.outputPath('wallet.png'), fullPage: true });
     const pong = await page.evaluate(() => new Promise<string>((resolve, reject) => {
       const socket = new WebSocket('ws://localhost:18080/ws/auction?userId=999&role=ADMIN');
       (window as unknown as { testSocket: WebSocket }).testSocket = socket;
@@ -41,9 +51,9 @@ test('real registration login cookie reload and logout in Electron', async ({}, 
     }));
     expect(JSON.parse(pong).payload).toMatchObject({ username, role: 'USER' });
     await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
-    await expect(page.getByRole('link', { name: 'Đăng nhập', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Chào mừng bạn trở lại.' })).toBeVisible();
     await page.waitForFunction(() => (window as unknown as { testSocket: WebSocket }).testSocket.readyState === WebSocket.CLOSED);
     await page.reload();
-    await expect(page.getByRole('link', { name: 'Đăng nhập', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Chào mừng bạn trở lại.' })).toBeVisible();
   } finally { await app.close(); }
 });

@@ -1,0 +1,46 @@
+.wallet-heading { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:36px 0 28px; }
+.wallet-heading h1 { font-size:30px; font-weight:500; letter-spacing:-1px; margin:12px 0; }
+.wallet-heading>div>p:last-child { color:#66716b; font-size:12px; }
+.wallet-button { display:inline-flex; align-items:center; justify-content:center; border-radius:8px; background:#145c53; color:white; padding:13px 20px; font-size:13px; font-weight:500; white-space:nowrap; }
+.wallet-button:hover { background:#104b44; }
+.wallet-button:disabled { opacity:.6; cursor:wait; }
+.wallet-balances { display:grid; grid-template-columns:1.25fr 1fr; gap:20px; }
+.wallet-balances article { border:1px solid #e1e5df; border-radius:12px; padding:27px; background:#fff; min-width:0; }
+.wallet-balances .wallet-available { background:#145c53; color:white; border-color:#145c53; }
+.wallet-balances p { font-size:13px; }
+.wallet-balances strong { display:block; font-size:clamp(20px,2.8vw,36px); font-weight:500; margin:22px 0; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.wallet-balances small { font-size:13px; font-weight:400; }
+.wallet-balances span { font-size:11px; opacity:.8; }
+.wallet-history { margin-top:38px; }
+.wallet-history-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:20px; }
+.wallet-history h2 { font-size:19px; font-weight:500; }
+.wallet-history-heading label { font-size:11px; color:#66716b; }
+.wallet-history select { margin-left:8px; padding:9px; border:1px solid #e1e5df; border-radius:8px; color:#202824; background:white; }
+.wallet-table-scroll { overflow-x:auto; border:1px solid #e1e5df; border-radius:12px; background:white; }
+.wallet-history table { width:100%; border-collapse:collapse; text-align:left; font-size:11px; }
+.wallet-history th { padding:15px; background:#eeeee7; font-weight:500; color:#66716b; white-space:nowrap; }
+.wallet-history td { padding:17px 15px; border-top:1px solid #e1e5df; font-variant-numeric:tabular-nums; }
+.wallet-history td strong { font-weight:500; white-space:nowrap; }
+.wallet-history td small { display:block; margin-top:5px; color:#66716b; }
+.wallet-empty { padding:42px 20px; text-align:center; border-bottom:1px solid #e1e5df; }
+.wallet-empty>span { color:#145c53; font-size:30px; }
+.wallet-empty h3 { margin:12px 0; font-size:14px; }
+.wallet-empty p { color:#66716b; font-size:12px; }
+.wallet-more { display:block; margin:20px auto; color:#145c53; font-size:12px; padding:10px 25px; border:1px solid #145c53; border-radius:8px; }
+.wallet-notice { background:#e0ece3; padding:13px; border-radius:8px; font-size:12px; margin-bottom:16px; color:#145c53; }
+.wallet-page [role=alert] { color:#b83a35; font-size:12px; margin:12px 0; }
+.wallet-page [role=alert] button { text-decoration:underline; }
+.wallet-dialog { color:#202824; background:#f6f5f1; border:1px solid #e1e5df; border-radius:12px; width:min(440px,calc(100vw - 40px)); padding:28px; box-shadow:0 20px 60px #20282426; }
+.wallet-dialog::backdrop { background:#20282466; }
+.wallet-dialog-heading { display:flex; justify-content:space-between; align-items:center; }
+.wallet-dialog-heading h2 { font-size:21px; font-weight:500; }
+.wallet-dialog-heading button { font-size:25px; padding:0 8px; }
+.wallet-dialog p { font-size:12px; color:#66716b; line-height:1.8; margin:16px 0 24px; }
+.wallet-dialog label { display:block; font-size:12px; margin-bottom:10px; }
+.wallet-dialog input { width:100%; padding:13px; background:white; border:1px solid #cbd4ca; border-radius:8px; font-variant-numeric:tabular-nums; }
+.wallet-presets { display:flex; gap:10px; margin:13px 0 24px; }
+.wallet-presets button { border:1px solid #cbd4ca; border-radius:6px; padding:7px 16px; font-size:12px; }
+.wallet-dialog .wallet-button { width:100%; }
+.wallet-dialog .wallet-error { color:#b83a35; }
+@media(max-width:1000px) { .wallet-balances article { padding:20px; } .wallet-history td,.wallet-history th { padding:12px 9px; } .wallet-heading h1 { font-size:24px; } }
+@media(max-width:760px) { .wallet-heading,.wallet-history-heading { align-items:flex-start; flex-direction:column; } .wallet-balances { grid-template-columns:1fr; } }

@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 class RealtimeWebSocketTest {
     @MockBean private com.group6.auction.account.repository.UserRepository users;
     @MockBean private com.group6.auction.wallet.repository.WalletRepository wallets;
+    @MockBean private org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final java.util.Map<Long, String> cookies = new java.util.HashMap<>();
     private static final String HASH = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(4).encode("test-password-123");
     @org.junit.jupiter.api.BeforeEach void accounts() {

@@ -1,0 +1,65 @@
+import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test';
+import path from 'node:path';
+let app: ElectronApplication;
+let page: Page;
+const wallet = { walletId: '9', availableBalance: '2500', lockedBalance: '500', updatedAt: '2026-10-01T00:00:00Z' };
+test.beforeEach(async ({}, info) => {
+  const env = Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined));
+  delete env.ELECTRON_RUN_AS_NODE; delete env.ELECTRON_DEV_URL;
+  app = await electron.launch({ args: [path.resolve('.'), `--user-data-dir=${info.outputPath('profile')}`], env });
+  page = await app.firstWindow();
+  await page.route('**/api/auth/me', r => r.fulfill({ json: { id: 1, username: 'batien', role: 'USER' } }));
+  await page.route('**/api/auth/csrf', r => r.fulfill({ json: { token: 'wallet-csrf' } }));
+  await page.route('**/api/wallet', r => r.fulfill({ json: wallet }));
+  await page.route('**/api/wallet/transactions*', r => r.fulfill({ json: { items: [], nextCursor: null } }));
+  await page.goto('app://auction/#/wallet');
+});
+test.afterEach(async () => { await app?.close(); });
+test('shows balances, validates deposit and updates only after server confirmation', async () => {
+  await expect(page.getByLabel('Số dư ví')).toContainText('2.500');
+  await expect(page.getByText('Chưa có giao dịch', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '＋ Nạp Coin' }).click();
+  await page.getByRole('button', { name: 'Xác nhận nạp' }).click();
+  await expect(page.getByLabel('Số Coin muốn nạp')).toBeFocused();
+  await expect(page.getByRole('alert')).toBeVisible();
+  let requests = 0;
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/wallet/deposits', async r => {
+    requests++;
+    expect(r.request().postDataJSON()).toEqual({ amount: '1000' });
+    expect(r.request().headers()['x-csrf-token']).toBe('wallet-csrf');
+    await pending;
+    await r.fulfill({ status: 201, json: { ...wallet, availableBalance: '3500' } });
+  });
+  await page.getByLabel('Số Coin muốn nạp').fill('1000');
+  await page.getByRole('button', { name: 'Xác nhận nạp' }).click();
+  await expect(page.getByRole('button', { name: 'Đang nạp…' })).toBeDisabled();
+  await expect(page.getByLabel('Số dư ví')).toContainText('2.500');
+  release();
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(page.getByLabel('Số dư ví')).toContainText('3.500');
+  expect(requests).toBe(1);
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(820, 650));
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+test('uncertain deposit is not automatically retried and filter goes to server', async () => {
+  let requests = 0;
+  await page.route('**/api/wallet/deposits', r => { requests++; return r.abort(); });
+  await page.getByRole('button', { name: '＋ Nạp Coin' }).click();
+  await page.getByLabel('Số Coin muốn nạp').fill('500');
+  await page.getByRole('button', { name: 'Xác nhận nạp' }).click();
+  await expect(page.getByRole('alert')).toContainText('Chưa xác định kết quả nạp');
+  await expect(page.getByLabel('Số Coin muốn nạp')).toBeDisabled();
+  await page.getByRole('button', { name: 'Kiểm tra ví và lịch sử' }).click();
+  const filtered = page.waitForRequest(r => r.url().includes('/api/wallet/transactions') && r.url().includes('type=LOCK'));
+  await page.getByLabel('Lọc giao dịch').selectOption('LOCK');
+  await filtered;
+  expect(requests).toBe(1);
+});
+test('expired session hides wallet and sends user to login', async () => {
+  await page.route('**/api/wallet', r => r.fulfill({ status: 401, json: {} }));
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Chào mừng bạn trở lại.' })).toBeVisible();
+  await expect(page.getByLabel('Số dư ví')).toHaveCount(0);
+});

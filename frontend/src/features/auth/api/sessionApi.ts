@@ -15,7 +15,7 @@ export async function currentUser(): Promise<SessionUser | null> {
     throw error;
   }
 }
-async function csrfHeaders() {
+export async function csrfHeaders() {
   const { data } = await client.get<{ token: string }>('/api/auth/csrf');
   if (typeof data?.token !== 'string' || !data.token) throw new Error('Missing CSRF token');
   return { 'X-CSRF-TOKEN': data.token };
