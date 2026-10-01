@@ -17,6 +17,9 @@ target/
 .vscode/
 *.iml
 
+# Personal implementation notes
+docs/realtime/
+
 # Environment
 .env
 .env.*

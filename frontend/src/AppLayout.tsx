@@ -17,7 +17,7 @@ export default function AppLayout() {
       </header>
       <Outlet />
       <footer className="mx-auto max-w-5xl px-8 py-6 text-xs text-slate-500">
-        {window.desktop ? `Desktop · ${window.desktop.platform} · Electron ${window.desktop.electronVersion}` : 'Browser preview'}
+        {window.desktop ? `Desktop / ${window.desktop.platform} / Electron ${window.desktop.electronVersion}` : 'Browser preview'}
       </footer>
     </div>
   );

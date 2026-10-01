@@ -2,21 +2,21 @@ import { useEffect, useState } from 'react';
 import axiosClient, { serverConfig } from '../api/axiosClient';
 
 type HealthResponse = { status: string; service: string };
-type ProbeState = 'Checking…' | 'Connected' | 'Unavailable';
+type ProbeState = 'Checking...' | 'Connected' | 'Unavailable';
 
 export default function ApiTestPage() {
   const [attempt, setAttempt] = useState(0);
   const [response, setResponse] = useState<HealthResponse | null>(null);
-  const [apiState, setApiState] = useState<ProbeState>('Checking…');
-  const [socketState, setSocketState] = useState<ProbeState>('Checking…');
+  const [apiState, setApiState] = useState<ProbeState>('Checking...');
+  const [socketState, setSocketState] = useState<ProbeState>('Checking...');
 
   useEffect(() => {
     let active = true;
     let receivedPong = false;
     const controller = new AbortController();
     setResponse(null);
-    setApiState('Checking…');
-    setSocketState('Checking…');
+    setApiState('Checking...');
+    setSocketState('Checking...');
     void axiosClient.get<HealthResponse>('/api/health', { signal: controller.signal })
       .then(({ data }) => {
         if (!active) return;
@@ -29,7 +29,6 @@ export default function ApiTestPage() {
       })
       .catch(() => { if (active) setApiState('Unavailable'); });
 
-    // This is a short-lived connectivity probe, not the future auction subscription.
     const socket = new WebSocket(serverConfig.websocketUrl);
     const timeout = window.setTimeout(() => {
       if (active) setSocketState('Unavailable');
