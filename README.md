@@ -15,7 +15,8 @@ Electron / React ── HTTP + WebSocket ── Spring Boot ── MySQL
 
 Base có cửa sổ desktop, điều hướng, kiểm tra REST/WebSocket, cấu hình LAN và đóng gói Windows.
 Đã có đăng ký USER và tự tạo ví 0 Coin với giao diện trắng ngà/xanh cổ vịt. Xem [hướng dẫn đăng ký](docs/registration.md).
-Đã có đăng nhập/đăng xuất bằng session, khôi phục phiên và phân quyền USER/ADMIN. Xem [hướng dẫn đăng nhập](docs/login.md). Chưa triển khai đấu giá, nạp/giao dịch Coin, phòng, chat, reconnect nghiệp vụ, replay hoặc leaderboard.
+Đã có đăng nhập/đăng xuất bằng session, khôi phục phiên và phân quyền USER/ADMIN. Xem [hướng dẫn đăng nhập](docs/login.md).
+Backend đã tích hợp room, chat, snapshot khi reconnect và Replay qua session thật. Xem [hướng dẫn tích hợp realtime](docs/REALTIME_MERGE_NOTES.md). Chưa có giao diện phòng đấu giá; nghiệp vụ bid NORMAL/BLIND, nạp/giao dịch Coin, Admin CRUD và leaderboard là các bước tiếp theo.
 `/ws/health` chỉ là kiểm tra kết nối PING/PONG, chưa phải kênh sự kiện đấu giá.
 Đọc `SYSTEM_SPEC.md` trước khi phát triển nghiệp vụ; schema và các quy tắc NORMAL/BLIND không thay đổi.
 

@@ -16,6 +16,7 @@ class LoginIT {
     @LocalServerPort int port;
     @Autowired JdbcTemplate jdbc;
     @Autowired ObjectMapper json;
+    @org.springframework.boot.test.mock.mockito.MockBean com.group6.auction.realtime.replay.ReplayService replayService;
     String username = "login_" + UUID.randomUUID().toString().replace("-", "");
     String cookie = "";
     String csrf = "";
@@ -87,5 +88,43 @@ class LoginIT {
         bootstrap();
         assertThat(request("POST", "/api/auth/login", body("my-password-123")).body()).contains("\"role\":\"ADMIN\"");
         assertThat(request("GET", "/api/admin/session", null).statusCode()).isEqualTo(200);
+    }
+    @Test void socketUsesSessionIdentityAndClosesOnLogout() throws Exception {
+        bootstrap();
+        assertThat(request("POST", "/api/auth/login", body("my-password-123")).statusCode()).isEqualTo(200);
+        long id = jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, username);
+        var message = new java.util.concurrent.CompletableFuture<String>();
+        var closed = new java.util.concurrent.CompletableFuture<Integer>();
+        try (var client = HttpClient.newHttpClient()) {
+            var socket = client.newWebSocketBuilder().header("Origin", "app://auction").header("Cookie", cookie)
+                .buildAsync(URI.create("ws://localhost:" + port + "/ws/auction?userId=999&role=ADMIN"), new WebSocket.Listener() {
+                    public java.util.concurrent.CompletionStage<?> onText(WebSocket ws, CharSequence data, boolean last) {
+                        message.complete(data.toString()); ws.request(1); return null;
+                    }
+                    public java.util.concurrent.CompletionStage<?> onClose(WebSocket ws, int code, String reason) {
+                        closed.complete(code); return null;
+                    }
+                }).get(5, java.util.concurrent.TimeUnit.SECONDS);
+            try {
+                socket.sendText("{\"type\":\"PING\"}", true).join();
+                assertThat(message.get(5, java.util.concurrent.TimeUnit.SECONDS))
+                    .contains("\"userId\":" + id, "\"role\":\"USER\"").doesNotContain("\"role\":\"ADMIN\"");
+                bootstrap();
+                assertThat(request("POST", "/api/auth/logout", "{}").statusCode()).isEqualTo(204);
+                assertThat(closed.get(5, java.util.concurrent.TimeUnit.SECONDS)).isEqualTo(1008);
+            } finally { socket.abort(); }
+        }
+    }
+    @Test void replayIgnoresForgedDevIdentity() throws Exception {
+        bootstrap();
+        assertThat(request("POST", "/api/auth/login", body("my-password-123")).statusCode()).isEqualTo(200);
+        long id = jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, username);
+        try (var client = HttpClient.newHttpClient()) {
+            client.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/auctions/1/replay"))
+                .header("Cookie", cookie).header("X-Dev-User-Id", "999").header("X-Dev-Role", "ADMIN").GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+        }
+        org.mockito.Mockito.verify(replayService).buildReplay(1L,
+            new com.group6.auction.realtime.replay.ReplayViewer(id, com.group6.auction.realtime.connection.RealtimePrincipal.Role.USER));
     }
 }

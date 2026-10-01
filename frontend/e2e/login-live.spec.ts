@@ -31,8 +31,18 @@ test('real registration login cookie reload and logout in Electron', async ({}, 
     expect(await page.evaluate(() => localStorage.length)).toBe(0);
     await page.reload();
     await expect(page.getByRole('complementary').getByRole('heading', { name: username })).toBeVisible();
+    const pong = await page.evaluate(() => new Promise<string>((resolve, reject) => {
+      const socket = new WebSocket('ws://localhost:18080/ws/auction?userId=999&role=ADMIN');
+      (window as unknown as { testSocket: WebSocket }).testSocket = socket;
+      const timeout = setTimeout(() => { socket.close(); reject(new Error('Socket authentication timed out')); }, 5000);
+      socket.onopen = () => socket.send(JSON.stringify({ type: 'PING' }));
+      socket.onmessage = event => { clearTimeout(timeout); resolve(String(event.data)); };
+      socket.onerror = () => { clearTimeout(timeout); reject(new Error('Socket authentication failed')); };
+    }));
+    expect(JSON.parse(pong).payload).toMatchObject({ username, role: 'USER' });
     await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
     await expect(page.getByRole('link', { name: 'Đăng nhập', exact: true })).toBeVisible();
+    await page.waitForFunction(() => (window as unknown as { testSocket: WebSocket }).testSocket.readyState === WebSocket.CLOSED);
     await page.reload();
     await expect(page.getByRole('link', { name: 'Đăng nhập', exact: true })).toBeVisible();
   } finally { await app.close(); }
