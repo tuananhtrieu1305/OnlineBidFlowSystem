@@ -56,6 +56,19 @@
 
     <profiles>
         <profile>
+            <id>product-coverage</id>
+            <build><plugins><plugin>
+                <groupId>org.jacoco</groupId><artifactId>jacoco-maven-plugin</artifactId><version>0.8.12</version>
+                <configuration><append>true</append><includes><include>com/group6/auction/product/**</include></includes></configuration>
+                <executions>
+                    <execution><id>product-agent</id><goals><goal>prepare-agent</goal></goals></execution>
+                    <execution><id>product-report</id><phase>verify</phase><goals><goal>report</goal><goal>check</goal></goals>
+                        <configuration><rules><rule><element>BUNDLE</element><limits><limit><counter>LINE</counter><value>COVEREDRATIO</value><minimum>0.80</minimum></limit></limits></rule></rules></configuration>
+                    </execution>
+                </executions>
+            </plugin></plugins></build>
+        </profile>
+        <profile>
             <id>registration-it</id>
             <build><plugins><plugin>
                 <groupId>org.apache.maven.plugins</groupId>

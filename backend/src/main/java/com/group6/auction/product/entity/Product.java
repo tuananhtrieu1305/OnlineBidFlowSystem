@@ -32,6 +32,20 @@ public class Product {
     protected Product() {
     }
 
+    public static Product create(String name, String description, int quantity, Long price, String imageUrl) {
+        Product product = new Product();
+        product.update(name, description, quantity, price, imageUrl);
+        return product;
+    }
+
+    public void update(String name, String description, int quantity, Long price, String imageUrl) {
+        this.name = name;
+        this.description = description;
+        this.quantity = quantity;
+        this.estimatedPrice = price;
+        this.imageUrl = imageUrl;
+    }
+
     public Long getId() {
         return id;
     }

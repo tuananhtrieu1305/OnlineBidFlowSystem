@@ -35,8 +35,12 @@ services:
       DB_USERNAME: ${DB_USERNAME:-auction_user}
       DB_PASSWORD: ${DB_PASSWORD:-auction_password}
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:5173,app://auction}
+      PRODUCT_IMAGE_DIR: /data/product-images
+    volumes:
+      - product_images:/data/product-images
     ports:
       - "8080:8080"
 
 volumes:
+  product_images:
   mysql_data:

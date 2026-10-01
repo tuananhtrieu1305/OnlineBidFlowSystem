@@ -4,6 +4,7 @@ dist/
 dist-electron/
 release/
 .cache/
+.runtime/
 coverage/
 test-results/
 playwright-report/

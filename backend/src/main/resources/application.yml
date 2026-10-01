@@ -11,6 +11,10 @@ server:
         same-site: none
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   application:
     name: auction-backend
   datasource:
@@ -25,5 +29,7 @@ spring:
     show-sql: false
 
 app:
+  products:
+    image-dir: ${PRODUCT_IMAGE_DIR:.runtime/product-images}
   cors:
     allowed-origins: ${FRONTEND_ORIGINS:http://localhost:5173,app://auction}

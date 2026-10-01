@@ -145,6 +145,7 @@ Content Security Policy được tạo từ địa chỉ server; không tắt we
 ## Kiểm tra
 
 Module Ví Coin (USER): xem số dư, nạp giả lập và lịch sử tại mục **Ví Coin** sau đăng nhập.
+Module Sản phẩm (ADMIN): thêm/sửa sản phẩm, upload ảnh và bảo vệ dữ liệu đã dùng trong phiên; xem [docs/products.md](docs/products.md).
 Hợp đồng khóa/mở khóa/thanh toán cho NORMAL/BLIND và hướng dẫn đối soát: [docs/wallet.md](docs/wallet.md).
 
 ```powershell

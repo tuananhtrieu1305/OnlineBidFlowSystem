@@ -10,7 +10,7 @@ export default defineConfig(({ command, mode }) => {
     "default-src 'self'",
     `script-src 'self'${dev ? " 'unsafe-inline'" : ''}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
+    `img-src 'self' data: blob: ${new URL(server.apiUrl).origin}`,
     `connect-src 'self' ${server.apiUrl} ${new URL(server.websocketUrl).origin}${dev ? ' ws://localhost:5173' : ''}`,
     "object-src 'none'", "base-uri 'none'", "form-action 'none'"
   ].join('; ');

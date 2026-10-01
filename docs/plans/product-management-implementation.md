@@ -1,6 +1,6 @@
 # Implementation plan — Admin quản lý sản phẩm
 
-Ngày: 2026-10-01. Trạng thái: kế hoạch, chưa triển khai.
+Ngày: 2026-10-01. Trạng thái: đã triển khai; hợp đồng và hướng dẫn thực tế tại [products.md](../products.md).
 Chủ sở hữu: Phạm Bá Tiến. Baseline: pbtien, module ví đã hoàn thành ở 6a5234c.
 
 ## 1. Mục tiêu và phạm vi
