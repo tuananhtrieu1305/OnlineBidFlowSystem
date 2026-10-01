@@ -25,6 +25,7 @@ export default function AppLayout() {
           <NavLink to="/" end className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}><span aria-hidden="true">▦</span> Khám phá</NavLink>
           {user?.role === 'ADMIN' && <NavLink to="/admin" end className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Quản trị</NavLink>}
           {user?.role === 'ADMIN' && <NavLink to="/admin/products" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Sản phẩm</NavLink>}
+          {user?.role === 'ADMIN' && <NavLink to="/admin/users" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Người dùng</NavLink>}
           {user?.role === 'ADMIN' && <NavLink to="/admin/auctions" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Phiên đấu giá</NavLink>}
           {user?.role === 'USER' && <NavLink to="/wallet" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>◈ Ví Coin</NavLink>}
         </nav>

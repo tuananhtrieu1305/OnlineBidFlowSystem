@@ -56,6 +56,17 @@
 
     <profiles>
         <profile>
+            <id>admin-users-coverage</id>
+            <build><plugins><plugin>
+                <groupId>org.jacoco</groupId><artifactId>jacoco-maven-plugin</artifactId><version>0.8.12</version>
+                <configuration><destFile>${project.build.directory}/users-jacoco.exec</destFile><dataFile>${project.build.directory}/users-jacoco.exec</dataFile><append>true</append><includes><include>com/group6/auction/account/admin/**</include></includes></configuration>
+                <executions>
+                    <execution><id>users-agent</id><goals><goal>prepare-agent</goal></goals></execution>
+                    <execution><id>users-report</id><phase>verify</phase><goals><goal>report</goal><goal>check</goal></goals><configuration><rules><rule><element>BUNDLE</element><limits><limit><counter>LINE</counter><value>COVEREDRATIO</value><minimum>0.80</minimum></limit></limits></rule></rules></configuration></execution>
+                </executions>
+            </plugin></plugins></build>
+        </profile>
+        <profile>
             <id>auction-coverage</id>
             <build><plugins><plugin>
                 <groupId>org.jacoco</groupId><artifactId>jacoco-maven-plugin</artifactId><version>0.8.12</version>

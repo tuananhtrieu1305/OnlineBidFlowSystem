@@ -1,6 +1,6 @@
 # Implementation plan — Admin quản lý người dùng
 
-Ngày: 01/10/2026. Phụ trách: Phạm Bá Tiến. Trạng thái: kế hoạch, chưa triển khai code.
+Ngày: 01/10/2026. Phụ trách: Phạm Bá Tiến. Trạng thái: mốc A đã triển khai; mốc B chưa triển khai. Kết quả kiểm thử và giới hạn: [user-management.md](../user-management.md).
 
 ## 1. Mục tiêu và phạm vi
 

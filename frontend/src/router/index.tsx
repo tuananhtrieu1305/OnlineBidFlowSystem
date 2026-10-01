@@ -8,6 +8,7 @@ import AdminPage from '../pages/AdminPage';
 import WalletPage from '../features/wallet/WalletPage';
 import ProductsPage from '../features/products/ProductsPage';
 import AdminAuctionsPage from '../features/auctions/configuration/AdminAuctionsPage';
+import AdminUsersPage from '../features/admin/users/AdminUsersPage';
 
 export default createHashRouter([
   { path: '/register', element: <RegisterPage /> },
@@ -15,6 +16,8 @@ export default createHashRouter([
   { element: <AppLayout />, children: [
     { path: '/', element: <HomePage /> },
     { path: '/admin', element: <AdminPage /> },
+    { path: '/admin/users', element: <AdminUsersPage /> },
+    { path: '/admin/users/:id', element: <AdminUsersPage /> },
     { path: '/admin/auctions', element: <AdminAuctionsPage /> },
     { path: '/admin/auctions/new', element: <AdminAuctionsPage /> },
     { path: '/admin/auctions/:id', element: <AdminAuctionsPage /> },
