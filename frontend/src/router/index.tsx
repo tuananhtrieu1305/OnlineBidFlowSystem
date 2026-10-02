@@ -9,6 +9,7 @@ import WalletPage from '../features/wallet/WalletPage';
 import ProductsPage from '../features/products/ProductsPage';
 import AdminAuctionsPage from '../features/auctions/configuration/AdminAuctionsPage';
 import AdminUsersPage from '../features/admin/users/AdminUsersPage';
+import SystemWalletPage from '../features/admin/system-wallet/SystemWalletPage';
 
 export default createHashRouter([
   { path: '/register', element: <RegisterPage /> },
@@ -16,6 +17,7 @@ export default createHashRouter([
   { element: <AppLayout />, children: [
     { path: '/', element: <HomePage /> },
     { path: '/admin', element: <AdminPage /> },
+    { path: '/admin/system-wallet', element: <SystemWalletPage /> },
     { path: '/admin/users', element: <AdminUsersPage /> },
     { path: '/admin/users/:id', element: <AdminUsersPage /> },
     { path: '/admin/auctions', element: <AdminAuctionsPage /> },

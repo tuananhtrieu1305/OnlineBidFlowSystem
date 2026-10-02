@@ -16,6 +16,7 @@ class WalletTransferIT {
  @Autowired WalletTransferService transfer;
  @Autowired WalletQueryService queries;
  @Autowired WalletLedger ledger;
+ @Autowired com.group6.auction.wallet.admin.SystemWalletQueryService systemQueries;
  @Autowired PlatformTransactionManager manager;
  long alice,bob,product,auction,second;
  String prefix="wt_"+UUID.randomUUID().toString().substring(0,8);
@@ -60,6 +61,32 @@ class WalletTransferIT {
   assertThat(held(alice)).isEqualTo(300);assertThat(held(bob)).isEqualTo(500);
   tx.executeWithoutResult(s->{transfer.releaseAll(second,alice);transfer.releaseAll(second,alice);});
   assertThat(available(alice)).isEqualTo(1000);
+ }
+ @Test void systemQueriesSeeCommittedSettlementExactlyOnceAndRollbackNothing(){
+  var before=new java.math.BigInteger(systemQueries.summary().totalReceivedCoin());
+  tx.executeWithoutResult(s->{transfer.lockToAmount(auction,alice,500);});
+  tx.executeWithoutResult(s->{transfer.settleAuction(auction,alice,500);s.setRollbackOnly();});
+  assertThat(new java.math.BigInteger(systemQueries.summary().totalReceivedCoin())).isEqualTo(before);
+  tx.executeWithoutResult(s->{transfer.settleAuction(auction,alice,500);jdbc.update("UPDATE auctions SET status='SOLD',winner_user_id=?,winning_price=500,finished_at=UTC_TIMESTAMP(6) WHERE id=?",alice,auction);});
+  tx.executeWithoutResult(s->transfer.settleAuction(auction,alice,500));
+  assertThat(new java.math.BigInteger(systemQueries.summary().totalReceivedCoin())).isEqualTo(before.add(java.math.BigInteger.valueOf(500)));
+  assertThat(systemQueries.history(com.group6.auction.wallet.admin.SystemWalletFilters.parse(""+auction,"PAYMENT",null,null,20),null).items()).hasSize(1);
+ }
+ @Test void systemReadsDoNotExposeUncommittedPayment()throws Exception{
+  var before=systemQueries.summary().totalReceivedCoin();
+  tx.executeWithoutResult(s->transfer.lockToAmount(auction,alice,500));
+  var written=new CountDownLatch(1);var release=new CountDownLatch(1);
+  try(var executor=Executors.newSingleThreadExecutor()){
+   var pending=executor.submit(()->tx.executeWithoutResult(s->{
+    transfer.settleAuction(auction,alice,500);written.countDown();
+    try{if(!release.await(10,TimeUnit.SECONDS))throw new IllegalStateException("Read test timed out");}catch(InterruptedException e){Thread.currentThread().interrupt();throw new IllegalStateException(e);}
+    s.setRollbackOnly();
+   }));
+   try{assertThat(written.await(10,TimeUnit.SECONDS)).isTrue();assertThat(systemQueries.summary().totalReceivedCoin()).isEqualTo(before);assertThat(systemQueries.history(com.group6.auction.wallet.admin.SystemWalletFilters.parse(""+auction,"",null,null,20),null).items()).isEmpty();}finally{release.countDown();}
+   pending.get(10,TimeUnit.SECONDS);
+  }
+  tx.executeWithoutResult(s->{transfer.releaseAuction(auction);jdbc.update("UPDATE auctions SET status='UNSOLD',finished_at=UTC_TIMESTAMP(6) WHERE id=?",auction);});
+  assertThat(systemQueries.summary().totalReceivedCoin()).isEqualTo(before);
  }
  @Test void settlementIsBalancedIdempotentAndPreservesOtherAuctions(){
   long system=jdbc.queryForObject("SELECT available_balance FROM wallets WHERE wallet_type='SYSTEM'",Long.class);

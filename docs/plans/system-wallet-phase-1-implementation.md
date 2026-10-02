@@ -1,7 +1,7 @@
 # Phase 1 — API và màn hình quản trị ví hệ thống
 
 Ngày lập: 02/10/2026. Phụ trách: Phạm Bá Tiến.
-Trạng thái: đã khảo sát code, chưa triển khai. Mục tiêu: hoàn thiện phần tra cứu ví SYSTEM, độc lập với scheduler và nghiệp vụ xác định winner của nhóm.
+Trạng thái: đã triển khai API/UI; kết quả kiểm thử và giới hạn môi trường xem [system-wallet.md](../system-wallet.md). Mục tiêu: hoàn thiện phần tra cứu ví SYSTEM, độc lập với scheduler và nghiệp vụ xác định winner của nhóm.
 
 ## 1. Kết quả khảo sát và quyết định
 

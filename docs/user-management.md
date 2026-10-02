@@ -27,7 +27,7 @@ Coverage: profile `admin-users-coverage` cùng `registration-it`, DB kiểm th�
 
 ## Phần còn lại của Phạm Bá Tiến
 
-1. Màn hình/API quản trị ví SYSTEM: backend settlement nhận Coin đã có, giao diện tra cứu chưa có.
+1. Màn hình/API quản trị ví SYSTEM: đã triển khai ngày 02/10/2026, xem [system-wallet.md](system-wallet.md).
 2. Khóa/mở USER là mốc B đề xuất, chưa triển khai; đặc tả cần chốt trước khi bổ sung schema/session policy.
 3. Phối hợp NORMAL/BLIND gọi service Coin đúng transaction, chạy luồng bid → kết thúc → thanh toán/hoàn Coin toàn hệ thống.
 4. Đối soát dữ liệu mẫu lệch ledger đã ghi trong docs/wallet.md trước khi dùng demo. Không tự sửa seed hay reset database.
