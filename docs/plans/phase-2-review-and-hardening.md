@@ -1,6 +1,6 @@
 # Phase 2 — Rà soát, sửa lỗi và chuẩn bị bàn giao phần Phạm Bá Tiến
 
-Ngày lập: 02/10/2026. Trạng thái: kế hoạch, chưa thực hiện rà soát đầy đủ hoặc sửa dữ liệu.
+Ngày lập: 02/10/2026. Trạng thái: đã triển khai; kết quả và giới hạn tại `../reviews/phase-2-report.md`. Dữ liệu seed cũ còn ngoại lệ chưa xử lý, không được coi là đã đối soát sạch.
 
 ## 1. Mục tiêu
 
@@ -114,4 +114,4 @@ docs/{wallet,products,auction-configuration,user-management,system-wallet}.md
 
 Production files chỉ được xác định sau bằng chứng lỗi; plan không đặt trước một danh sách refactor. Script sửa seed/migration chỉ được tạo khi đã rõ nguyên nhân và phương án.
 
-Nguồn lập plan: các tài liệu module hiện có, init.sql, kết quả và giới hạn Phase1. Lần này chỉ tạo kế hoạch; không đọc số dư DB trực tiếp, không đổi dữ liệu, không chạy lại kiểm thử và không tuyên bố có phát hiện runtime mới.
+Nguồn lập plan: các tài liệu module hiện có, init.sql, kết quả và giới hạn Phase1. Các kết quả triển khai sau khi lập kế hoạch được ghi riêng trong `../reviews/phase-2-report.md`.

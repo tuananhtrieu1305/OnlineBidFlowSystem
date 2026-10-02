@@ -9,7 +9,8 @@ test('admin uploads and edits a product against real backend',async({request},in
  const sql=(statement:string)=>execFileSync('docker',['exec','-e',`MYSQL_PWD=${process.env.DB_PASSWORD}`,'onlinebidflow-registration-test','mysql','-uroot','auction_db','-e',statement]);
  sql(`UPDATE users SET role='ADMIN' WHERE username='${username}'`);
  const env=Object.fromEntries(Object.entries(process.env).filter((e):e is [string,string]=>e[1]!==undefined));delete env.ELECTRON_RUN_AS_NODE;delete env.ELECTRON_DEV_URL;
- const app=await electron.launch({args:[path.resolve('.'),`--user-data-dir=${info.outputPath('profile')}`],env});
+ const executablePath=process.env.E2E_EXECUTABLE;
+ const app=await electron.launch({...(executablePath?{executablePath}:{}),args:[...(executablePath?[]:[path.resolve('.')]),`--user-data-dir=${info.outputPath('profile')}`],env});
  try{
   const page=await app.firstWindow();page.on('pageerror',error=>console.log('Renderer error:',error.message));await page.goto('app://auction/#/login');
   await page.getByLabel('Tên đăng nhập').fill(username);await page.getByLabel('Mật khẩu',{exact:true}).fill('test-password-123');

@@ -20,7 +20,7 @@ Mỗi endpoint đọc trong transaction REPEATABLE_READ, không khóa ví để 
 - Full regression backend: 68 unit +39 MySQL IT qua; sau đó thêm 1 unit cursor và 1 MySQL IT đọc đồng thời, chạy lại toàn bộ69 unit +11 IT thuộc SystemWalletIT/WalletTransferIT đều qua.
 - Kiểm tra tổng vượt long, khác số dư, filter thời gian, cursor microsecond/khác ví, thiếu/trùng SYSTEM, quyền, rollback, settlement lặp, UNSOLD và không đọc được PAYMENT chưa commit.
 - 37 frontend unit qua; coverage helpers đang đo100%, không phải coverage toàn UI. JaCoCo module wallet.admin vượt ngưỡng80% line.
-- Electron regression23/24 qua, gồm2 test mới SYSTEM. Test development thất bại do localhost:5173 trả ứng dụng “Hello World” khác, không phải OnlineBidFlow; không dừng tiến trình của ứng dụng khác. Cần chạy lại test development khi cổng5173 phục vụ đúng dự án.
+- Phase 1: Electron regression23/24 qua; development bị container frontend cũ chiếm5173. Phase 2 đã xác minh container thuộc dự án, dừng container cũ và chạy lại:25/25 qua, gồm regression phiên đăng nhập mới. Xem `reviews/phase-2-report.md`.
 - Live Electron riêng dùng session/API/MySQL thật: số dư đối chiếu DB, đọc lịch sử seed PAYMENT, filter/rỗng/reload và ảnh giao diện qua. Settlement thật và đồng thời được kiểm tra tại MySQL IT, không qua UI điều khiển thanh toán; không có endpoint debug.
 - Build/typecheck qua; npm audit không báo lỗ hổng.
 - EXPLAIN trên10.000 dòng tạm đã rollback: query lịch sử và thời gian dùng idx_coin_transactions_wallet_created, backward index scan; query theo phiên dùng index FK auction với filesort trên tập nhỏ. Chưa có bằng chứng cần migration index trong Phase1; không suy rộng thành benchmark production.
