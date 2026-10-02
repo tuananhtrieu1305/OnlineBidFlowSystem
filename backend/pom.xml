@@ -56,6 +56,17 @@
 
     <profiles>
         <profile>
+            <id>integration-coverage</id>
+            <build><plugins><plugin>
+                <groupId>org.jacoco</groupId><artifactId>jacoco-maven-plugin</artifactId><version>0.8.12</version>
+                <configuration><destFile>${project.build.directory}/integration-jacoco.exec</destFile><dataFile>${project.build.directory}/integration-jacoco.exec</dataFile><append>true</append><includes><include>com/group6/auction/auction/integration/**</include></includes></configuration>
+                <executions>
+                    <execution><id>integration-agent</id><goals><goal>prepare-agent</goal></goals></execution>
+                    <execution><id>integration-report</id><phase>verify</phase><goals><goal>report</goal><goal>check</goal></goals><configuration><rules><rule><element>BUNDLE</element><limits><limit><counter>LINE</counter><value>COVEREDRATIO</value><minimum>0.80</minimum></limit></limits></rule></rules></configuration></execution>
+                </executions>
+            </plugin></plugins></build>
+        </profile>
+        <profile>
             <id>system-wallet-coverage</id>
             <build><plugins><plugin>
                 <groupId>org.jacoco</groupId><artifactId>jacoco-maven-plugin</artifactId><version>0.8.12</version>

@@ -2,6 +2,8 @@
 
 Ngày 02/10/2026. Baseline `2c350bb`, branch `pbtien`.
 
+Trạng thái: đã triển khai lớp tích hợp trong phạm vi dưới đây; kết quả tại `../reviews/phase-3-report.md`. Luồng bid/scheduler/UI của cả nhóm còn chờ module tương ứng.
+
 ## Phạm vi dựa trên code hiện tại
 
 Repo có service Coin, cấu hình phiên, room/chat/snapshot/replay và publisher socket; chưa có service bid NORMAL/BLIND hoặc scheduler. Phase này triển khai điểm nối nội bộ, test bằng caller fixture và tài liệu bàn giao. Không coi fixture là nghiệp vụ đấu giá đã hoàn thành. Giữ dữ liệu làm việc và schema nguyên trạng.

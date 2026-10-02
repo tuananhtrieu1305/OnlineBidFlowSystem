@@ -20,6 +20,8 @@ Giới hạn nạp mặc định 10 lần/phút/tài khoản, cấu hình `app.w
 
 ## Hợp đồng cho NORMAL và BLIND
 
+Phase 3 đã thêm `AuctionWalletIntegration` để nối quyết định đã kiểm tra với ví, kết quả và sự kiện AFTER_COMMIT. Module đấu giá ưu tiên gọi adapter này thay vì tự phối hợp ví/result/socket. Xem [hướng dẫn tích hợp](auction-wallet-integration.md); caller bid/scheduler thực tế vẫn thuộc thành viên phụ trách.
+
 `WalletTransferService` là service nội bộ, không có HTTP endpoint để client tự thay đổi Coin.
 
 | Phương thức | Ý nghĩa |
