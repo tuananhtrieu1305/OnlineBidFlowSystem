@@ -84,3 +84,28 @@ test('logout waits for server confirmation and can retry', async () => {
   await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
   await expect(page.getByRole('link', { name: 'Đăng nhập', exact: true })).toBeVisible();
 });
+
+test('late unauthorized response from old login cannot clear a new admin session', async () => {
+  const alice={id:2,username:'alice',role:'USER'};
+  const admin={id:1,username:'admin_test',role:'ADMIN'};
+  await page.route('**/api/auth/me',r=>r.fulfill({json:alice}));
+  await page.goto('app://auction/');
+  let pending:import('@playwright/test').Route|undefined;
+  await page.route('**/api/wallet',r=>{pending=r;});
+  await page.route('**/api/wallet/transactions?*',r=>r.fulfill({json:{items:[],nextCursor:null}}));
+  await page.getByRole('link',{name:'Ví Coin'}).click();
+  await expect.poll(()=>!!pending).toBe(true);
+  await page.route('**/api/auth/logout',r=>r.fulfill({status:204}));
+  await page.getByRole('button',{name:'Đăng xuất',exact:true}).click();
+  await page.route('**/api/auth/login',r=>r.fulfill({json:admin}));
+  await page.route('**/api/auth/me',r=>r.fulfill({json:admin}));
+  await page.getByLabel('Tên đăng nhập').fill('admin_test');
+  await page.getByLabel('Mật khẩu',{exact:true}).fill('password');
+  await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Chào mừng, admin_test.'})).toBeVisible();
+  const late=page.waitForResponse(r=>r.url().endsWith('/api/wallet')&&r.status()===401);
+  await pending!.fulfill({status:401,json:{code:'UNAUTHENTICATED'}});await late;
+  // Allow the response interceptor and React to process before asserting identity.
+  await page.getByRole('link',{name:'Người dùng',exact:true}).click();
+  await expect(page.getByRole('complementary').getByRole('heading',{name:'admin_test',exact:true})).toBeVisible();
+});
