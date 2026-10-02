@@ -15,6 +15,23 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AuctionSnapshotServiceTest {
+    @Test
+    void utcDeadlinesRemainCorrectWhenServerUsesVietnamTimezone() {
+        var previous = java.util.TimeZone.getDefault();
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+            var now = LocalDateTime.now(java.time.ZoneOffset.UTC);
+            for (var type : AuctionType.values()) {
+                var auction = new AuctionSnapshotAuction(1L, 1L, type, AuctionStatus.RUNNING,
+                        AuctionAccessType.PUBLIC, new ProductSnapshot(1L, "Camera", "Demo", null),
+                        100L, now.minusMinutes(1), now.plusMinutes(10));
+                long remaining = type == AuctionType.NORMAL
+                        ? new NormalAuctionSnapshotBuilder().build(auction, List.of(), List.of()).remainingSeconds()
+                        : new BlindAuctionSnapshotBuilder().build(auction, List.of(), List.of(), List.of(), 2L).remainingSeconds();
+                assertThat(remaining).isBetween(590L, 600L);
+            }
+        } finally { java.util.TimeZone.setDefault(previous); }
+    }
     private final FakeAuctionSnapshotDataGateway gateway = new FakeAuctionSnapshotDataGateway();
     private final AuctionSnapshotService service = new AuctionSnapshotService(
             gateway,

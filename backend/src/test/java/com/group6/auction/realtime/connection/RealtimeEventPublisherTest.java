@@ -31,6 +31,22 @@ import org.springframework.web.socket.TextMessage;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class RealtimeEventPublisherTest {
+    @Test
+    void failedRecipientDoesNotPreventRemainingRecipientsFromReceivingCommittedEvent() throws Exception {
+        var registry = org.mockito.Mockito.mock(RealtimeSessionRegistry.class);
+        var bad = org.mockito.Mockito.mock(WebSocketSession.class);
+        var good = org.mockito.Mockito.mock(WebSocketSession.class);
+        org.mockito.Mockito.when(bad.isOpen()).thenReturn(true);
+        org.mockito.Mockito.when(good.isOpen()).thenReturn(true);
+        org.mockito.Mockito.when(registry.sessionIdsForUser(2L)).thenReturn(new java.util.LinkedHashSet<>(List.of("bad", "good")));
+        org.mockito.Mockito.when(registry.sessionById("bad")).thenReturn(Optional.of(bad));
+        org.mockito.Mockito.when(registry.sessionById("good")).thenReturn(Optional.of(good));
+        org.mockito.Mockito.doThrow(new IOException("disconnected")).when(bad).sendMessage(org.mockito.ArgumentMatchers.any());
+        var sender = new RealtimeEventPublisher(new ObjectMapper(), registry, membershipService);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> sender.sendBlindBidAccepted(2L, 3L,
+                new BlindBidAcceptedPayload(3L, 100L, "bid-1"))).isInstanceOf(IOException.class);
+        org.mockito.Mockito.verify(good).sendMessage(org.mockito.ArgumentMatchers.any(TextMessage.class));
+    }
     private final FakeRoomDataGateway gateway = new FakeRoomDataGateway();
     private final RealtimeSessionRegistry sessionRegistry = new RealtimeSessionRegistry();
     private final RoomMembershipService membershipService =
