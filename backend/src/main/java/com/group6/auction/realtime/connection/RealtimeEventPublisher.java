@@ -86,9 +86,16 @@ public class RealtimeEventPublisher {
     }
 
     private void sendToSessions(Collection<String> sessionIds, ServerEvent event) throws IOException {
+        IOException failure = null;
         for (String sessionId : sessionIds) {
-            sendToSession(sessionId, event);
+            try {
+                sendToSession(sessionId, event);
+            } catch (IOException | RuntimeException ex) {
+                // A closed/slow recipient must not starve the other recipients.
+                if (failure == null) failure = new IOException("Realtime delivery failed", ex);
+            }
         }
+        if (failure != null) throw failure;
     }
 
     private void send(WebSocketSession session, ServerEvent event) throws IOException {

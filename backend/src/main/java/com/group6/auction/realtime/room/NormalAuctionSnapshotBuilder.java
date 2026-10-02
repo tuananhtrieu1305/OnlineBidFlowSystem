@@ -36,6 +36,6 @@ public class NormalAuctionSnapshotBuilder {
     }
 
     private long remainingSeconds(LocalDateTime endTime) {
-        return Math.max(0, Duration.between(LocalDateTime.now(), endTime).getSeconds());
+        return Math.max(0, Duration.between(LocalDateTime.now(java.time.ZoneOffset.UTC), endTime).getSeconds());
     }
 }
