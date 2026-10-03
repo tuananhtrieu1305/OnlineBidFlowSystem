@@ -41,6 +41,7 @@ public class DiscoveryService {
   result.put("id",rs.getString("id"));result.put("auctionType",rs.getString("auction_type"));result.put("status",rs.getString("status"));
   result.put("startTime",rs.getObject("start_time",LocalDateTime.class).toInstant(ZoneOffset.UTC).toString());
   result.put("endTime",rs.getObject("end_time",LocalDateTime.class).toInstant(ZoneOffset.UTC).toString());
+  result.put("serverNow",clock.instant().toString());
   product.put("id",rs.getString("product_id"));product.put("name",rs.getString("name"));product.put("imageUrl",rs.getString("image_url"));
   if(detail){product.put("description",rs.getString("description"));product.put("quantity",rs.getInt("quantity"));}
   result.put("product",product);

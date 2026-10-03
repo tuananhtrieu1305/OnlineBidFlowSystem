@@ -25,8 +25,11 @@ class AuctionStartIT {
  }
  long auction(String type,String access,String status,LocalDateTime start,LocalDateTime end){
   jdbc.update("INSERT INTO auctions(product_id,created_by,auction_type,access_type,status,starting_price,min_bid_increment,start_time,end_time,room_code) VALUES (?,1,?,?,?,?,?,?,?,?)",
-    product,type,access,status,100,"NORMAL".equals(type)?10:null,start,end,"PRIVATE".equals(access)?UUID.randomUUID().toString().substring(0,12):null);
-  return jdbc.queryForObject("SELECT MAX(id) FROM auctions WHERE product_id=?",Long.class,product);
+    product,type,access,"UPCOMING",100,"NORMAL".equals(type)?10:null,start,end,"PRIVATE".equals(access)?UUID.randomUUID().toString().substring(0,12):null);
+  long id=jdbc.queryForObject("SELECT MAX(id) FROM auctions WHERE product_id=?",Long.class,product);
+  if("SOLD".equals(status))jdbc.update("UPDATE auctions SET status='SOLD',winner_user_id=2,winning_price=100,finished_at=? WHERE id=?",now,id);
+  if("UNSOLD".equals(status))jdbc.update("UPDATE auctions SET status='UNSOLD',finished_at=? WHERE id=?",now,id);
+  return id;
  }
  String status(long id){return jdbc.queryForObject("SELECT status FROM auctions WHERE id=?",String.class,id);}
  @Test void startsDueNormalAndBlindPublicAndPrivateAndIsIdempotent(){

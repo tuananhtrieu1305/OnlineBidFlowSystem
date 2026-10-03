@@ -63,12 +63,12 @@ npm run build
 
 Nếu có `frontend/.env`, xác minh nó trỏ đúng server bàn giao; environment trống dùng giá trị trong file hoặc mặc định 8080. Không phân phối bản build còn trỏ 18080. `npm run pack:win` tạo executable Windows; không tự publish. Không cần sửa/deploy backend đang chạy để thực hiện kiểm thử này.
 
-Bản Windows unpacked đã tạo và smoke test ngày 03/10/2026 tại `frontend/release/win-unpacked/OnlineBidFlow.exe`, trỏ mặc định 8080. Sao chép cả thư mục `win-unpacked` khi bàn giao. Để demo trên backend test 18080, dùng bản source build ở bước demo hoặc đóng gói riêng với đúng VITE_API_BASE_URL; executable mặc định không tự đổi URL theo environment lúc chạy. Backend làm việc 8080 chưa được deploy trong lượt hoàn thiện này.
+Bản Windows unpacked đã tạo và smoke test ngày 03/10/2026 tại `frontend/release/win-unpacked/OnlineBidFlow.exe`, trỏ mặc định 8080. Sao chép cả thư mục `win-unpacked` khi bàn giao. Để demo trên backend test 18080, dùng bản source build ở bước demo hoặc đóng gói riêng với đúng VITE_API_BASE_URL; executable mặc định không tự đổi URL theo environment lúc chạy. Sau yêu cầu sửa lỗi ngày 03/10/2026, backend local8080 đã được cập nhật và kiểm tra #11/#12 RUNNING ở trang user; xem docs/reviews/auction-status-fix.md.
 
 ## Phần nhóm cần nối
 
 - NORMAL/BLIND: nhận lệnh user, kiểm tra quyền/thời gian/giá, lưu bid, tính winner; gọi [AuctionWalletIntegration](auction-wallet-integration.md) đúng transaction/lock order.
-- Lifecycle: scheduler bắt đầu/kết thúc phiên; không tự thanh toán seed chưa đối soát.
+- Lifecycle: đã có scheduler bắt đầu phiên; còn scheduler kết thúc và quyết định kết quả của NORMAL/BLIND. Không tự thanh toán seed chưa đối soát.
 - Room UI: join/chat/reconnect/snapshot/replay; không tự retry bid khi kết quả chưa xác định.
 - Khóa tài khoản là đề xuất chưa có đặc tả/schema; quản lý người dùng hiện là tra cứu tài khoản/ví/lịch sử, không tuyên bố có khóa/xóa USER.
 
