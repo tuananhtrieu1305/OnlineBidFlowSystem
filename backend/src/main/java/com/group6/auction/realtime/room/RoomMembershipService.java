@@ -28,6 +28,12 @@ public class RoomMembershipService {
             return access;
         }
 
+        return registerMembership(sessionId, auctionId);
+    }
+
+    // Both indexes form one invariant. Keep this lock limited to in-memory work;
+    // database authorization above and socket delivery must never run under it.
+    private synchronized RoomAccessResult registerMembership(String sessionId, long auctionId) {
         var sessionAuctions = auctionsBySession.computeIfAbsent(sessionId, ignored -> ConcurrentHashMap.newKeySet());
         if (sessionAuctions.contains(auctionId)) {
             return RoomAccessResult.unchangedSuccess();
@@ -38,7 +44,7 @@ public class RoomMembershipService {
         return RoomAccessResult.success();
     }
 
-    public RoomAccessResult leave(String sessionId, RealtimePrincipal principal, long auctionId) {
+    public synchronized RoomAccessResult leave(String sessionId, RealtimePrincipal principal, long auctionId) {
         var sessionAuctions = auctionsBySession.get(sessionId);
         if (sessionAuctions == null || !sessionAuctions.remove(auctionId)) {
             return RoomAccessResult.denied("NOT_IN_ROOM", "Session is not in this auction room.");
@@ -48,7 +54,7 @@ public class RoomMembershipService {
         return RoomAccessResult.success();
     }
 
-    public Set<Long> disconnect(String sessionId) {
+    public synchronized Set<Long> disconnect(String sessionId) {
         var auctionIds = auctionsBySession.remove(sessionId);
         if (auctionIds == null || auctionIds.isEmpty()) {
             return Set.of();
@@ -60,7 +66,7 @@ public class RoomMembershipService {
         return Set.copyOf(auctionIds);
     }
 
-    public Set<Long> auctionIdsForSession(String sessionId) {
+    public synchronized Set<Long> auctionIdsForSession(String sessionId) {
         var auctionIds = auctionsBySession.get(sessionId);
         if (auctionIds == null) {
             return Set.of();
@@ -68,7 +74,7 @@ public class RoomMembershipService {
         return Collections.unmodifiableSet(new HashSet<>(auctionIds));
     }
 
-    public Set<String> sessionIdsForAuction(long auctionId) {
+    public synchronized Set<String> sessionIdsForAuction(long auctionId) {
         var sessionIds = sessionsByAuction.get(auctionId);
         if (sessionIds == null) {
             return Set.of();

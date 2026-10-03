@@ -21,10 +21,12 @@ class RealtimeDeliveryFailureTest {
   registry.register(healthy,new RealtimePrincipal(4,"carol",RealtimePrincipal.Role.USER));
   when(rooms.sessionIdsForAuction(1)).thenReturn(new LinkedHashSet<>(List.of("broken","healthy")));
   when(rooms.join(eq("joining"),any(),eq(1L),isNull())).thenReturn(RoomAccessResult.success());
+  when(snapshots.buildSnapshot(1,2)).thenReturn(Optional.of(Map.of("auctionId",1)));
   doThrow(new IOException("offline")).when(broken).sendMessage(any());
   assertThatCode(()->dispatcher.dispatch(joining,"{\"type\":\"JOIN_ROOM\",\"payload\":{\"auctionId\":1}}" )).doesNotThrowAnyException();
   verify(healthy).sendMessage(argThat(m->m.getPayload().toString().contains("USER_JOINED")));
   verify(snapshots).buildSnapshot(1,2);
+  verify(joining).sendMessage(argThat(m->m.getPayload().toString().contains("AUCTION_STATE")));
  }
  @Test void disconnectAlwaysUnregistersEvenIfPresenceFails() throws Exception {
   for(boolean transport:List.of(false,true)){

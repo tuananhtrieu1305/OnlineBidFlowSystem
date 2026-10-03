@@ -45,18 +45,24 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        var leftRooms = roomMembershipService.disconnect(session.getId());
-        dispatcher.broadcastUserLeft(session, leftRooms);
-        sessionRegistry.unregister(session);
+        try {
+            var leftRooms = roomMembershipService.disconnect(session.getId());
+            dispatcher.broadcastUserLeft(session, leftRooms);
+        } finally {
+            sessionRegistry.unregister(session);
+        }
     }
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-        var leftRooms = roomMembershipService.disconnect(session.getId());
-        dispatcher.broadcastUserLeft(session, leftRooms);
-        sessionRegistry.unregister(session);
-        if (session.isOpen()) {
-            session.close(CloseStatus.SERVER_ERROR);
+        try {
+            var leftRooms = roomMembershipService.disconnect(session.getId());
+            dispatcher.broadcastUserLeft(session, leftRooms);
+        } finally {
+            sessionRegistry.unregister(session);
+            if (session.isOpen()) {
+                session.close(CloseStatus.SERVER_ERROR);
+            }
         }
     }
 }

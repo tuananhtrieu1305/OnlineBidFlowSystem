@@ -22,6 +22,7 @@ import org.springframework.web.socket.WebSocketSession;
 
 @Component
 public class RealtimeMessageDispatcher {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(RealtimeMessageDispatcher.class);
     private final ObjectMapper objectMapper;
     private final RealtimeSessionRegistry sessionRegistry;
     private final RoomMembershipService roomMembershipService;
@@ -224,11 +225,17 @@ public class RealtimeMessageDispatcher {
         }
     }
 
-    private void broadcast(Collection<String> sessionIds, ServerEvent event) throws IOException {
+    private void broadcast(Collection<String> sessionIds, ServerEvent event) {
         for (String sessionId : sessionIds) {
             var session = sessionRegistry.sessionById(sessionId);
             if (session.isPresent()) {
-                send(session.get(), event);
+                try {
+                    send(session.get(), event);
+                } catch (IOException | RuntimeException ex) {
+                    // Delivery to one stale/slow socket must not interrupt other recipients
+                    // or the joining client's snapshot. Transport callbacks own cleanup.
+                    log.warn("Realtime {} delivery failed for session {}", event.type(), sessionId, ex);
+                }
             }
         }
     }
