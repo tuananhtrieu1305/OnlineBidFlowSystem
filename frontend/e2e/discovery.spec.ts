@@ -11,11 +11,17 @@ test('guest discovers real-shaped auctions, filters, opens blind detail and retr
   await page.route('**/api/discovery/auctions**',r=>fail?r.fulfill({status:500,json:{}}):r.fulfill({json:r.request().url().includes('/222')?auction:{items:[auction],page:0,totalPages:1,totalElements:'1'}}));
   await page.goto('app://auction/#/');
   await expect(page.getByRole('link',{name:'Xem phiên Máy ảnh sưu tầm'})).toBeVisible();
+  auction.status='RUNNING';
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await expect(page.locator('.discovery-card .discovery-meta')).toContainText('Đang diễn ra');
   await page.getByLabel('Loại đấu giá').selectOption('BLIND');
   await page.getByRole('link',{name:'Xem phiên Máy ảnh sưu tầm'}).click();
   await expect(page.getByRole('heading',{name:'Máy ảnh sưu tầm'})).toBeVisible();
   await expect(page.getByText('Giá trả được giữ kín.')).toBeVisible();
   await expect(page.getByText('Máy ảnh còn nguyên hộp')).toBeVisible();
+  auction.status='UNSOLD';
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await expect(page.locator('.discovery-detail .discovery-meta')).toContainText('Chưa bán được');
   await expect(page.getByText('Giá khởi điểm',{exact:true})).toHaveCount(0);
   await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(820,650));
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);

@@ -13,6 +13,18 @@ test.beforeEach(async({},info)=>{
  await page.route('**/api/admin/auctions/33',r=>r.fulfill({json:current}));
 });
 test.afterEach(async()=>{await app?.close();});
+test('refreshes admin status on focus without replacing a dirty edit form',async()=>{
+ await page.goto('app://auction/#/admin/auctions');
+ await expect(page.getByRole('cell',{name:/Sắp diễn ra/})).toBeVisible();
+ current={...baseline,status:'RUNNING',editable:false};
+ await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await expect(page.getByRole('cell',{name:/Đang diễn ra/})).toBeVisible();
+ current={...baseline};
+ await page.goto('app://auction/#/admin/auctions/33/edit');
+ await page.getByLabel('Giá khởi điểm (Coin)').fill('200');
+ await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await expect(page.getByLabel('Giá khởi điểm (Coin)')).toHaveValue('200');
+});
 test('creates all four type/access combinations with confirmation and hidden private code',async()=>{
  for(const type of ['NORMAL','BLIND'])for(const access of ['PUBLIC','PRIVATE']){
   await page.goto('app://auction/#/admin/auctions/new');
