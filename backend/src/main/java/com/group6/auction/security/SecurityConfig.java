@@ -41,6 +41,7 @@ public class SecurityConfig {
             .securityContext(c -> c.securityContextRepository(context))
             .csrf(c -> c.csrfTokenRepository(csrf).ignoringRequestMatchers("/api/auth/register"))
             .authorizeHttpRequests(a -> a
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/discovery/auctions", "/api/discovery/auctions/*").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/product-images/*").permitAll()
                 .requestMatchers("/api/health", "/ws/health", "/api/auth/csrf", "/api/auth/login", "/api/auth/register", "/error").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

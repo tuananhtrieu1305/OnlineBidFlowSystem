@@ -10,12 +10,14 @@ import ProductsPage from '../features/products/ProductsPage';
 import AdminAuctionsPage from '../features/auctions/configuration/AdminAuctionsPage';
 import AdminUsersPage from '../features/admin/users/AdminUsersPage';
 import SystemWalletPage from '../features/admin/system-wallet/SystemWalletPage';
+import {DiscoveryDetail} from '../features/auctions/discovery/Discovery';
 
 export default createHashRouter([
   { path: '/register', element: <RegisterPage /> },
   { path: '/login', element: <LoginPage /> },
   { element: <AppLayout />, children: [
     { path: '/', element: <HomePage /> },
+    { path: '/auctions/:id', element: <DiscoveryDetail /> },
     { path: '/admin', element: <AdminPage /> },
     { path: '/admin/system-wallet', element: <SystemWalletPage /> },
     { path: '/admin/users', element: <AdminUsersPage /> },

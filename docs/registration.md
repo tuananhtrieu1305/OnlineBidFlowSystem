@@ -79,4 +79,4 @@ Container test là môi trường dùng một lần; dừng/xóa đúng containe
 
 ## Ranh giới tiếp theo
 
-Đã triển khai AuthProvider, phiên đăng nhập và bảo vệ API bằng Spring Security. Ví/nạp Coin và các API nghiệp vụ cụ thể là các task tiếp theo.
+Đã triển khai AuthProvider, phiên đăng nhập và bảo vệ API bằng Spring Security; ví/nạp Coin, lịch sử và các API Admin đã có. Xem [hướng dẫn demo phần Tiến](tien-demo.md) và [module ví](wallet.md). Luồng nhận bid và phòng đấu giá thuộc phần tích hợp tiếp theo của nhóm.

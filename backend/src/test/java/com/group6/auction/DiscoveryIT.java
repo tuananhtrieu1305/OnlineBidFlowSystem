@@ -45,4 +45,37 @@ class DiscoveryIT {
   assertThat(get("/api/discovery/auctions?status=INVALID").statusCode()).isEqualTo(400);
   assertThat(get("/api/discovery/auctions/nope").statusCode()).isEqualTo(400);
  }
+ @Test void paginationUsesStableOrderAndTreatsSearchWildcardsLiterally()throws Exception {
+  var first=json.readTree(get("/api/discovery/auctions?q="+name+"&size=1").body());
+  var second=json.readTree(get("/api/discovery/auctions?q="+name+"&size=1&page=1").body());
+  assertThat(first.get("totalPages").asInt()).isEqualTo(2);
+  assertThat(first.get("items").get(0).get("id").asText()).isEqualTo(Long.toString(blind));
+  assertThat(second.get("items").get(0).get("id").asText()).isEqualTo(Long.toString(normal));
+  assertThat(json.readTree(get("/api/discovery/auctions?q="+name+"&page=2&size=1").body()).get("items").size()).isZero();
+  for(String literal:java.util.List.of("%25","%5F","!","%27")) {
+   assertThat(json.readTree(get("/api/discovery/auctions?q="+name+literal).body()).get("items").size()).isZero();
+  }
+  assertThat(java.time.Instant.parse(first.get("serverNow").asText())).isBefore(java.time.Instant.now().plusSeconds(5));
+ }
+ @Test void rejectsInvalidBoundariesAndDoesNotExposePrivateExistence()throws Exception {
+  for(String query:java.util.List.of("page=-1","page=2147483647&size=100","page=abc","size=0","auctionType=invalid","q="+"x".repeat(256)))
+   assertThat(get("/api/discovery/auctions?"+query).statusCode()).as(query).isEqualTo(400);
+  for(String id:java.util.List.of("0","-1","9223372036854775808"))
+   assertThat(get("/api/discovery/auctions/"+id).statusCode()).as(id).isEqualTo(400);
+  assertThat(get("/api/discovery/auctions/9223372036854775807").statusCode()).isEqualTo(404);
+ }
+ @Test void runningBlindListAndDetailHideBidDataWhileNormalShowsExactCurrentPrice()throws Exception {
+  jdbc.update("UPDATE auctions SET status='RUNNING' WHERE id IN (?,?)",normal,blind);
+  try {
+   jdbc.update("INSERT INTO bids(auction_id,user_id,amount,created_at) VALUES (?,2,9007199254741993,UTC_TIMESTAMP(6)),(?,2,888888,UTC_TIMESTAMP(6))",normal,blind);
+   var n=json.readTree(get("/api/discovery/auctions/"+normal).body());
+   assertThat(n.get("currentPrice").asText()).isEqualTo("9007199254741993");
+   assertThat(n.get("startTime").asText()).endsWith("Z");
+   for(String url:java.util.List.of("/api/discovery/auctions/"+blind,"/api/discovery/auctions?q="+name+"&auctionType=BLIND")) {
+    var r=get(url);assertThat(r.statusCode()).isEqualTo(200);
+    assertThat(r.body()).doesNotContain("888888","777777","startingPrice","currentPrice","minBidIncrement","highest","leader","bids","estimatedPrice","roomCode");
+   }
+   assertThat(n.toString()).doesNotContain("statistics","estimatedPrice","roomCode");
+  } finally {jdbc.update("DELETE FROM bids WHERE auction_id IN (?,?)",normal,blind);}
+ }
 }

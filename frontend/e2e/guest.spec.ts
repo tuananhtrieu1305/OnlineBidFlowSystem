@@ -10,12 +10,13 @@ test('guest discovers the app and can register without diagnostic screens', asyn
     const page = await app.firstWindow();
     await expect(page.getByRole('heading', { name: 'Món đồ đặc biệt. Lựa chọn của bạn.' })).toBeVisible();
     await page.route('**/api/auth/me', route => route.fulfill({ status: 401, json: { code: 'UNAUTHENTICATED' } }));
+    await page.route('**/api/discovery/auctions?*', route => route.fulfill({ json: { items: [], page: 0, totalPages: 0, totalElements: '0' } }));
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Món đồ đặc biệt. Lựa chọn của bạn.' })).toBeVisible();
     const sidebar = page.getByRole('complementary');
     await expect(sidebar.getByRole('link', { name: 'Đăng nhập', exact: true })).toBeVisible();
     await expect(sidebar.getByRole('link', { name: 'Tạo tài khoản' })).toBeVisible();
-    await expect(page.getByText('Danh sách phiên chưa sẵn sàng')).toBeVisible();
+    await expect(page.getByText('Chưa có phiên phù hợp', { exact: true })).toBeVisible();
     await expect(page.getByText('Check server connection')).toHaveCount(0);
     await page.screenshot({ path: info.outputPath('guest-home.png'), fullPage: true });
     await sidebar.getByRole('link', { name: 'Tạo tài khoản' }).click();

@@ -1,4 +1,5 @@
 import CollectionArtwork from '../features/auth/components/CollectionArtwork';
+import {DiscoveryList} from '../features/auctions/discovery/Discovery';
 
 export default function HomePage() {
   return (
@@ -15,11 +16,7 @@ export default function HomePage() {
       </section>
       <section id="auction-list" className="guest-auctions" aria-labelledby="auction-title">
         <div className="guest-section-heading"><div><p className="guest-kicker">TÌM PHIÊN CỦA BẠN</p><h2 id="auction-title">Khám phá phiên đấu giá</h2></div><span className="guest-public">Dành cho cộng đồng</span></div>
-        <div className="guest-empty">
-          <span className="guest-empty-icon" aria-hidden="true">◇</span>
-          <h3>Danh sách phiên chưa sẵn sàng</h3>
-          <p>Các phiên đấu giá sẽ xuất hiện tại đây khi tính năng khám phá được mở.<br />Trong lúc chờ, bạn có thể tạo tài khoản và tìm hiểu cách tham gia.</p>
-        </div>
+        <DiscoveryList />
       </section>
       <section className="guest-guide" aria-labelledby="guide-title">
         <div className="guest-section-heading"><h2 id="guide-title">Từ khám phá đến sở hữu</h2><span>Ba bước để bắt đầu</span></div>

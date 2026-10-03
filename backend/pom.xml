@@ -56,6 +56,17 @@
 
     <profiles>
         <profile>
+            <id>discovery-coverage</id>
+            <build><plugins><plugin>
+                <groupId>org.jacoco</groupId><artifactId>jacoco-maven-plugin</artifactId><version>0.8.12</version>
+                <configuration><destFile>${project.build.directory}/discovery-jacoco.exec</destFile><dataFile>${project.build.directory}/discovery-jacoco.exec</dataFile><append>false</append><includes><include>com/group6/auction/auction/discovery/**</include></includes></configuration>
+                <executions>
+                    <execution><id>discovery-agent</id><goals><goal>prepare-agent</goal></goals></execution>
+                    <execution><id>discovery-report</id><phase>verify</phase><goals><goal>report</goal><goal>check</goal></goals><configuration><rules><rule><element>BUNDLE</element><limits><limit><counter>LINE</counter><value>COVEREDRATIO</value><minimum>0.80</minimum></limit></limits></rule></rules></configuration></execution>
+                </executions>
+            </plugin></plugins></build>
+        </profile>
+        <profile>
             <id>integration-coverage</id>
             <build><plugins><plugin>
                 <groupId>org.jacoco</groupId><artifactId>jacoco-maven-plugin</artifactId><version>0.8.12</version>

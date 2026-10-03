@@ -77,7 +77,7 @@ test('logout waits for server confirmation and can retry', async () => {
   await page.goto('app://auction/');
   await page.route('**/api/auth/logout', route => route.abort());
   await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('Chưa thể đăng xuất');
+  await expect(page.getByRole('complementary').getByRole('alert')).toContainText('Chưa thể đăng xuất');
   await expect(page.getByRole('complementary').getByRole('heading', { name: 'batien' })).toBeVisible();
   await page.unroute('**/api/auth/logout');
   await page.route('**/api/auth/logout', route => route.fulfill({ status: 204 }));
