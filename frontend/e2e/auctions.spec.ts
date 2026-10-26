@@ -32,10 +32,10 @@ test('creates all four type/access combinations with confirmation and hidden pri
   await page.getByRole('combobox',{name:'Loại đấu giá',exact:true}).selectOption(type);await page.getByRole('combobox',{name:'Quyền vào phòng',exact:true}).selectOption(access);
   await page.getByLabel('Giá khởi điểm (Coin)').fill('100');
   if(type==='NORMAL')await page.getByLabel('Bước giá tối thiểu (Coin)').fill('10');else await expect(page.getByLabel('Bước giá tối thiểu (Coin)')).toHaveCount(0);
-  if(access==='PRIVATE')await page.getByLabel('Số người tối đa (để trống nếu không giới hạn)').fill('2');
-  await page.getByLabel('Thời gian bắt đầu',{exact:true}).fill('2030-01-02T10:00');await page.getByLabel('Thời gian kết thúc',{exact:true}).fill('2030-01-02T11:00');
+  if(access==='PRIVATE'&&type==='NORMAL')await page.getByLabel('Số người tối đa (để trống nếu không giới hạn)').fill('2');
+  await page.getByLabel(type==='BLIND'?'Mở phòng chờ từ':'Thời gian bắt đầu',{exact:true}).fill('2030-01-02T10:00');await page.getByLabel(type==='BLIND'?'Hạn chờ đủ 4 người':'Thời gian kết thúc',{exact:true}).fill('2030-01-02T11:00');
   await page.route('**/api/admin/auctions',r=>{
-   const body=r.request().postDataJSON();expect(body.productVersion).toBe('"p1"');expect(body.minBidIncrement).toBe(type==='NORMAL'?'10':null);expect(body.maxParticipants).toBe(access==='PRIVATE'?2:null);expect(body.startTime).toMatch(/Z$/);expect(body).not.toHaveProperty('roomCode');
+   const body=r.request().postDataJSON();expect(body.productVersion).toBe('"p1"');expect(body.minBidIncrement).toBe(type==='NORMAL'?'10':null);expect(body.maxParticipants).toBe(access==='PRIVATE'?(type==='BLIND'?4:2):null);expect(body.startTime).toMatch(/Z$/);expect(body).not.toHaveProperty('roomCode');
    current={...baseline,...body,roomCode:access==='PRIVATE'?'ABCDEF234567':null};return r.fulfill({status:201,json:current});
   });
   await page.getByRole('button',{name:'Xem lại cấu hình'}).click();await expect(page.getByRole('status')).toContainText('Xác nhận cấu hình');

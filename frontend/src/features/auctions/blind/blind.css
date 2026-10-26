@@ -1,0 +1,261 @@
+.blind-page,
+.blind-admin,
+.blind-entry {
+  color: #202824;
+  min-height: 100vh;
+  padding-bottom: 48px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.blind-page h1,
+.blind-admin h1,
+.blind-entry h1 { letter-spacing: -.035em; font-weight: 500; }
+.blind-page h2,
+.blind-admin h2 { font-size: 18px; font-weight: 500; line-height: 1.4; margin: 3px 0 0; }
+.blind-page a,
+.blind-admin a,
+.blind-entry a { color: #145c53; }
+
+.blind-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 22px 0 28px;
+  font-size: 12px;
+}
+.blind-top a { text-decoration: none; }
+.blind-top a:hover,
+.blind-result a:hover { text-decoration: underline; }
+.blind-connection { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.blind-connection > span { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.blind-online { color: #145c53; }
+.blind-offline { color: #a66316; }
+
+.blind-panel {
+  min-width: 0;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e1e5df;
+  border-radius: 12px;
+}
+.blind-panel p { margin: 12px 0 0; }
+.blind-section-label { margin: 0 !important; color: #66716b; font-size: 10px; font-weight: 600; letter-spacing: 1.2px; }
+.blind-panel-heading { display: flex; justify-content: space-between; align-items: start; gap: 12px; margin-bottom: 18px; }
+.blind-panel-heading > span { padding: 5px 9px; border: 1px solid #e1e5df; border-radius: 20px; color: #66716b; font-size: 11px; white-space: nowrap; }
+.blind-muted { color: #66716b; font-size: 12px; line-height: 1.75; }
+
+.blind-page input,
+.blind-entry input,
+.blind-admin textarea {
+  min-width: 0;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5cd;
+  border-radius: 8px;
+  background: #fff;
+  color: #202824;
+  font: inherit;
+}
+.blind-page input,
+.blind-entry input { min-height: 42px; }
+.blind-page button,
+.blind-entry button,
+.blind-admin button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 9px 15px;
+  border: 1px solid #145c53;
+  border-radius: 8px;
+  background: #fff;
+  color: #145c53;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.blind-page button:hover,
+.blind-entry button:hover,
+.blind-admin button:hover { background: #edf3ef; }
+.blind-page .blind-primary,
+.blind-entry .blind-primary,
+.blind-admin .blind-primary { background: #145c53; color: #fff; }
+.blind-page .blind-primary:hover,
+.blind-entry .blind-primary:hover,
+.blind-admin .blind-primary:hover { background: #104b44; }
+.blind-page button:disabled,
+.blind-entry button:disabled,
+.blind-admin button:disabled { opacity: .5; cursor: not-allowed; }
+.blind-page label,
+.blind-entry label,
+.blind-admin label { display: grid; gap: 7px; font-size: 12px; font-weight: 500; }
+
+.blind-error,
+.blind-notice { padding: 12px 16px; border-radius: 8px; margin: 16px 0; font-size: 12px; }
+.blind-error { background: #fff2f0; border: 1px solid #ebc9c6; color: #8d302b; }
+.blind-notice { background: #e8f3ef; border: 1px solid #c7dfd0; color: #145c53; }
+.blind-join { max-width: 500px; margin: 34px auto; }
+.blind-join h1 { font-size: 27px; margin: 8px 0 10px; }
+.blind-join p:not(.guest-kicker) { color: #66716b; }
+.blind-join label { margin: 24px 0 14px; }
+.blind-join label span { color: #66716b; font-weight: 400; }
+.blind-join .blind-primary { width: 100%; }
+
+.blind-heading {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 24px;
+  align-items: end;
+  margin: 0 0 24px;
+}
+.blind-heading h1 { margin: 6px 0 12px; font-size: clamp(24px,2.8vw,34px); line-height: 1.25; overflow-wrap: anywhere; }
+.blind-room-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.blind-room-meta span { padding: 5px 9px; border: 1px solid #e1e5df; border-radius: 20px; background: #fff; color: #66716b; font-size: 11px; }
+.blind-timer { min-width: 185px; padding: 14px 18px; border-radius: 12px; background: #145c53; color: #fff; }
+.blind-timer small { display: block; font-size: 10px; opacity: .85; }
+.blind-timer strong { display: block; margin-top: 3px; font-size: 26px; font-weight: 500; line-height: 1.25; font-variant-numeric: tabular-nums; }
+
+.blind-layout {
+  display: grid;
+  grid-template-columns: minmax(0,1.55fr) minmax(310px,1fr);
+  grid-template-areas: "product bid" "clues chat" "market chat" "history chat";
+  gap: 20px;
+  align-items: start;
+}
+.blind-product { grid-area: product; display: grid; grid-template-columns: minmax(0,44%) minmax(0,1fr); min-height: 315px; padding: 0; overflow: hidden; }
+.blind-photo { min-height: 250px; background: #eceee9; color: #99aba2; display: grid; place-items: center; font-size: 58px; overflow: hidden; }
+.blind-photo img { width: 100%; height: 100%; min-height: 250px; object-fit: contain; display: block; }
+.blind-product-copy { padding: 25px; min-width: 0; }
+.blind-product-copy h2 { margin-top: 7px; font-size: 21px; overflow-wrap: anywhere; }
+.blind-product-copy > p:not(.blind-section-label) { line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.blind-product-copy .blind-privacy { padding-top: 14px; margin-top: 18px; border-top: 1px solid #e1e5df; color: #66716b; font-size: 11px; }
+
+.blind-bid { grid-area: bid; border-top: 3px solid #145c53; }
+.blind-wallet-summary { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin: 20px 0; }
+.blind-wallet-summary > div { min-width: 0; padding: 13px; border-radius: 8px; background: #f3f5f1; }
+.blind-wallet-summary small,
+.blind-current-bid small { display: block; color: #66716b; font-size: 11px; }
+.blind-wallet-summary strong { display: block; margin-top: 5px; color: #145c53; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.blind-current-bid { padding: 15px 0; border-top: 1px solid #e1e5df; border-bottom: 1px solid #e1e5df; }
+.blind-current-bid strong { display: block; margin-top: 5px; color: #145c53; font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.blind-current-bid span { display: block; color: #66716b; font-size: 11px; }
+.blind-bid form { display: grid; gap: 11px; margin-top: 18px; }
+.blind-bid form .blind-primary { width: 100%; }
+.blind-bid form small { color: #66716b; font-size: 11px; line-height: 1.6; }
+.blind-bid-hint { margin-top: 18px !important; }
+.blind-result { margin-top: 18px; padding: 14px; background: #edf3ef; border-radius: 8px; }
+.blind-result strong { color: #145c53; }
+.blind-result a { display: inline-block; margin-top: 10px; }
+
+.blind-clue-panel { grid-area: clues; }
+.blind-clues { display: grid; gap: 12px; }
+.blind-clue { min-width: 0; padding: 17px; border: 1px solid #d7e2da; border-radius: 8px; background: #f6f9f6; }
+.blind-clue > small { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; color: #145c53; font-size: 10px; font-weight: 600; letter-spacing: .5px; }
+.blind-clue > small span { color: #527a5e; font-size: 9px; }
+.blind-clue > p { margin: 9px 0 15px; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.blind-sell { display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: end; gap: 8px; padding-top: 13px; border-top: 1px solid #d7e2da; }
+.blind-sell label { min-width: 0; font-size: 11px; }
+.blind-sell button { min-width: 84px; }
+.blind-sell button:last-child:not(:first-of-type) { border-color: #d2dad2; color: #66716b; }
+.blind-reveal { animation: blind-open 1.4s cubic-bezier(.16,1,.3,1); }
+@keyframes blind-open { from { opacity: 0; transform: scale(.92); filter: blur(6px); } to { opacity: 1; transform: scale(1); filter: blur(0); } }
+.blind-reel { display: flex; justify-content: center; gap: 6px; margin: 18px 0 4px; overflow: hidden; }
+.blind-reel span { padding: 11px 14px; border-radius: 6px; background: #145c53; color: #fff; animation: blind-ticker .65s ease-in-out 4 alternate; }
+.blind-reel span:nth-child(2n) { animation-delay: .14s; }
+.blind-reel span:nth-child(3) { background: #a66316; }
+@keyframes blind-ticker { from { transform: translateY(-7px); opacity: .6; } to { transform: translateY(7px); opacity: 1; } }
+
+.blind-market { grid-area: market; }
+.blind-listings { display: grid; gap: 10px; margin-top: 17px; }
+.blind-listings article { display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid #e1e5df; border-radius: 8px; }
+.blind-listing-info { display: grid; gap: 2px; min-width: 0; }
+.blind-listing-info strong { font-size: 13px; font-weight: 500; }
+.blind-listing-info span { color: #66716b; font-size: 11px; overflow-wrap: anywhere; }
+.blind-listings b { color: #145c53; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.blind-listings button { min-width: 100px; }
+.blind-empty { margin: 17px 0 0 !important; padding: 18px; border: 1px dashed #d2dad2; border-radius: 8px; color: #66716b; text-align: center; font-size: 12px; }
+
+.blind-chat { grid-area: chat; }
+.blind-chat .blind-panel-heading { margin-bottom: 5px; }
+.blind-chat-list { height: 310px; margin-top: 16px; padding: 4px 14px; overflow: auto; border: 1px solid #e1e5df; border-radius: 8px; background: #fbfbf8; }
+.blind-chat-list p { display: grid; gap: 3px; margin: 0; padding: 10px 0; border-bottom: 1px solid #e1e5df; overflow-wrap: anywhere; }
+.blind-chat-list p:last-child { border-bottom: 0; }
+.blind-chat-list small { color: #66716b; font-size: 10px; }
+.blind-chat-empty { color: #66716b; font-size: 12px; }
+.blind-chat form { display: grid; grid-template-columns: minmax(0,1fr) 66px; gap: 8px; margin-top: 10px; }
+
+.blind-history { grid-area: history; }
+.blind-history .blind-panel-heading { margin-bottom: 0; }
+.blind-stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin-top: 19px; }
+.blind-stats > div { padding-left: 12px; border-left: 1px solid #e1e5df; min-width: 0; }
+.blind-stats > div:first-child { border-left: 0; padding-left: 0; }
+.blind-stats small { display: block; color: #66716b; font-size: 10px; }
+.blind-stats strong { display: block; margin-top: 4px; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+.blind-entry > a,
+.blind-admin > a { display: inline-block; margin-top: 24px; font-size: 12px; text-decoration: none; }
+.blind-entry h1,
+.blind-admin h1 { font-size: 28px; margin: 20px 0 10px; }
+.blind-entry > p,
+.blind-admin > p { max-width: 700px; color: #66716b; }
+.blind-entry form { display: grid; grid-template-columns: minmax(0,1fr) 130px; align-items: end; gap: 12px; max-width: 510px; margin-top: 22px; }
+.blind-entry label { min-width: 0; }
+.blind-admin form { display: grid; gap: 18px; max-width: 760px; margin-top: 24px; padding: 24px; border: 1px solid #e1e5df; border-radius: 12px; background: #fff; }
+.blind-admin textarea { resize: vertical; }
+.blind-admin form .blind-primary { justify-self: end; min-width: 160px; }
+.blind-admin [role="alert"] { color: #b83a35; }
+.blind-admin [role="status"] { color: #145c53; }
+.blind-page > ol.blind-panel { margin-top: 22px; padding-left: 45px; }
+.blind-page > ol.blind-panel li { padding: 8px 0; border-bottom: 1px solid #e1e5df; overflow-wrap: anywhere; }
+.blind-page > ol.blind-panel li:last-child { border-bottom: 0; }
+
+@media (max-width: 1100px) {
+  .blind-layout { grid-template-columns: minmax(0,1fr) minmax(280px,.85fr); }
+  .blind-product { grid-template-columns: 1fr; min-height: 0; }
+  .blind-photo { min-height: 0; aspect-ratio: 4/3; }
+  .blind-photo img { min-height: 0; }
+}
+@media (max-width: 900px) {
+  .blind-layout { grid-template-columns: minmax(0,1fr); grid-template-areas: "product" "bid" "clues" "market" "chat" "history"; }
+  .blind-product { grid-template-columns: minmax(0,40%) minmax(0,1fr); }
+  .blind-photo { aspect-ratio: auto; min-height: 230px; }
+  .blind-photo img { min-height: 230px; }
+  .blind-chat-list { height: 250px; }
+}
+@media (max-width: 620px) {
+  .blind-heading { grid-template-columns: 1fr; gap: 15px; }
+  .blind-timer { width: 100%; }
+  .blind-product { grid-template-columns: 1fr; }
+  .blind-photo { aspect-ratio: 4/3; min-height: 0; }
+  .blind-photo img { min-height: 0; }
+  .blind-sell { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .blind-sell label { grid-column: 1 / -1; }
+  .blind-sell button { width: 100%; }
+  .blind-sell button:only-of-type { grid-column: 1 / -1; }
+  .blind-listings article { grid-template-columns: minmax(0,1fr) auto; }
+  .blind-listings button { grid-column: 1 / -1; width: 100%; }
+  .blind-stats { grid-template-columns: repeat(2,minmax(0,1fr)); row-gap: 18px; }
+  .blind-stats > div:nth-child(3) { border-left: 0; padding-left: 0; }
+}
+@media (max-width: 450px) {
+  .blind-panel { padding: 18px; }
+  .blind-product { padding: 0; }
+  .blind-product-copy { padding: 18px; }
+  .blind-top { align-items: start; }
+  .blind-connection { white-space: normal; text-align: right; }
+  .blind-wallet-summary { grid-template-columns: 1fr; }
+  .blind-entry form { grid-template-columns: 1fr; }
+  .blind-entry form button { width: 100%; }
+  .blind-admin form { padding: 18px; }
+  .blind-admin form .blind-primary { justify-self: stretch; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .blind-reveal,
+  .blind-reel span { animation: none; }
+}

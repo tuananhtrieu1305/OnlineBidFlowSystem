@@ -18,6 +18,7 @@ public record AuctionInput(Long productId,String productVersion,AuctionType type
    var max=node.get("maxParticipants");
    if(max==null)throw new IllegalArgumentException();
    if(!max.isNull()){if(access!=AuctionAccessType.PRIVATE||!max.isIntegralNumber()||!max.canConvertToInt()||max.intValue()<1)throw new IllegalArgumentException();capacity=max.intValue();}
+   if(type==AuctionType.BLIND){if(capacity!=null&&capacity!=4)throw new IllegalArgumentException();capacity=4;}
    LocalDateTime start=time(text(node,"startTime")),end=time(text(node,"endTime"));
    if(!end.isAfter(start))throw new IllegalArgumentException();
    String version=create?text(node,"productVersion"):null;

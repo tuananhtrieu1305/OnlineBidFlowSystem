@@ -29,7 +29,7 @@ Ví dụ POST:
 }
 ```
 
-PUT dùng cùng cấu hình nhưng bỏ productId/productVersion; không được đổi sản phẩm sau khi tạo. ID và Coin là chuỗi số nguyên dương trong giới hạn signed BIGINT; NORMAL kiểm tra cả tràn giá + bước giá. BLIND bắt buộc minBidIncrement=null. PUBLIC bắt buộc maxParticipants=null; PRIVATE cho phép null hoặc số nguyên dương. Server từ chối trường lạ, tự lấy createdBy từ session, tự tạo trạng thái/kết quả/mã phòng. Mã PRIVATE ngẫu nhiên 12 ký tự, được giữ khi sửa PRIVATE → PRIVATE; đổi sang PUBLIC sẽ xóa mã. Danh sách không trả mã phòng, giá sàn hoặc ETag chi tiết.
+PUT dùng cùng cấu hình nhưng bỏ productId/productVersion; không được đổi sản phẩm sau khi tạo. ID và Coin là chuỗi số nguyên dương trong giới hạn signed BIGINT; NORMAL kiểm tra cả tràn giá + bước giá. BLIND bắt buộc minBidIncrement=null và có sức chứa đúng 4 người, kể cả PUBLIC; PRIVATE BLIND chỉ nhận maxParticipants=null hoặc 4 trong input, server lưu 4. NORMAL PUBLIC bắt buộc maxParticipants=null; NORMAL PRIVATE cho phép null hoặc số nguyên dương. Server từ chối trường lạ, tự lấy createdBy từ session, tự tạo trạng thái/kết quả/mã phòng. Mã PRIVATE ngẫu nhiên 12 ký tự, được giữ khi sửa PRIVATE → PRIVATE; đổi sang PUBLIC sẽ xóa mã. Danh sách không trả mã phòng, giá sàn hoặc ETag chi tiết.
 
 Frontend nhập giờ địa phương và gửi UTC. API yêu cầu offset/Z; database lưu DATETIME theo UTC, độ chính xác microsecond. Các trường ngày Auction/AuctionParticipant dùng JDBC LocalDateTime trực tiếp để tránh JVM Asia/Saigon làm lệch giờ qua Timestamp. Không tự đổi dữ liệu lịch sử đã có. Tham khảo [Hibernate direct Java Time JDBC mapping](https://docs.hibernate.org/orm/6.5/javadocs/org/hibernate/cfg/MappingSettings.html).
 
@@ -39,7 +39,7 @@ Chỉ sửa khi UPCOMING, chưa đến giờ bắt đầu, chưa có participant
 
 `JpaRoomDataGateway.authorizeAndRegister` khóa cùng hàng auction mà update sử dụng, kiểm tra mã/sức chứa và ghi participant trong một transaction READ_COMMITTED. `RoomMembershipService` chỉ cập nhật membership bộ nhớ sau khi gateway hoàn tất. Hai người tranh chỗ cuối chỉ một người được vào; reconnect không tạo thêm participant. Không gọi riêng validateJoin rồi ensureParticipant trong đường runtime. Default gateway phục vụ fake/probe không thay thế bảo đảm transaction của JPA.
 
-Module bid/lifecycle của nhóm khi ghi dữ liệu phải phối hợp khóa hàng auction trước khi đổi trạng thái/ghi hoạt động, theo thứ tự auction → wallet. Phần cấu hình không quyết định winner, không sửa Coin, không broadcast bid và không có scheduler. Phiên quá giờ vẫn UPCOMING cho đến khi lifecycle được tích hợp; UI khóa sửa và thông báo chờ cập nhật.
+Module bid/lifecycle khi ghi dữ liệu khóa hàng auction trước khi đổi trạng thái/ghi hoạt động, theo thứ tự auction → wallet. Phần cấu hình không quyết định winner, không sửa Coin, không broadcast bid. NORMAL tự mở khi đến giờ; BLIND chờ đúng 4 USER đang kết nối và 4 Clue Admin thiết lập. Xem [flow BLIND](blind-game.md).
 
 ## Lỗi và trải nghiệm
 

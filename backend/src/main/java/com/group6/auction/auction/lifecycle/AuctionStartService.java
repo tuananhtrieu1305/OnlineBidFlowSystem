@@ -17,6 +17,6 @@ public class AuctionStartService {
  public int startDue(LocalDateTime now){
   // Row locks serialize with configuration edits; predicates are rechecked after waiting.
   // Never reopen expired/finished sessions or change winner, balances, or ledger entries.
-  return jdbc.update("UPDATE auctions SET status='RUNNING' WHERE status='UPCOMING' AND start_time<=? AND end_time>?",now,now);
+  return jdbc.update("UPDATE auctions SET status='RUNNING' WHERE auction_type='NORMAL' AND status='UPCOMING' AND start_time<=? AND end_time>?",now,now);
  }
 }

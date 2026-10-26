@@ -1,6 +1,6 @@
 # Khám phá phiên đấu giá
 
-Khách, USER và ADMIN có thể đọc danh sách/chi tiết các phiên PUBLIC. Đây là màn hình tra cứu; chưa có nút gửi bid hoặc join room. Backend tự chuyển UPCOMING → RUNNING khi đến giờ bắt đầu và chưa hết giờ.
+Khách, USER và ADMIN có thể đọc danh sách/chi tiết các phiên PUBLIC. Chi tiết BLIND có lối vào phòng dành cho USER; NORMAL vẫn chỉ là màn hình tra cứu. Backend tự chuyển NORMAL UPCOMING → RUNNING khi đến giờ; BLIND cần đủ 4 USER đang kết nối và 4 Clue đã cấu hình.
 
 ## API
 
@@ -23,7 +23,7 @@ Dữ liệu tải khi mở trang/đổi bộ lọc, mỗi 10 giây khi trang hi�
 
 Mỗi item và chi tiết có `serverNow` UTC. Nhãn trạng thái dựa trên thời gian server: phiên UPCOMING đã đến giờ nhưng chưa được scheduler mở hiển thị “Đã đến giờ · Chờ mở phiên”; UPCOMING/RUNNING quá hạn hiển thị “Đã hết giờ · Chờ kết quả”. Giá trị status và bộ lọc vẫn dùng trạng thái lưu trong DB. Không suy đoán SOLD/UNSOLD từ giờ kết thúc.
 
-`AuctionStartScheduler` mặc định chạy mỗi giây (`app.auctions.start-poll-ms`), có thể tắt bằng `app.auctions.auto-start=false`. UPDATE có điều kiện, dùng row lock cùng việc sửa cấu hình; không mở lại phiên đã hết hạn hoặc SOLD/UNSOLD. Không thay đổi winner, Coin hay ledger. Scheduler kết thúc/thanh toán vẫn là phần cần nối với nghiệp vụ NORMAL/BLIND.
+`AuctionStartScheduler` mặc định chạy mỗi giây (`app.auctions.start-poll-ms`), chỉ mở NORMAL và có thể tắt bằng `app.auctions.auto-start=false`. `BlindScheduler` quản lý thời điểm mở/kết thúc BLIND và quyết toán khi đủ điều kiện. Scheduler kết thúc NORMAL vẫn chờ module tương ứng.
 
 ## Kiểm chứng
 

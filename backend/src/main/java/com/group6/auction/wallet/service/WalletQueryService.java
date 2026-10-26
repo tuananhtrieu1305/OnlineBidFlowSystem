@@ -21,7 +21,7 @@ public class WalletQueryService {
  }
  public record History(List<TransactionResponse> items,String nextCursor) {}
  @Transactional(readOnly=true) public History history(String username,String type,int limit,String cursor){
-  if(limit<1||limit>100 || type!=null&&!Set.of("DEPOSIT","LOCK","UNLOCK","PAYMENT").contains(type))
+  if(limit<1||limit>100 || type!=null&&!Set.of("DEPOSIT","LOCK","UNLOCK","PAYMENT","CLUE_TRADE").contains(type))
    throw new WalletException(400,"INVALID_FILTER");
   var wallet=ledger.personal(username,false);
   String sql="SELECT * FROM coin_transactions WHERE wallet_id=?";

@@ -4,7 +4,7 @@
 
 ## Trách nhiệm caller
 
-Mỗi lệnh nghiệp vụ dùng outer `@Transactional(isolation = Isolation.READ_COMMITTED)`. Giữ khóa ghi auction **trước khi** đọc trạng thái, thời gian, các bid và leader; không khóa ví trước. Xác thực USER từ session phía server, quyền tham gia PUBLIC/PRIVATE, điều kiện 50%, bước giá, giới hạn một bid BLIND và hạn chót nằm ở caller. Không lấy userId/winner/previousLeader từ dữ liệu client rồi truyền thẳng vào adapter.
+Mỗi lệnh nghiệp vụ dùng outer `@Transactional(isolation = Isolation.READ_COMMITTED)`. Giữ khóa ghi auction **trước khi** đọc trạng thái, thời gian, các bid và leader; không khóa ví trước. Xác thực USER từ session phía server, quyền tham gia PUBLIC/PRIVATE, điều kiện 50% và bước giá NORMAL, cửa sổ sửa bid BLIND và hạn chót nằm ở caller. Không lấy userId/winner/previousLeader từ dữ liệu client rồi truyền thẳng vào adapter.
 
 | Quyết định đã kiểm tra | Điểm gọi sau khi lưu/flush bid |
 | --- | --- |
@@ -32,7 +32,7 @@ Session USER → service NORMAL/BLIND
 
 Thiếu Coin/lỗi ledger/lỗi lưu bid phải làm rollback cả lệnh. Không catch lỗi rồi commit riêng bid hoặc trả thành công. Nếu dùng JPA, flush trước khi gọi adapter để JDBC thấy bid mới. Không tự gửi thêm socket event trong caller, tránh gửi lặp hoặc gửi trước commit.
 
-Adapter không cung cấp idempotency cho request đặt bid. Module nhận lệnh phải kiểm tra trùng/giới hạn bid ở trong khóa auction. Không gọi lại `normalBidAccepted` cho bid cũ sau khi đã có leader mới. Chỉ retry **toàn bộ transaction** khi đã biết rollback; timeout không chứng minh transaction thất bại.
+Adapter không cung cấp idempotency cho request đặt bid. Module nhận lệnh phải kiểm tra thời gian và quyền sửa bid ở trong khóa auction. Không gọi lại `normalBidAccepted` cho bid cũ sau khi đã có leader mới. Chỉ retry **toàn bộ transaction** khi đã biết rollback; timeout không chứng minh transaction thất bại.
 
 ## Luồng kết thúc
 
@@ -79,4 +79,4 @@ Chạy trong terminal riêng để không mang environment DB test sang ứng d�
 
 ## Phần còn chờ module nhóm
 
-Service bid NORMAL/BLIND, scheduler chuyển UPCOMING/RUNNING/kết thúc, thuật toán winner và màn hình đặt bid chưa có trong branch này. Test caller fixture chứng minh contract adapter, không chứng minh các chức năng trên đã được triển khai. Dữ liệu seed cũ vẫn theo ngoại lệ trong `reviews/wallet-reconciliation.md`.
+BLIND hiện có service bid, scheduler mở/kết thúc, winner theo bid cuối của từng USER, thị trường Clue và màn hình phòng; xem [flow BLIND](blind-game.md). NORMAL bid/ending và phòng NORMAL vẫn còn chờ module nhóm. Dữ liệu seed cũ vẫn theo ngoại lệ trong `reviews/wallet-reconciliation.md`.

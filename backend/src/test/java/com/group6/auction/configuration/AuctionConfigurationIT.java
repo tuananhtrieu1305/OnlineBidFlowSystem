@@ -49,7 +49,7 @@ class AuctionConfigurationIT {
  ObjectNode body(String type,String access,boolean create){
   var n=json.createObjectNode().put("auctionType",type).put("accessType",access).put("startingPrice","100").put("startTime","2030-01-01T08:00:00+07:00").put("endTime","2030-01-01T09:00:00+07:00");
   if(type.equals("NORMAL"))n.put("minBidIncrement","10");else n.putNull("minBidIncrement");
-  if(access.equals("PRIVATE"))n.put("maxParticipants",1);else n.putNull("maxParticipants");
+  if(access.equals("PRIVATE"))n.put("maxParticipants",type.equals("BLIND")?4:1);else n.putNull("maxParticipants");
   if(create)n.put("productId",""+product).put("productVersion",version);return n;
  }
  Map<String,Object> create(String type,String access){return service.create("admin",AuctionInput.parse(body(type,access,true),true));}
@@ -85,7 +85,7 @@ class AuctionConfigurationIT {
   assertThatThrownBy(()->create("NORMAL","PUBLIC")).hasMessage("PRODUCT_CHANGED");
  }
  @Test void concurrentJoinCapacityAndReconnect()throws Exception{
-  var a=create("BLIND","PRIVATE");long id=Long.parseLong((String)a.get("id"));String code=(String)a.get("roomCode");
+  var a=create("NORMAL","PRIVATE");long id=Long.parseLong((String)a.get("id"));String code=(String)a.get("roomCode");
   assertThat(rooms.authorizeAndRegister(alice,id,"wrong").errorCode()).isEqualTo("ROOM_CODE_INVALID");
   var barrier=new CyclicBarrier(2);
   try(var executor=Executors.newFixedThreadPool(2)){
