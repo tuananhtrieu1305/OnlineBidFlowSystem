@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../auth/AuthProvider';
 import { getProduct, imageSource, listProducts, saveProduct, type Product, type ProductPage } from './productApi';
 import { validateProduct, type Fields } from './validation';
+import ProductStatistics from './statistics/ProductStatistics';
 import './products.css';
 
 const price=(value:string|null)=>value===null?'Chưa đặt':new Intl.NumberFormat('vi-VN').format(BigInt(value))+' Coin';
@@ -50,6 +51,7 @@ function ProductDetail({id,edit}:{id:string;edit:boolean}){
   <p className="product-info"><Link to={'/admin/auctions/new?productId='+product.id}>Tạo phiên từ sản phẩm này →</Link></p>
   {!product.editable&&<p className="product-info">Sản phẩm đã được dùng trong phiên đấu giá nên không thể chỉnh sửa.</p>}
   <section className="product-detail"><div className="product-large-photo"><Photo src={product.imageUrl} name={product.name}/></div><div><h2>Thông tin sản phẩm</h2><dl><dt>Số lượng</dt><dd>{product.quantity}</dd><dt>Giá ước tính · Chỉ Admin thấy</dt><dd>{price(product.estimatedPrice)}</dd></dl><h2>Mô tả</h2><p className="product-description">{product.description||'Chưa có mô tả.'}</p></div></section>
+  <ProductStatistics productId={product.id} estimatedPrice={product.estimatedPrice}/>
  </>;
 }
 function ProductForm({product,reload}:{product?:Product;reload?:()=>void}){

@@ -212,16 +212,16 @@ CREATE INDEX idx_coin_transactions_wallet_created ON coin_transactions (wallet_i
 
 -- Users. Development password for all seed accounts: Password@123
 INSERT INTO users (id, username, password_hash, role) VALUES
-(1, 'admin', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'ADMIN'),
-(2, 'alice', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(3, 'bob', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(4, 'charlie', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(5, 'diana', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(6, 'eric', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(7, 'fiona', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(8, 'george', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(9, 'hana', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(10, 'ivan', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER');
+(1, 'admin', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'ADMIN'),
+(2, 'alice', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(3, 'bob', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(4, 'charlie', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(5, 'diana', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(6, 'eric', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(7, 'fiona', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(8, 'george', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(9, 'hana', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(10, 'ivan', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER');
 
 -- Wallets. Wallet id 1 is the only SYSTEM wallet.
 INSERT INTO wallets (id, user_id, wallet_type, available_balance, locked_balance, updated_at) VALUES
