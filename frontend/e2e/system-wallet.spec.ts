@@ -10,7 +10,7 @@ test.beforeEach(async({},info)=>{
 });
 test.afterEach(async()=>{await app?.close();});
 test('summary precision filters refresh and pagination',async()=>{
- await page.goto('app://auction/#/admin/system-wallet');await expect(page.getByLabel('Số liệu ví hệ thống')).toContainText('18.446.744.073.709.551.614');
+ await page.goto('app://auction/#/admin/system-wallet');await page.reload();await expect(page.getByLabel('Số liệu ví hệ thống')).toContainText('18.446.744.073.709.551.614');
  await page.getByLabel('Mã phiên',{exact:true}).fill('12');await page.getByLabel('Từ ngày',{exact:true}).fill('2030-01-01');await page.getByLabel('Đến ngày',{exact:true}).fill('2030-01-02');
  const request=page.waitForRequest(r=>r.url().includes('/transactions?')&&r.url().includes('auctionId=12'));await page.getByRole('button',{name:'Áp dụng',exact:true}).click();const url=new URL((await request).url());expect(url.searchParams.get('from')).toMatch(/Z$/);expect(url.searchParams.get('to')).toMatch(/Z$/);
  await page.route('**/api/admin/system-wallet/transactions?*',r=>{const next=new URL(r.request().url()).searchParams.has('cursor');return r.fulfill({json:{items:[{id:next?'4':'5',auctionId:null,type:'PAYMENT',availableDelta:'50',lockedDelta:'0',createdAt:'2030-01-01T00:00:00Z'}],nextCursor:next?null:'next'}});});

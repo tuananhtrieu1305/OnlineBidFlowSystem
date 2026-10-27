@@ -11,12 +11,16 @@ import AdminAuctionsPage from '../features/auctions/configuration/AdminAuctionsP
 import AdminUsersPage from '../features/admin/users/AdminUsersPage';
 import SystemWalletPage from '../features/admin/system-wallet/SystemWalletPage';
 import {DiscoveryDetail} from '../features/auctions/discovery/Discovery';
+import NormalAuctionPage from '../pages/NormalAuctionPage';
+import NormalAuctionListPage from '../pages/NormalAuctionListPage';
 
 export default createHashRouter([
   { path: '/register', element: <RegisterPage /> },
   { path: '/login', element: <LoginPage /> },
+  { path: '/normal/:id', element: <NormalAuctionPage /> },
   { element: <AppLayout />, children: [
     { path: '/', element: <HomePage /> },
+    { path: '/normal', element: <NormalAuctionListPage /> },
     { path: '/auctions/:id', element: <DiscoveryDetail /> },
     { path: '/admin', element: <AdminPage /> },
     { path: '/admin/system-wallet', element: <SystemWalletPage /> },

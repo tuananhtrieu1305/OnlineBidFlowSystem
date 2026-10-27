@@ -11,16 +11,16 @@ test.beforeEach(async({},info)=>{
 });
 test.afterEach(async()=>{await app?.close();});
 test('admin finds a user, sees exact Coin and returns to preserved filters',async()=>{
- await page.goto('app://auction/#/admin/users');await page.getByLabel('Tìm người dùng').fill('alice');await page.getByRole('combobox',{name:'Vai trò'}).selectOption('USER');
+ await page.goto('app://auction/#/admin/users');await page.reload();await page.getByLabel('Tìm người dùng').fill('alice');await page.getByRole('combobox',{name:'Vai trò'}).selectOption('USER');
  await page.getByRole('link',{name:'Xem alice'}).click();await expect(page.getByRole('heading',{name:'alice',exact:true})).toBeVisible();await expect(page.getByLabel('Số dư người dùng')).toContainText('9.007.199.254.740.993');await expect(page.getByRole('cell',{name:'Nạp Coin',exact:true})).toBeVisible();
  await page.getByRole('combobox',{name:'Loại giao dịch'}).selectOption('LOCK');await page.getByRole('link',{name:'← Người dùng',exact:true}).click();await expect(page.getByLabel('Tìm người dùng')).toHaveValue('alice');await expect(page.getByRole('combobox',{name:'Vai trò'})).toHaveValue('USER');
  await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(820,650));expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 test('missing wallet is not zero and forbidden history hides all detail data',async()=>{
  await page.route('**/api/admin/users/43',r=>r.fulfill({json:{id:'43',username:'missing',role:'USER',walletState:'MISSING',wallet:null}}));
- await page.goto('app://auction/#/admin/users/43');await expect(page.getByText(/Tài khoản thiếu ví/)).toBeVisible();await expect(page.getByLabel('Số dư người dùng')).toHaveCount(0);
+ await page.goto('app://auction/#/admin/users/43');await page.reload();await expect(page.getByText(/Tài khoản thiếu ví/)).toBeVisible();await expect(page.getByLabel('Số dư người dùng')).toHaveCount(0);
  await page.route('**/api/admin/users/42/transactions?*',r=>r.fulfill({status:403,json:{code:'FORBIDDEN'}}));await page.goto('app://auction/#/admin/users/42');await expect(page.getByRole('alert')).toContainText('không còn quyền');await expect(page.getByLabel('Số dư người dùng')).toHaveCount(0);await expect(page.getByRole('heading',{name:'alice',exact:true})).toHaveCount(0);
 });
 test('user cannot render admin information',async()=>{
- await page.route('**/api/auth/me',r=>r.fulfill({json:{id:2,username:'alice',role:'USER'}}));let calls=0;await page.route('**/api/admin/users?*',r=>{calls++;return r.abort();});await page.goto('app://auction/#/admin/users');await expect(page.getByRole('heading',{name:'Người dùng',exact:true})).toHaveCount(0);await expect(page.getByRole('link',{name:'Ví Coin'})).toBeVisible();expect(calls).toBe(0);
+ await page.route('**/api/auth/me',r=>r.fulfill({json:{id:2,username:'alice',role:'USER'}}));let calls=0;await page.route('**/api/admin/users?*',r=>{calls++;return r.abort();});await page.goto('app://auction/#/admin/users');await page.reload();await expect(page.getByRole('heading',{name:'Người dùng',exact:true})).toHaveCount(0);await expect(page.getByRole('link',{name:'Ví Coin'})).toBeVisible();expect(calls).toBe(0);
 });

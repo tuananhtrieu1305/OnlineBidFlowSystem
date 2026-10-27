@@ -14,7 +14,7 @@ test.beforeEach(async({},info)=>{
 });
 test.afterEach(async()=>{await app?.close();});
 test('refreshes admin status on focus without replacing a dirty edit form',async()=>{
- await page.goto('app://auction/#/admin/auctions');
+ await page.goto('app://auction/#/admin/auctions');await page.reload();
  await expect(page.getByRole('cell',{name:/Sắp diễn ra/})).toBeVisible();
  current={...baseline,status:'RUNNING',editable:false};
  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));

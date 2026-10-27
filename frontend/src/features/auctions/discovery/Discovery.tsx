@@ -67,7 +67,7 @@ export function DiscoveryDetail(){
    <section><p className="discovery-meta">PHIÊN #{data.id} · {auctionStatusLabel(data)}</p><h1>{data.product.name}</h1><p>{data.auctionType==='NORMAL'?'Đấu giá thường':'Đấu giá mù'} · Công khai</p><Price auction={data}/>
     {data.auctionType==='NORMAL'&&<dl><dt>Giá khởi điểm</dt><dd>{coin(data.startingPrice)}</dd><dt>Bước giá tối thiểu</dt><dd>{coin(data.minBidIncrement)}</dd></dl>}
     <dl><dt>Bắt đầu</dt><dd>{date(data.startTime)}</dd><dt>Kết thúc</dt><dd>{date(data.endTime)}</dd></dl>
-    <div className="discovery-notice"><strong>Bạn đang xem thông tin phiên.</strong><p>Chức năng tham gia phòng và trả giá chưa được mở.</p>{!user&&<p><Link to="/login">Đăng nhập</Link> hoặc <Link to="/register">tạo tài khoản</Link> để chuẩn bị ví Coin.</p>}</div>
+    <div className="discovery-notice"><strong>Bạn đang xem thông tin phiên.</strong>{data.auctionType==='NORMAL'?<p><Link to={'/normal/'+data.id}>Mở phòng đấu giá thường →</Link></p>:<p>Chức năng trả giá BLIND chưa được mở.</p>}{!user&&<p><Link to="/login">Đăng nhập</Link> hoặc <Link to="/register">tạo tài khoản</Link> để chuẩn bị ví Coin.</p>}</div>
     <p className="discovery-note">Coin là đơn vị giả lập, chỉ có giá trị trong hệ thống. Thông tin tự cập nhật mỗi 10 giây khi bạn đang xem.</p>
    </section></div>
   </>}

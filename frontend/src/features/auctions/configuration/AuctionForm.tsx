@@ -7,17 +7,31 @@ import { localTime, utcTime, validateAuction, type AuctionFields } from './valid
 import ProductPicker from './ProductPicker';
 export default function AuctionForm({auction,reload}:{auction?:Auction;reload?:()=>void}){
  const [params]=useSearchParams();const navigate=useNavigate();
- const initial:AuctionFields={auctionType:auction?.auctionType??'NORMAL',accessType:auction?.accessType??'PUBLIC',startingPrice:auction?.startingPrice??'',minBidIncrement:auction?.minBidIncrement??'',maxParticipants:auction?.maxParticipants?.toString()??'',startTime:auction?localTime(auction.startTime):'',endTime:auction?localTime(auction.endTime):''};
+ const initial:AuctionFields={auctionType:auction?.auctionType??'NORMAL',accessType:auction?.accessType??'PUBLIC',startingPrice:auction?.startingPrice??'',minBidIncrement:auction?.minBidIncrement??'',maxParticipants:auction?.maxParticipants?.toString()??'',startTime:auction?localTime(auction.startTime):'',endTime:auction?localTime(auction.endTime):'',closingWindowSeconds:String(auction?.normalTiming?.closingWindowSeconds??30),extensionSeconds:String(auction?.normalTiming?.extensionSeconds??30),leaderboardSeconds:String(auction?.normalTiming?.leaderboardSeconds??60)};
  const [f,setF]=useState(initial),[product,setProduct]=useState<Product|null>(null),[errors,setErrors]=useState<Partial<Record<keyof AuctionFields,string>>>({}),[message,setMessage]=useState(''),[confirm,setConfirm]=useState(false),[busy,setBusy]=useState(false),[blocked,setBlocked]=useState(false),[forbidden,setForbidden]=useState(false),[destination,setDestination]=useState(''),[offset,setOffset]=useState(auction?Date.parse(auction.serverNow)-Date.now():0);
+ const [durationMinutes,setDurationMinutes]=useState(auction?String(Math.round((Date.parse(auction.endTime)-Date.parse(auction.startTime))/60000*100)/100):'5');
  const alive=useRef(true),sending=useRef(false);useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
  const blocker=useBlocker(!destination&&(!!product||JSON.stringify(f)!==JSON.stringify(initial)));
  useEffect(()=>{if(destination)navigate(destination,{replace:true});},[destination,navigate]);
  useEffect(()=>{if(auction)return;let live=true;void listAuctions({q:'',status:'',auctionType:'',accessType:''},0).then(data=>{if(live)setOffset(Date.parse(data.serverNow)-Date.now());}).catch(()=>{});return()=>{live=false;};},[]);
- function field(key:keyof AuctionFields,value:string){setF(old=>{const next={...old,[key]:value};if(key==='auctionType'&&value==='BLIND')next.minBidIncrement='';if(key==='accessType'&&value==='PUBLIC')next.maxParticipants='';return next;});setErrors(e=>({...e,[key]:undefined}));setConfirm(false);}
+ function field(key:keyof AuctionFields,value:string){
+  if(f.auctionType==='NORMAL'&&key==='endTime'&&utcTime(value)&&utcTime(f.startTime)){
+   const minutes=(Date.parse(utcTime(value)!)-Date.parse(utcTime(f.startTime)!))/60000;
+   if(minutes>0)setDurationMinutes(String(Math.round(minutes*100)/100));
+  }
+  setF(old=>{
+   const next={...old,[key]:value};
+   if(old.auctionType==='NORMAL'&&key==='startTime'&&utcTime(value)&&Number(durationMinutes)>0&&Number(durationMinutes)<=10080)next.endTime=localTime(new Date(Date.parse(utcTime(value)!)+Number(durationMinutes)*60000).toISOString());
+   if(key==='auctionType'&&value==='BLIND')next.minBidIncrement='';
+   if(key==='accessType'&&value==='PUBLIC')next.maxParticipants='';
+   return next;
+  });
+  setErrors(e=>({...e,[key]:undefined}));setConfirm(false);
+ }
  async function submit(event:React.FormEvent){event.preventDefault();if(sending.current||blocked)return;setMessage('');const errors=validateAuction(f,Date.now()+offset);setErrors(errors);
   if(!auction&&!product){setMessage('Chọn sản phẩm trước khi tạo phiên.');return;}const first=Object.keys(errors)[0];if(first){document.getElementById('auction-'+first)?.focus();return;}
   if(!confirm){setConfirm(true);return;}sending.current=true;setBusy(true);
-  const body={auctionType:f.auctionType,accessType:f.accessType,startingPrice:f.startingPrice,minBidIncrement:f.auctionType==='NORMAL'?f.minBidIncrement:null,maxParticipants:f.accessType==='PRIVATE'&&f.maxParticipants?Number(f.maxParticipants):null,startTime:utcTime(f.startTime),endTime:utcTime(f.endTime),...(!auction?{productId:product!.id,productVersion:product!.version}:{})};
+  const body={auctionType:f.auctionType,accessType:f.accessType,startingPrice:f.startingPrice,minBidIncrement:f.auctionType==='NORMAL'?f.minBidIncrement:null,maxParticipants:f.accessType==='PRIVATE'&&f.maxParticipants?Number(f.maxParticipants):null,startTime:utcTime(f.startTime),endTime:utcTime(f.endTime),...(f.auctionType==='NORMAL'?{normalTiming:{closingWindowSeconds:Number(f.closingWindowSeconds),extensionSeconds:Number(f.extensionSeconds),leaderboardSeconds:Number(f.leaderboardSeconds)}}:{}),...(!auction?{productId:product!.id,productVersion:product!.version}:{})};
   try{const result=await saveAuction(body,auction?.id,auction?.version);if(alive.current)setDestination('/admin/auctions/'+result.id);}
   catch(error){if(!alive.current)return;const status=axios.isAxiosError(error)?error.response?.status:0;const code=axios.isAxiosError(error)?error.response?.data?.code:'';
    setBlocked(!status||status>=500||status===409||status===412);setForbidden(status===403);setConfirm(false);
@@ -34,9 +48,14 @@ export default function AuctionForm({auction,reload}:{auction?:Auction;reload?:(
  <p>{f.auctionType==='BLIND'?'Người chơi chỉ gửi một giá bí mật; giá khởi điểm chỉ Admin thấy.':'Người chơi nhìn thấy giá hiện tại và lịch sử trả giá.'}</p>{f.accessType==='PRIVATE'&&<p>Mã phòng sẽ được hệ thống tạo. Chỉ chia sẻ với người bạn muốn mời.</p>}</section>
  <section className="auction-section"><h2>3. Giá và lịch đấu giá</h2><p>Thời gian theo múi giờ {zone}. Server kiểm tra thời gian lần cuối khi lưu.</p><div className="auction-grid">
  {(['startingPrice',...(f.auctionType==='NORMAL'?['minBidIncrement']:[]),...(f.accessType==='PRIVATE'?['maxParticipants']:[]),'startTime','endTime'] as (keyof AuctionFields)[]).map(key=><label key={key} htmlFor={'auction-'+key}>{({startingPrice:'Giá khởi điểm (Coin)',minBidIncrement:'Bước giá tối thiểu (Coin)',maxParticipants:'Số người tối đa (để trống nếu không giới hạn)',startTime:'Thời gian bắt đầu',endTime:'Thời gian kết thúc'} as Record<string,string>)[key]}<input id={'auction-'+key} type={key.endsWith('Time')?'datetime-local':'text'} step={key.endsWith('Time')?'1':undefined} inputMode={key.endsWith('Time')?undefined:'numeric'} value={f[key]} onChange={e=>field(key,e.target.value)} aria-invalid={!!errors[key]} aria-describedby={errors[key]?'err-'+key:undefined}/>{errors[key]&&<span className="product-field-error" id={'err-'+key}>{errors[key]}</span>}</label>)}
- </div></section></fieldset>
+ </div></section>
+ {f.auctionType==='NORMAL'&&<section className="auction-section"><h2>4. Nhịp đấu giá và bảng xếp hạng live</h2><p>Ba nhịp Mở giá / Cạnh tranh / Chốt giá chia thời lượng theo tỷ lệ 3:2:1. Giá và quyền trả được giữ nguyên. Bid hợp lệ sát giờ sẽ gia hạn nhịp cuối.</p><div className="auction-grid">
+ <label>Thời lượng phiên (phút)<input type="number" min="0.1" max="10080" step="0.1" value={durationMinutes} onChange={e=>{const value=e.target.value;setDurationMinutes(value);if(Number(value)>0&&Number(value)<=10080&&utcTime(f.startTime))field('endTime',localTime(new Date(Date.parse(utcTime(f.startTime)!)+Number(value)*60000).toISOString()));setConfirm(false);}}/><small>Tự tính giờ kết thúc từ giờ bắt đầu; vẫn có thể nhập trực tiếp giờ kết thúc.</small></label>
+ {(['closingWindowSeconds','extensionSeconds','leaderboardSeconds'] as const).map(key=><label key={key} htmlFor={'auction-'+key}>{({closingWindowSeconds:'Ngưỡng gia hạn cuối phiên (giây)',extensionSeconds:'Thời gian phản hồi sau bid (giây)',leaderboardSeconds:'Nổi bật BXH khi còn (giây)'})[key]}<input id={'auction-'+key} type="number" min="1" max="3600" step="1" value={f[key]} onChange={e=>field(key,e.target.value)} aria-invalid={!!errors[key]}/>{errors[key]&&<span className="product-field-error">{errors[key]}</span>}</label>)}
+ </div></section>}
+ </fieldset>
  {message&&<p role="alert">{message}</p>}{blocked&&<><Link to="/admin/auctions">Kiểm tra danh sách</Link>{reload&&<button type="button" onClick={()=>{if(window.confirm('Bỏ bản nhập và tải cấu hình mới?'))reload();}}>Tải bản mới</button>}</>}
- {confirm&&<div className="product-info" role="status"><strong>Xác nhận cấu hình</strong><p>{auction?.product.name??product?.name} · {f.auctionType} · {f.accessType}</p><p>{new Date(utcTime(f.startTime)!).toLocaleString('vi-VN')} → {new Date(utcTime(f.endTime)!).toLocaleString('vi-VN')} ({zone})</p><p>Giá khởi điểm: {f.startingPrice} Coin. Phiên được tạo ở trạng thái sắp diễn ra.</p></div>}
+ {confirm&&<div className="product-info" role="status"><strong>Xác nhận cấu hình</strong><p>{auction?.product.name??product?.name} · {f.auctionType} · {f.accessType}</p><p>{new Date(utcTime(f.startTime)!).toLocaleString('vi-VN')} → {new Date(utcTime(f.endTime)!).toLocaleString('vi-VN')} ({zone})</p><p>Giá khởi điểm: {f.startingPrice} Coin. Phiên được tạo ở trạng thái sắp diễn ra.</p>{f.auctionType==='NORMAL'&&<p>Ngưỡng cuối phiên {f.closingWindowSeconds}s · phản hồi {f.extensionSeconds}s · BXH {f.leaderboardSeconds}s cuối. Thời gian kết thúc có thể được gia hạn khi có bid hợp lệ.</p>}</div>}
  <div className="product-actions"><Link to="/admin/auctions">Hủy</Link><button className="product-primary" disabled={busy||blocked} type="submit">{busy?'Đang lưu…':confirm?(auction?'Lưu thay đổi':'Xác nhận tạo phiên'):'Xem lại cấu hình'}</button></div>
  </form></>;
 }

@@ -1,4 +1,4 @@
-export type AuctionFields={auctionType:'NORMAL'|'BLIND';accessType:'PUBLIC'|'PRIVATE';startingPrice:string;minBidIncrement:string;maxParticipants:string;startTime:string;endTime:string};
+export type AuctionFields={auctionType:'NORMAL'|'BLIND';accessType:'PUBLIC'|'PRIVATE';startingPrice:string;minBidIncrement:string;maxParticipants:string;startTime:string;endTime:string;closingWindowSeconds?:string;extensionSeconds?:string;leaderboardSeconds?:string};
 export function localTime(iso:string){const d=new Date(iso);if(!Number.isFinite(d.getTime()))return '';return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,19);}
 export function utcTime(local:string){if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(local))return null;const date=new Date(local);if(!Number.isFinite(date.getTime())||localTime(date.toISOString()).slice(0,local.length)!==local)return null;return date.toISOString();}
 function coin(value:string){return /^[1-9][0-9]{0,18}$/.test(value)&&BigInt(value)<=9223372036854775807n;}
@@ -8,6 +8,10 @@ export function validateAuction(f:AuctionFields,now:number){
  if(f.auctionType==='NORMAL'){
   if(!coin(f.minBidIncrement))e.minBidIncrement='Nhập bước giá là số Coin nguyên dương hợp lệ.';
   else if(!e.startingPrice&&BigInt(f.startingPrice)+BigInt(f.minBidIncrement)>9223372036854775807n)e.minBidIncrement='Giá khởi điểm cộng bước giá vượt giới hạn Coin.';
+ }
+ if(f.auctionType==='NORMAL'){
+  for(const key of ['closingWindowSeconds','extensionSeconds','leaderboardSeconds'] as const){const value=f[key]??(key==='leaderboardSeconds'?'60':'30');if(!/^[1-9][0-9]{0,3}$/.test(value)||Number(value)>3600)e[key]='Nhập số giây nguyên từ 1 đến 3600.';}
+  if(!e.extensionSeconds&&!e.closingWindowSeconds&&Number(f.extensionSeconds??30)<Number(f.closingWindowSeconds??30))e.extensionSeconds='Thời gian phản hồi phải ít nhất bằng ngưỡng gia hạn.';
  }
  if(f.accessType==='PRIVATE'&&f.maxParticipants&&(!/^[1-9][0-9]{0,9}$/.test(f.maxParticipants)||BigInt(f.maxParticipants)>2147483647n))e.maxParticipants='Giới hạn người phải là số nguyên dương, hoặc để trống.';
  const start=utcTime(f.startTime),end=utcTime(f.endTime);

@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../AuthProvider';
 import CollectionArtwork from '../components/CollectionArtwork';
@@ -8,6 +8,9 @@ import '../registration.css';
 export default function LoginPage() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const requested = location.state?.from;
+  const returnTo = typeof requested === 'string' && /^\/normal(?:\/\d+)?$/.test(requested) ? requested : null;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [visible, setVisible] = useState(false);
@@ -16,7 +19,7 @@ export default function LoginPage() {
   const busy = useRef(false);
   const usernameInput = useRef<HTMLInputElement>(null);
   const passwordInput = useRef<HTMLInputElement>(null);
-  if (!auth.loading && auth.user) return <Navigate to={auth.user.role === 'ADMIN' ? '/admin' : '/'} replace />;
+  if (!auth.loading && auth.user) return <Navigate to={returnTo ?? (auth.user.role === 'ADMIN' ? '/admin' : '/')} replace />;
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (busy.current) return;
@@ -29,7 +32,7 @@ export default function LoginPage() {
     try {
       const user = await auth.login(username, password);
       setPassword('');
-      navigate(user.role === 'ADMIN' ? '/admin' : '/', { replace: true });
+      navigate(returnTo ?? (user.role === 'ADMIN' ? '/admin' : '/'), { replace: true });
     } catch (error) {
       const status = axios.isAxiosError(error) ? error.response?.status : undefined;
       setFailure(status === 401 ? 'Tên đăng nhập hoặc mật khẩu không đúng.'

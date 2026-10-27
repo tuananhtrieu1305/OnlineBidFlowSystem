@@ -1,0 +1,306 @@
+/* Focused auction room: independent from the catalog/sidebar layout. */
+.normal-room { position:fixed; inset:0; z-index:20; height:100dvh; width:100%; display:grid; grid-template-rows:68px 94px minmax(0,1fr); background:#f4f5f0; color:#202c27; overflow:hidden; font-size:14px; }
+.normal-room * { box-sizing:border-box; }
+.normal-room button,.normal-room input { font:inherit; }
+.normal-room button { cursor:pointer; }
+.normal-room button:disabled { cursor:not-allowed; opacity:.5; }
+.normal-room button:focus-visible,.normal-room a:focus-visible,.normal-room input:focus-visible { outline:2px solid #b2822a; outline-offset:3px; }
+.room-loading { display:flex; align-items:center; justify-content:center; }
+.room-loading .room-exit { position:absolute; right:20px; top:16px; }
+.room-header { display:grid; grid-template-columns:minmax(0,1fr) auto auto 40px; align-items:center; gap:26px; padding:0 24px; background:white; border-bottom:1px solid #dfe5df; }
+.room-identity { display:flex; align-items:center; gap:12px; min-width:0; }
+.room-identity>div { min-width:0; }
+.room-logo { display:grid; place-items:center; width:36px; height:36px; flex-shrink:0; background:#145c53; color:white; font-weight:600; font-size:20px; border-radius:10px; }
+.room-identity small { font-size:10px; color:#6e7c73; letter-spacing:1px; }
+.room-identity h1 { font-size:16px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+.room-account { display:flex; align-items:center; gap:8px; font-size:13px; }
+.room-avatar { display:grid; place-items:center; width:29px; height:29px; border-radius:50%; background:#e9f2ed; color:#145c53; font-size:12px; font-weight:600; }
+.room-account>strong { max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.room-connection { width:6px; height:6px; border-radius:50%; background:#c4a976; }
+.room-connection[data-connected=true] { background:#319b70; }
+.room-wallet { display:flex; gap:24px; border-left:1px solid #e0e5df; padding-left:24px; }
+.room-wallet small { display:block; color:#778279; font-size:10px; margin-bottom:2px; }
+.room-wallet strong { font-size:13px; white-space:nowrap; font-weight:600; }
+.room-wallet>div:first-child strong { color:#145c53; }
+.room-exit { display:grid; place-items:center; width:36px; height:36px; border:1px solid #dce4dd; border-radius:50%; color:#56655b; font-size:25px; text-decoration:none; background:white; }
+.room-exit:hover { background:#f3e9e5; border-color:#c8aba0; color:#8d493b; }
+.room-timing { display:grid; grid-template-columns:minmax(190px,1fr) minmax(270px,1fr) minmax(190px,1fr); align-items:center; gap:20px; padding:12px 28px; background:#edf3ee; border-bottom:1px solid #dce5dd; }
+.room-timing small { display:block; font-size:10px; font-weight:600; letter-spacing:.8px; text-transform:uppercase; color:#65776a; }
+.room-timing strong { display:block; font-size:30px; line-height:1.35; font-weight:600; letter-spacing:1px; font-variant-numeric:tabular-nums; }
+.room-rhythm-clock strong { color:#145c53; }
+.room-session-clock { text-align:right; }
+.room-session-clock.urgent small,.room-session-clock.urgent strong { color:#b24a36; }
+.room-rhythm-steps { display:flex; justify-content:center; gap:18px; list-style:none; padding:0; margin:0; }
+.room-rhythm-steps li { display:flex; align-items:center; gap:7px; opacity:.45; font-size:11px; white-space:nowrap; }
+.room-rhythm-steps li>span { display:grid; place-items:center; width:25px; height:25px; background:#dce5db; border-radius:50%; font-weight:600; }
+.room-rhythm-steps li.active { opacity:1; color:#145c53; }
+.room-rhythm-steps li.active>span { color:white; background:#145c53; box-shadow:0 0 0 4px #145c5310; }
+.room-rhythm-steps li.done { opacity:1; color:#6d8071; }
+.room-body { min-height:0; display:grid; grid-template-columns:minmax(240px,.95fr) minmax(350px,1.25fr) minmax(250px,.8fr); gap:16px; padding:16px 20px 20px; overflow:hidden; }
+.room-product-column,.room-bidding,.room-board,.room-chat { min-width:0; background:white; border:1px solid #dee5dc; border-radius:14px; }
+.room-product-column { min-height:0; display:flex; flex-direction:column; overflow:hidden; }
+.room-product-visual { padding:14px 14px 0; }
+.room-product-visual .normal-product-image { width:100%; height:clamp(155px,29vh,310px); max-height:none; aspect-ratio:auto; object-fit:contain; background:#eeefe9; border-radius:9px; }
+.room-product-visual .normal-placeholder span { font-size:11px; }
+.room-product-details { padding:14px 16px; }
+.room-product-details h2 { font-size:16px; font-weight:600; }
+.room-product-details>p { color:#7a847b; font-size:11px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:5px; }
+.room-product-chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+.room-product-chips span { font-size:10px; color:#657269; background:#f4f5f0; border-radius:5px; padding:4px 6px; }
+.room-activity { display:flex; flex-direction:column; flex:1; min-height:0; border-top:1px solid #e9ede7; }
+.room-section-heading { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:14px 16px 10px; flex-shrink:0; }
+.room-section-heading h2 { font-size:13px; font-weight:600; }
+.room-section-heading>span { font-size:10px; color:#839084; }
+.room-section-heading .connected { color:#26885b; }
+.room-activity-scroll,.room-board-scroll { min-height:0; overflow:auto; scrollbar-width:thin; scrollbar-color:#c7d3c8 transparent; }
+.normal-room table { width:100%; border-collapse:collapse; text-align:left; font-size:11px; }
+.normal-room th { position:sticky; top:0; background:#f6f7f3; color:#819080; font-weight:500; font-size:10px; z-index:1; }
+.normal-room th,.normal-room td { padding:10px 12px; border-bottom:1px solid #edf0e9; white-space:nowrap; }
+.room-activity td:nth-child(2) { font-weight:500; }
+.room-activity td:last-child { font-size:10px; color:#8c978c; }
+.room-empty { color:#8b978b; font-size:12px; text-align:center; margin:24px 10px; }
+.room-main-column { min-width:0; min-height:0; display:flex; flex-direction:column; gap:14px; overflow-y:auto; scrollbar-width:thin; }
+.room-bidding { padding:18px; flex-shrink:0; }
+.room-price-row { display:flex; justify-content:space-between; gap:16px; align-items:center; }
+.room-price-row small { color:#778574; font-size:10px; }
+.room-price-row>div>strong { display:block; margin-top:4px; color:#145c53; font-size:28px; line-height:1.3; font-weight:600; overflow-wrap:anywhere; }
+.room-leader { text-align:right; }
+.room-leader b { display:block; margin-top:5px; font-size:13px; max-width:130px; overflow:hidden; text-overflow:ellipsis; }
+.room-position { display:flex; flex-wrap:wrap; justify-content:space-between; gap:5px 12px; padding:9px 10px; background:#f5f6f1; border-radius:6px; margin:13px 0; font-size:10px; }
+.room-position strong { font-weight:500; }
+.room-position span { color:#7a8878; }
+.room-position.leading { background:#edf5ef; color:#21664c; }
+.room-position.outbid { background:#fff5e5; color:#9c6b28; }
+.room-bid-form>label,.room-join-form label { display:block; font-size:11px; font-weight:500; margin-bottom:6px; }
+.room-bid-entry { display:flex; gap:8px; }
+.normal-room input { min-width:0; background:#fafbf8; border:1px solid #d8e1d6; border-radius:7px; padding:10px 12px; color:#253b2b; outline:none; }
+.normal-room input:disabled { color:#9fa99d; }
+.room-bid-entry input { width:100%; flex:1; font-size:16px; font-weight:500; }
+.room-primary { border:0; background:#145c53; color:white; border-radius:7px; padding:10px 16px; white-space:nowrap; font-size:12px!important; font-weight:500!important; }
+.room-primary:hover:not(:disabled) { background:#104b44; }
+.room-primary:disabled { background:#d9e1d6; color:#81907d; opacity:1; }
+.room-quick-bids { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin-top:9px; }
+.room-quick-bids button { min-width:0; padding:7px 4px; border:1px solid #e0e7dc; background:white; border-radius:6px; text-align:center; }
+.room-quick-bids button:hover:not(:disabled) { border-color:#8baf95; background:#f4f8f1; }
+.room-quick-bids span { display:block; font-size:9px; color:#7d8978; }
+.room-quick-bids b { display:block; font-size:11px; font-weight:500; margin-top:3px; overflow-wrap:anywhere; }
+.room-bid-hint { font-size:10px; color:#87907f; margin-top:8px; }
+.room-feedback p { padding:8px 10px; margin-top:9px; background:#edf5ef; color:#286346; border-radius:6px; font-size:11px; }
+.room-feedback p.error { background:#fff0ec; color:#a54735; }
+.room-feedback button { text-decoration:underline; margin-left:8px; }
+.room-rules { margin-top:9px; color:#82907c; font-size:10px; }
+.room-rules summary { cursor:pointer; width:max-content; }
+.room-rules p { line-height:1.6; margin-top:6px; }
+.room-join-form { display:flex; flex-wrap:wrap; align-items:end; gap:8px; }
+.room-join-form input { display:block; margin-top:5px; }
+.room-result { display:grid; gap:7px; padding:16px 12px; background:#f4f5ef; border-radius:8px; margin-top:14px; font-size:14px; }
+.room-result span { color:#7c8977; font-size:11px; }
+.room-result.won { background:#e8f4ec; color:#236345; }
+.room-board { flex:1; min-height:155px; display:flex; flex-direction:column; overflow:hidden; }
+.room-board-summary { border-color:#c9b277; }
+
+.room-board-tabs { display:flex; flex-wrap:wrap; gap:5px; padding:0 16px 10px; }
+.room-board-tabs button { padding:5px 10px; border-radius:5px; background:#f2f4ee; font-size:10px; color:#7a8974; }
+.room-board-tabs button[aria-pressed=true] { color:#145c53; background:#e4f0e7; font-weight:600; }
+.room-board-tabs button:disabled { opacity:.35; }
+.room-board td:nth-child(3) { text-align:right; font-weight:600; }
+.room-board th:nth-child(3) { text-align:right; }
+.room-board tr.first { background:#f0f6ed; color:#21664d; }
+.room-board small { color:#8a9982; font-size:10px; }
+.room-rank-label { display:block; font-size:8px; font-weight:500; color:#709264; margin-top:2px; }
+.room-boundary-note { padding:8px 16px; font-size:10px; color:#947139; background:#fff8e8; }
+.room-boundary-note button { text-decoration:underline; margin-left:6px; }
+.room-row-new { animation:room-bid-flash 2s ease-out; }
+.room-chat { display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+.room-chat>.room-section-heading { padding-bottom:14px; border-bottom:1px solid #edf0e9; }
+.room-chat-scroll { flex:1; min-height:0; overflow:auto; padding:12px; scrollbar-width:thin; scrollbar-color:#c7d3c8 transparent; }
+.room-chat-message { margin-bottom:12px; max-width:95%; padding:9px 10px; background:#f4f6f0; border-radius:0 9px 9px 9px; }
+.room-chat-message.mine { margin-left:auto; border-radius:9px 0 9px 9px; background:#eaf2eb; }
+.room-chat-message>div { display:flex; justify-content:space-between; gap:12px; font-size:9px; }
+.room-chat-message strong { color:#3a7151; font-weight:600; }
+.room-chat-message time { color:#9da994; }
+.room-chat-message p { margin-top:5px; font-size:12px; line-height:1.55; overflow-wrap:anywhere; white-space:pre-wrap; }
+.room-chat-compose { display:flex; padding:12px; gap:7px; border-top:1px solid #e9eee3; }
+.room-chat-compose input { width:100%; flex:1; font-size:11px; }
+.room-chat-compose .room-primary { padding:10px 12px; }
+.room-chat-error { padding:8px 12px; color:#ab5643; font-size:10px; }
+.room-chat-reconnect { display:flex; flex-wrap:wrap; gap:6px; padding:10px 12px; }
+.room-chat-reconnect input { width:100%; font-size:11px; }
+.room-toasts { position:fixed; top:174px; left:50%; transform:translateX(-50%); z-index:40; width:min(420px,calc(100vw - 32px)); display:grid; gap:8px; pointer-events:none; }
+.room-toasts>div { display:flex; justify-content:space-between; gap:14px; background:#fff; border:1px solid #b8cdb7; border-left:4px solid #145c53; border-radius:8px; padding:12px 14px; font-size:12px; box-shadow:0 6px 22px #213d2220; pointer-events:auto; }
+.room-toasts>div.warning { border-left-color:#c38c36; background:#fffbf0; }
+.room-toasts button { font-size:20px; line-height:1; }
+@keyframes room-bid-flash { from { background:#f7e4ac; } }
+@media(min-width:1650px) { .room-body { grid-template-columns:minmax(300px,1fr) minmax(430px,1.35fr) minmax(300px,.75fr); gap:20px; padding:20px 28px 24px; } .room-bidding { padding:24px; } .room-price-row>div>strong { font-size:34px; } .room-bid-entry input { padding:14px; } .normal-room table { font-size:12px; } .normal-room th,.normal-room td { padding:12px 16px; } }
+@media(max-width:1100px) { .room-header { gap:14px; padding:0 16px; } .room-wallet { gap:12px; padding-left:14px; } .room-body { grid-template-columns:minmax(210px,.85fr) minmax(310px,1.2fr) minmax(220px,.8fr); gap:10px; padding:12px; } .room-rhythm-steps { gap:8px; } .room-rhythm-steps b { font-size:10px; } .room-bidding { padding:14px; } .room-price-row>div>strong { font-size:24px; } .room-product-visual .normal-product-image { height:23vh; } }
+@media(max-width:850px) { .normal-room { grid-template-rows:68px 84px minmax(0,1fr); } .room-header { grid-template-columns:minmax(0,1fr) auto 36px; gap:10px; } .room-account { display:none; } .room-timing { grid-template-columns:1fr auto; padding:10px 16px; } .room-rhythm-steps { display:none; } .room-timing strong { font-size:25px; } .room-body { grid-template-columns:minmax(0,1fr) 230px; grid-template-rows:170px minmax(0,1fr); } .room-product-column { grid-column:1; grid-row:1; display:grid; grid-template-columns:140px minmax(0,1fr); } .room-product-visual { padding:10px; } .room-product-visual .normal-product-image { height:145px; min-height:0; } .room-product-details { padding:14px 10px; } .room-product-details h2 { font-size:14px; } .room-activity { display:none; } .room-main-column { grid-column:1; grid-row:2; } .room-chat { grid-column:2; grid-row:1/3; } .room-wallet>div:last-child { display:none; } .room-wallet { border:0; padding:0; } }
+@media(max-width:590px) { .normal-room { grid-template-rows:62px 78px minmax(0,1fr); } .room-header { padding:0 12px; } .room-logo { width:29px; height:29px; font-size:16px; } .room-identity { gap:7px; } .room-identity h1 { font-size:13px; } .room-wallet strong { font-size:10px; } .room-body { display:flex; flex-direction:column; overflow-y:auto; padding:10px; } .room-product-column { flex-shrink:0; min-height:110px; grid-template-columns:95px minmax(0,1fr); } .room-product-visual .normal-product-image { height:90px; } .room-product-details { padding:10px; } .room-product-details>p { display:none; } .room-main-column { overflow:visible; flex-shrink:0; } .room-board { height:220px; flex:none; } .room-chat { min-height:280px; flex-shrink:0; height:320px; } .room-price-row>div>strong { font-size:24px; } .room-timing { padding:8px 14px; } .room-toasts { top:146px; } }
+@media(max-height:700px) and (min-width:851px) { .normal-room { grid-template-rows:60px 76px minmax(0,1fr); } .room-timing strong { font-size:25px; } .room-product-visual .normal-product-image { height:22vh; } .room-bidding { padding:12px; } .room-quick-bids button { padding:5px; } .room-position { margin:8px 0; padding:6px 8px; } }
+@media(prefers-reduced-motion:reduce) { .room-row-new { animation:none; } }
+
+.room-board-closing { border-color:#8fb498; box-shadow:0 0 0 2px #145c5308; }
+.room-board-closing>.room-section-heading h2 { color:#145c53; }
+.room-board-summary { border-color:#c9b277; }
+
+/* Stable room geometry: only the contents of each panel may scroll. */
+.normal-room { font-size:16px; background:#f3f4f1; }
+.room-body { height:100%; max-height:100%; grid-template-rows:minmax(0,1fr); align-items:stretch; }
+.room-body>* { min-height:0; max-height:100%; }
+.room-header,.room-timing,.room-bidding,.room-board,.room-product-column,.room-chat { contain:inline-size; }
+.room-product-column,.room-bidding,.room-board,.room-chat { border-radius:5px; border-color:#d5dbd5; box-shadow:none; }
+.room-main-column { display:grid; grid-template-rows:clamp(355px,44dvh,410px) minmax(0,1fr); overflow:hidden; }
+.room-bidding { height:100%; min-height:0; max-height:100%; overflow-y:scroll; overflow-x:hidden; scrollbar-gutter:stable; padding:16px 18px; }
+.room-board { display:grid; grid-template-rows:46px 42px 30px minmax(0,1fr); min-height:0; height:100%; max-height:100%; overflow:hidden; }
+.room-activity { display:grid; grid-template-rows:46px minmax(0,1fr); flex:1 1 0; min-height:0; overflow:hidden; }
+.room-activity-scroll,.room-board-scroll { height:100%; min-height:0; max-height:100%; overflow-y:scroll; overflow-x:auto; scrollbar-gutter:stable; overscroll-behavior:contain; overflow-anchor:none; }
+.room-chat { height:100%; max-height:100%; }
+.room-chat-scroll { flex:1 1 0; height:0; min-height:0; max-height:100%; overflow-y:scroll; overflow-x:hidden; scrollbar-gutter:stable; overscroll-behavior:contain; overflow-anchor:none; }
+.room-chat-compose,.room-chat-reconnect,.room-chat-error { flex:0 0 auto; }
+.room-chat-error { max-height:64px; overflow:auto; }
+.room-chat-compose input,.room-bid-entry input { width:0; flex:1 1 0; min-width:0; max-width:100%; height:44px; }
+.room-bid-entry { height:44px; }
+.room-bid-entry .room-primary { flex:0 0 100px; height:44px; }
+.room-position { height:42px; margin:10px 0; padding:8px 10px; flex-wrap:nowrap; align-items:center; font-size:13px; gap:10px; border-radius:3px; }
+.room-position strong { flex-shrink:0; }
+.room-position span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.room-price-row { display:grid; grid-template-columns:minmax(0,1fr) 125px; min-height:66px; }
+.room-price-row>div { min-width:0; }
+.room-price-row>div>strong { font-size:30px; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; overflow-wrap:normal; font-variant-numeric:tabular-nums; }
+.room-leader b { font-size:15px; white-space:nowrap; }
+.room-quick-bids { height:54px; }
+.room-quick-bids button { height:54px; padding:5px; border-radius:3px; overflow:hidden; }
+.room-quick-bids span { font-size:12px; color:#536050; white-space:nowrap; }
+.room-quick-bids b { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; overflow-wrap:normal; font-variant-numeric:tabular-nums; }
+.room-bid-hint { height:20px; margin-top:7px; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.room-feedback { height:42px; overflow:hidden; }
+.room-feedback p { height:34px; margin-top:4px; padding:6px 8px; font-size:13px; overflow:auto; line-height:22px; border-radius:3px; }
+.room-rules { position:relative; margin-top:0; font-size:13px; }
+.room-rules p { position:absolute; left:0; right:0; bottom:100%; z-index:4; margin:0 0 6px; padding:12px; max-height:170px; overflow:auto; background:white; border:1px solid #c5cec4; border-radius:3px; box-shadow:0 3px 12px #00000012; }
+.room-boundary-note { height:30px; min-height:30px; padding:5px 16px; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background:transparent; }
+.room-boundary-note[data-active=true] { background:#faf3e5; }
+.room-board-tabs { height:42px; padding:3px 16px 8px; flex-wrap:nowrap; overflow:hidden; }
+.room-board-tabs button { font-size:13px; padding:5px 10px; border-radius:3px; white-space:nowrap; }
+.room-section-heading { height:46px; padding:10px 16px; }
+.room-section-heading h2 { font-size:16px; }
+.room-section-heading>span { font-size:12px; }
+.normal-room table { table-layout:fixed; font-size:14px; }
+.normal-room th { font-size:12px; color:#586553; }
+.normal-room th,.normal-room td { padding:10px; overflow:hidden; text-overflow:ellipsis; }
+.room-board th:first-child { width:38px; }
+.room-board th:last-child { width:46%; }
+.room-board td { height:56px; }
+.room-activity th:first-child { width:31%; }
+.room-activity th:nth-child(2) { width:43%; }
+.room-activity th:last-child { width:26%; }
+.room-activity td { height:44px; }
+.room-activity td:last-child,.room-board small { font-size:12px; }
+.room-rank-label { font-size:11px; }
+.room-product-visual,.room-product-details { flex:0 0 auto; min-width:0; }
+.room-product-visual .normal-product-image { border-radius:3px; height:clamp(140px,25dvh,280px); }
+.room-product-details { height:132px; overflow:hidden; }
+.room-product-details h2 { font-size:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.room-product-details>p { font-size:14px; color:#626e5d; }
+.room-product-chips { display:flex; flex-wrap:nowrap; gap:10px; overflow:hidden; }
+.room-product-chips span { padding:0; font-size:12px; background:none; border-radius:0; white-space:nowrap; }
+.room-identity small,.room-wallet small { font-size:12px; letter-spacing:0; }
+.room-identity h1 { font-size:18px; }
+.room-account,.room-wallet strong { font-size:15px; }
+.room-timing small { font-size:13px; letter-spacing:0; text-transform:none; }
+.room-rhythm-steps li,.room-rhythm-steps b { font-size:13px; }
+.room-rhythm-steps li.active>span { box-shadow:none; }
+.room-timing { background:#eef1ec; }
+.room-logo { border-radius:5px; }
+.room-price-row small { font-size:13px; }
+.room-bid-form>label,.room-join-form label { font-size:14px; }
+.room-primary { border-radius:4px; font-size:14px!important; }
+.room-bid-entry input { font-size:20px; }
+.normal-room input { border-radius:4px; }
+.room-chat-compose { height:68px; }
+.room-chat-compose input { font-size:14px; }
+.room-chat-message { border-radius:3px; background:#f3f4f0; }
+.room-chat-message.mine { border-radius:3px; background:#edf2eb; }
+.room-chat-message>div { font-size:12px; }
+.room-chat-message p { font-size:15px; }
+.room-chat-error { font-size:13px; }
+.room-chat-reconnect input { font-size:14px; }
+.room-empty { font-size:14px; }
+.room-result { border-radius:3px; }
+.room-result span { font-size:13px; }
+.room-toasts>div { font-size:14px; border-radius:4px; box-shadow:0 3px 12px #00000012; }
+.room-board-closing { box-shadow:none; }
+.room-bidding,.room-activity-scroll,.room-board-scroll,.room-chat-scroll { scrollbar-width:auto; scrollbar-color:#b1b9af #f2f4ee; }
+.room-bidding::-webkit-scrollbar,.room-activity-scroll::-webkit-scrollbar,.room-board-scroll::-webkit-scrollbar,.room-chat-scroll::-webkit-scrollbar { width:10px; height:10px; }
+.room-bidding::-webkit-scrollbar-track,.room-activity-scroll::-webkit-scrollbar-track,.room-board-scroll::-webkit-scrollbar-track,.room-chat-scroll::-webkit-scrollbar-track { background:#f2f4ee; }
+.room-bidding::-webkit-scrollbar-thumb,.room-activity-scroll::-webkit-scrollbar-thumb,.room-board-scroll::-webkit-scrollbar-thumb,.room-chat-scroll::-webkit-scrollbar-thumb { background:#b1b9af; border:2px solid #f2f4ee; border-radius:5px; }
+@media(max-height:740px) and (min-width:851px) {
+  .room-main-column { grid-template-rows:minmax(0,1.45fr) minmax(0,1fr); }
+  .room-product-visual .normal-product-image { height:20dvh; }
+  .room-product-details { height:114px; padding:10px 14px; }
+}
+@media(max-width:1100px) and (min-width:851px) {
+  .room-wallet strong,.room-account { font-size:13px; }
+  .room-price-row { grid-template-columns:minmax(0,1fr) 90px; }
+  .room-price-row>div>strong { font-size:25px; }
+  .room-position { display:block; height:42px; padding:5px 8px; font-size:12px; }
+  .room-position span { display:block; font-size:11px; }
+  .room-quick-bids b { font-size:12px; }
+}
+@media(max-width:850px) and (min-width:591px) {
+  .room-body { grid-template-rows:150px minmax(0,1fr); }
+  .room-product-column { height:150px; }
+  .room-product-visual .normal-product-image { height:128px; }
+  .room-product-details { height:148px; }
+  .room-main-column { grid-template-rows:minmax(0,1.5fr) minmax(0,1fr); }
+  .room-activity { display:none; }
+  .room-chat { height:100%; }
+}
+@media(max-width:590px) {
+  .room-body { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1.7fr) minmax(0,1fr); overflow:hidden; }
+  .room-product-column { display:none; }
+  .room-main-column { grid-row:1; display:grid; grid-template-rows:minmax(0,1.5fr) minmax(0,1fr); overflow:hidden; }
+  .room-board { height:100%; min-height:0; }
+  .room-chat { grid-column:1; grid-row:2; height:100%; min-height:0; }
+  .room-header { gap:8px; }
+  .room-identity h1 { font-size:14px; }
+  .room-identity small,.room-wallet small { font-size:10px; }
+  .room-wallet strong { font-size:12px; }
+  .room-timing small { font-size:12px; }
+  .room-price-row>div>strong { font-size:25px; }
+}
+.room-price-row { min-height:60px; }
+.room-position { height:36px; margin:8px 0; }
+.room-quick-bids,.room-quick-bids button { height:48px; }
+.room-quick-bids { margin-top:7px; }
+.room-bid-hint { height:18px; margin-top:5px; }
+.room-feedback { height:36px; }
+.room-feedback p { height:30px; margin-top:3px; padding:4px 8px; }
+.room-chat-message strong { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.room-chat-message time { flex-shrink:0; }
+.room-wallet strong { display:block; max-width:180px; overflow:hidden; text-overflow:ellipsis; }
+.room-toasts>div { box-shadow:none; }
+
+/* Official winner reveal. Native dialog keeps focus inside and supports Escape. */
+.room-winner-dialog { width:min(450px,calc(100vw - 32px)); max-width:none; max-height:calc(100dvh - 32px); margin:auto; padding:0; border:0; background:transparent; color:#f3f1e9; overflow:visible; }
+.room-winner-dialog::backdrop { background:rgba(0,0,0,.84); backdrop-filter:blur(3px); }
+.room-winner-card { position:relative; z-index:2; padding:30px 32px 28px; border:1px solid #776442; border-top:3px solid #d9b361; border-radius:8px; background:#1c2421; text-align:center; max-height:calc(100dvh - 32px); overflow-y:auto; animation:room-winner-reveal .4s ease-out; }
+.room-winner-close { position:absolute; top:10px; right:12px; width:32px; height:32px; color:#bdbeb5; font-size:26px!important; line-height:1; border-radius:4px; }
+.room-winner-close:hover { color:white; background:#ffffff0d; }
+.room-winner-trophy { display:block; width:44px; height:44px; color:#dfbb70; margin:0 auto 12px; }
+.room-winner-card h2 { font-size:25px; line-height:1.3; font-weight:600; color:#f1d99e; }
+.room-winner-avatar { width:94px; height:94px; display:grid; place-items:center; margin:24px auto 14px; border-radius:50%; border:2px solid #d9b361; background:#27544a; color:#f9f5e9; font-size:32px; font-weight:600; box-shadow:0 0 0 6px #d9b36112; }
+.room-winner-name { display:block; color:#fff; font-size:27px; font-weight:600; overflow-wrap:anywhere; }
+.room-winner-card p { margin:10px 0 0; font-size:14px; line-height:1.6; color:#b8c3b9; }
+.room-winner-card p b { font-weight:500; color:#e7ece4; }
+.room-winner-price { display:grid; gap:5px; margin:23px 0; padding:16px; border-top:1px solid #ffffff14; border-bottom:1px solid #ffffff14; }
+.room-winner-price span { font-size:13px; color:#b3bcae; }
+.room-winner-price strong { color:#f1d99e; font-size:28px; font-weight:600; overflow-wrap:anywhere; }
+.room-winner-confirm { width:100%; background:#e0bd72; color:#202821; padding:12px 16px; }
+.room-winner-confirm:hover:not(:disabled) { background:#ebcd8c; }
+.room-winner-confetti { position:fixed; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
+.room-winner-confetti i { position:absolute; top:-22px; left:var(--left); width:7px; height:13px; opacity:0; background:var(--piece-color); animation:room-confetti-fall var(--duration) var(--delay) ease-in forwards; }
+.room-winner-confetti i:nth-child(3n) { width:6px; height:6px; border-radius:50%; }
+.room-winner-replay { width:max-content; font-size:13px!important; text-decoration:underline; color:#145c53; padding:3px 0; }
+@keyframes room-winner-reveal { from { opacity:0; transform:translateY(14px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes room-confetti-fall { 0% { opacity:0; transform:translate3d(0,-20px,0) rotate(0deg); } 10% { opacity:.9; } 85% { opacity:.8; } 100% { opacity:0; transform:translate3d(var(--drift),110dvh,0) rotate(540deg); } }
+@media(max-height:650px) { .room-winner-card { padding:20px 24px; } .room-winner-avatar { width:70px; height:70px; font-size:26px; margin-top:16px; } .room-winner-trophy { width:32px; height:32px; margin-bottom:8px; } .room-winner-price { margin:14px 0; padding:10px; } }
+@media(prefers-reduced-motion:reduce) { .room-winner-confetti { display:none; } .room-winner-card { animation:none; } }
