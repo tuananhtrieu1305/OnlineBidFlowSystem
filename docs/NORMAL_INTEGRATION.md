@@ -65,13 +65,13 @@ chạy trước fixture; test đổi tài khoản chỉ đổi mock session sau 
 - Không chạy test hoặc khởi động/build frontend theo yêu cầu người dùng; backend được biên dịch và chạy với `-Dmaven.test.skip=true`.
 
 
-## Phòng toàn màn hình và ba nhịp (2026-10-28)
+## Phòng toàn màn hình và các nhịp đấu giá (2026-10-28)
 
 - `/normal/:id` ra ngoài AppLayout; chỉ phòng đấu giá, nút × về danh sách, không sidebar. Header chứa người chơi/ví; đồng hồ nhịp trái, đồng hồ phiên phải. Desktop ba cột: sản phẩm/diễn biến, đặt giá/BXH, chat. Chỉ danh sách dài cuộn nội bộ. Màn nhỏ xếp lại để tránh ép chữ.
-- Nhịp theo tỷ lệ 3:2:1 của thời lượng ban đầu (6 phút => 3/2/1 phút; 5 phút => 2:30/1:40/0:50). Không loại người, không đổi bước giá, không reset giá/khóa Coin. Chỉ server SOLD/UNSOLD mới chốt thắng/thanh toán.
+- Nhịp ban đầu được chia theo tỷ lệ 3:2:1 (được thay bằng hai nhịp bằng nhau ở cập nhật 2026-10-28 bên dưới). Không loại người, không đổi bước giá, không reset giá/khóa Coin. Chỉ server SOLD/UNSOLD mới chốt thắng/thanh toán.
 - `scheduledEndsAt` trong snapshot là hạn dự kiến ban đầu. Cột `auction_normal_timing.scheduled_end_time` được thêm nếu thiếu khi backend chạy; cấu hình mới lưu mốc này ngay. Phiên cũ chưa có mốc dùng hạn hiện tại và cố định trước khi gia hạn tiếp. Không tái dựng được hạn gốc của lần gia hạn trước bản cập nhật.
 - Mốc kết thúc nhịp 1/2 không đổi khi gia hạn nhịp 3. Đồng hồ phiên và nhịp 3 cùng dùng endsAt hiện tại.
-- BXH live luôn có ở cột giữa; khi chuyển nhịp tự mở tổng kết nhịp vừa qua 10s rồi về live. Tab Nhịp 1/2/3 xem lại xếp hạng cộng dồn tính tới mốc kết nhịp (theo timestamp bid server), không dùng giá phát sinh sau mốc đó.
+- BXH live luôn có ở cột giữa; khi chuyển nhịp tự mở tổng kết nhịp vừa qua 10s rồi về live. Tab lịch sử nhịp xem lại xếp hạng cộng dồn tính tới mốc kết nhịp (theo timestamp bid server), không dùng giá phát sinh sau mốc đó.
 - Giữ thông báo bid/vượt giá/gia hạn. Chat đã nhận vẫn hiển thị khi phiên đóng, chuyển sang chỉ đọc. Không chạy test hay khởi động/build frontend theo yêu cầu trước đó.
 
 
@@ -98,3 +98,58 @@ chạy trước fixture; test đổi tài khoản chỉ đổi mock session sau 
 - Người thắng thấy “Bạn đã thắng!”, người khác thấy “Chúc mừng người thắng!”. Không mở chỉ vì đồng hồ về 0 và không mở với UNSOLD.
 - Confetti CSS chạy một lần; tôn trọng prefers-reduced-motion. Đóng bằng ×, Escape hoặc Xem kết quả; có nút Xem người thắng để mở lại. Polling không tự mở lại sau khi người dùng đóng.
 - Chỉ sửa frontend; không chạy test/build hay khởi động frontend theo yêu cầu trước đó.
+
+
+### Tinh gọn phòng theo UI/UX Pro Max
+
+- Áp dụng skill `.agents/skills/ui-ux-pro-max/SKILL.md`: tra cứu UX chữ dễ đọc/tương phản và hướng dẫn React/ARIA, dùng quy tắc khung ổn định/focus; giữ React 18 và không thêm thư viện.
+- Gộp header tài khoản/ví và đồng hồ thành một toolbar, bỏ logo và thanh nhịp trang trí lặp. Hai đồng hồ cùng header, không lặp 00:00 khi đã chốt. Desktop dùng hai cột: khung ảnh lớn riêng bên trái, đặt giá và dữ liệu bên phải.
+- Chuyển lịch sử sang tab Lượt trả cạnh Xếp hạng; không bỏ lịch sử hoặc tổng kết nhịp. Giữ khung giá, thông báo và vùng dữ liệu có chiều cao giới hạn, thanh cuộn nội bộ với gutter ổn định, không tự nở khi nhập số/thêm dữ liệu.
+- Chat mặc định thu gọn, mở từ nút Chat trên header thành khung nổi không modal; không làm co giãn các cột. Giữ socket và nội dung soạn khi thu gọn; đếm tin mới, hỗ trợ aria-expanded/aria-controls, nút thu gọn và Escape trả focus về nút mở. Không đếm lịch sử tải lần đầu thành tin chưa đọc.
+- Chỉ sửa giao diện, không đổi API/DB/luật bid/nhịp/gia hạn/thanh toán/hiệu ứng người thắng. Không chạy test/typecheck/build hoặc khởi động frontend theo yêu cầu người dùng; chỉ rà source.
+
+## Chia phiên thành nhịp đầu và nhịp cuối (2026-10-28)
+
+- Thời lượng dự kiến chia đều thành hai nhịp. Khi chuyển sang nhịp cuối, giao diện phủ đen ngắn với biểu tượng “Nhịp cuối”.
+- Nhịp cuối kết thúc theo hạn server hiện tại. Bid hợp lệ trong cửa sổ chốt giá tiếp tục gia hạn deadline theo `extensionSeconds`; đồng hồ nhịp cuối vì vậy được cộng lại để người chơi kịp phản hồi.
+- Không thay đổi luật bid, bước giá, số dư Coin, API hoặc database.
+
+
+### Thu gọn thanh cuộn và căn lại header
+
+- Ẩn scrollbar chrome ở khung đặt giá, BXH và lịch sử; vẫn dùng overflow:auto trong khung giới hạn, cuộn chuột/trackpad và bàn phím. Thêm tabindex và focus ring cho vùng cuộn để không mất khả năng thao tác khi không thấy scrollbar.
+- Header desktop cao 88px: đồng hồ có độ rộng giới hạn, bỏ hai đường chia quanh đồng hồ; avatar/tên, hai số dư, Chat và nút thoát được căn giữa cùng hàng. Gỡ dấu kết nối màu cạnh tên (trạng thái kết nối vẫn có trong chat), giản lược nhãn khi phiên kết thúc.
+- Chỉ sửa frontend, không chạy test/build hoặc khởi động frontend theo yêu cầu trước đó.
+
+
+### Biểu đồ giá theo thời gian
+
+- Thêm tab mặc định Biểu đồ giá bên cạnh Xếp hạng và Lượt trả; khi hết nhịp vẫn tự mở tổng kết BXH theo luồng hiện có.
+- SVG đường bậc thang: Y là Coin, X là thời điểm server của bid; không nội suy giá tăng giữa các bid. Đường nền là giá khởi điểm hoặc mức ngay trước cửa sổ gần nhất, không tạo bid giả.
+- Mặc định Gần nhất: tối đa 60 bid, khung thời gian quanh các lượt đó. Toàn phiên dùng thời gian bắt đầu đến snapshot server hoặc hạn chốt. Lịch sử lớn rút gọn vertices đường SVG nhưng giữ dữ liệu đọc/nhóm avatar và bảng Lượt trả đầy đủ.
+- Avatar chữ cái người trả được đặt dưới mốc X. Gộp các bid cách nhau ít hơn 46px thành một avatar kèm số lượt, hover/focus hiển thị tên/giá/thời gian; bấm hoặc mũi tên lên/xuống để đổi lượt trong nhóm, trái/phải để qua nhóm. Không dùng ảnh/avatar từ nguồn ngoài.
+- Cập nhật từ snapshot khi NORMAL_PRICE_UPDATED/AUCTION_STATE hoặc polling có sẵn; không thêm request/timer riêng hoặc đổi backend, ví, luật đấu giá. Trạng thái mất đồng bộ hiện rõ. ResizeObserver đo vùng vẽ; khung dữ liệu không tăng chiều cao khi thêm điểm.
+- Áp dụng gợi ý chart/UX của ui-ux-pro-max: time-series line chart, scale thời gian thật, avatar/giá bổ sung màu, hỗ trợ bàn phím và bảng lịch sử thay thế. Không chạy test/typecheck/build hoặc khởi động frontend theo yêu cầu trước đó.
+
+
+### Trục thời gian biểu đồ chạy trực tiếp
+
+- Tab mặc định dùng cửa sổ 60 giây trượt: X=[thời gian server hiện tại - 60s, thời gian server hiện tại], các điểm/avatar dịch trái mỗi giây. Không còn neo mốc đầu hoặc dừng trục ở bid gần nhất.
+- Dùng đồng hồ now có clockOffset sẵn trong phòng, không thêm timer/request riêng; đường giá kéo ngang tới hiện tại khi không có bid, dùng mức giữ ở đầu cửa sổ từ lịch sử trước đó. Không vẽ giá trước giờ mở phiên.
+- Toàn phiên vẫn xem được toàn bộ lịch sử. Khi hết hạn thì dừng tại hạn server; gia hạn làm thời gian tiếp tục, SOLD/UNSOLD cố định ở endsAt. Không tự tăng giá hoặc tạo điểm bid giả.
+- Readout hiển thị thời gian đang chạy, khi hover/focus avatar thì xem thời điểm bid đó. Sort bid memo theo mảng bid, không sort lại mỗi tick. Không chạy test/build/frontend.
+
+
+### Xem lại biểu đồ kết quả bằng cuộn ngang
+
+- Khi server chốt SOLD/UNSOLD, tự chuyển tab Biểu đồ giá sang toàn phiên; mốc thời gian dừng ở endsAt. Sau khi đóng chúc mừng vẫn xem được đường giá/avatar, có nút Xem lại biểu đồ trong kết quả SOLD.
+- Timeline kết quả rộng hơn viewport (xấp xỉ một phút/màn hình, tối đa 24000px), cuộn ngang bằng trackpad/vuốt, kéo chuột hoặc bàn phím trái/phải/Home/End. Có Về đầu/Về cuối. Trục Y cố định bên trái khi lướt; mốc X rải theo chiều rộng.
+- Lần đầu chốt mở tại cuối biểu đồ; các lần polling không kéo người dùng trở lại cuối. Focus avatar ngoài màn hình đưa avatar vào vùng xem. Các lượt sát nhau vẫn gộp, xem từng lượt trong nhóm; bảng Lượt trả giữ toàn bộ dữ liệu.
+- Dùng lịch sử bid đã lưu trong API hiện có, không thay đổi dữ liệu hay luật thanh toán. Chỉ rà source, không chạy test/build/frontend theo yêu cầu trước đó.
+
+
+### Đường nối giá mềm theo hình tham khảo
+
+- Thay đường bậc thang bằng cubic nối các mốc bid; control points bị giới hạn giữa hai đầu nên không vọt lên/xuống ngoài hai mức giá. Các bid trùng timestamp dùng đoạn thẳng đứng, đuôi đến hiện tại vẫn nằm ngang ở mức giá cuối.
+- Giữ màu xanh, tăng độ rõ các chấm bid, thêm đường dóng dọc mảnh và lưới ngang nhẹ. Đây là đường nối minh họa giữa các giá đã ghi nhận, không tạo bid/giá hay thay đổi dữ liệu; giá thật đọc ở chấm/avatar/readout.
+- Giữ nguyên thời gian trượt 60s, avatar, cuộn ngang kết quả và các chức năng khác. Không chạy test/build/frontend.

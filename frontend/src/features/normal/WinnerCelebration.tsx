@@ -1,10 +1,10 @@
 import { useEffect, useRef, type CSSProperties } from 'react';
 import { roomCoin } from './roomExperience';
 
-type Props = { winner: string; price: number; product: string; username: string; openSignal: number };
+type Props = { winner: string; price: number; product: string; username: string; openSignal: number; onViewResult: () => void };
 const colors = ['#e5bd63', '#f0dfad', '#78bda0', '#e2b5a0', '#f7f3df'];
 
-export default function WinnerCelebration({ winner, price, product, username, openSignal }: Props) {
+export default function WinnerCelebration({ winner, price, product, username, openSignal, onViewResult }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const won = winner === username;
   const parts = winner.trim().split(/[\s._-]+/u).filter(Boolean);
@@ -32,7 +32,7 @@ export default function WinnerCelebration({ winner, price, product, username, op
       <strong className="room-winner-name">{winner}</strong>
       <p id="room-winner-description">Đã thắng phiên đấu giá <b>{product}</b></p>
       <div className="room-winner-price"><span>Giá thắng</span><strong>{roomCoin(price)}</strong></div>
-      <button type="button" className="room-primary room-winner-confirm" autoFocus onClick={() => dialog.current?.close()}>Xem kết quả</button>
+      <button type="button" className="room-primary room-winner-confirm" autoFocus onClick={() => { dialog.current?.close(); onViewResult(); }}>Xem kết quả</button>
     </div>
   </dialog>;
 }
