@@ -23,9 +23,9 @@ export default function AppLayout() {
         <Link to="/" className="guest-brand"><span aria-hidden="true">b.</span>OnlineBidFlow</Link>
         <p className="guest-nav-label">KHÔNG GIAN ĐẤU GIÁ</p>
         <nav aria-label="Điều hướng chính">
+          {user?.role === 'ADMIN' && <NavLink to="/admin" end className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}><SidebarIcon name="admin"/>Quản trị</NavLink>}
           <NavLink to="/" end className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}><SidebarIcon name="explore"/>Khám phá</NavLink>
           <NavLink to="/leaderboard" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}><SidebarIcon name="leaderboard"/>Bảng xếp hạng</NavLink>
-          {user?.role === 'ADMIN' && <NavLink to="/admin" end className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}><SidebarIcon name="admin"/>Quản trị</NavLink>}
           {user?.role === 'ADMIN' && <NavLink to="/admin/products" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}><SidebarIcon name="products"/>Sản phẩm</NavLink>}
           {user?.role === 'ADMIN' && <NavLink to="/admin/users" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}><SidebarIcon name="users"/>Người dùng</NavLink>}
           {user?.role === 'ADMIN' && <NavLink to="/admin/system-wallet" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}><SidebarIcon name="systemWallet"/>Ví hệ thống</NavLink>}

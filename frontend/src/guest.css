@@ -69,3 +69,11 @@
 .guest-primary:hover { background:#104b44; }
 .account-name,.admin-title { overflow-wrap:anywhere; }
 .admin-title { font-size:28px; margin:20px 0; }
+.admin-actions { display:grid; gap:14px; padding-bottom:36px; }
+.admin-action-card { display:flex; align-items:center; justify-content:space-between; gap:28px; min-height:112px; padding:24px 28px; border:1px solid #e1e5df; border-radius:12px; background:#fff; }
+.admin-action-copy { min-width:0; text-align:left; }
+.admin-action-copy h2 { margin:0 0 7px; font-size:16px; font-weight:500; line-height:1.5; }
+.admin-action-copy p { margin:0; color:#66716b; font-size:12px; line-height:1.7; }
+.admin-action-button { display:inline-flex; align-items:center; justify-content:space-between; gap:16px; flex:none; min-width:190px; padding:12px 16px; border-radius:8px; background:#145c53; color:#fff; font-size:12px; font-weight:500; white-space:nowrap; }
+.admin-action-button:hover { background:#104b44; }
+@media(max-width:760px) { .admin-action-card { align-items:flex-start; flex-direction:column; gap:18px; padding:22px; } .admin-action-button { min-width:0; } }
