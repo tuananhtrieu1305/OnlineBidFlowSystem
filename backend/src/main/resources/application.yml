@@ -11,6 +11,9 @@ server:
         same-site: none
 
 spring:
+  jackson:
+    deserialization:
+      accept-float-as-int: false
   servlet:
     multipart:
       max-file-size: 5MB

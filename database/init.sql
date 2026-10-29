@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS blind_rounds;
 DROP TABLE IF EXISTS chat_messages;
 DROP TABLE IF EXISTS bids;
 DROP TABLE IF EXISTS auction_participants;
+DROP TABLE IF EXISTS auction_normal_timing;
 DROP TABLE IF EXISTS auctions;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS wallets;
@@ -92,6 +93,15 @@ CREATE TABLE auctions (
         OR (status = 'UNSOLD' AND winner_user_id IS NULL AND winning_price IS NULL AND finished_at IS NOT NULL)
         OR (status IN ('UPCOMING','RUNNING') AND winner_user_id IS NULL AND winning_price IS NULL AND finished_at IS NULL)
     )
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- NORMAL countdown settings; existing sessions without a row use 30/30/60 seconds.
+CREATE TABLE auction_normal_timing (
+    auction_id BIGINT NOT NULL PRIMARY KEY,
+    closing_window_seconds INT NOT NULL,
+    extension_seconds INT NOT NULL,
+    leaderboard_seconds INT NOT NULL,
+    scheduled_end_time DATETIME(6) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE auction_participants (

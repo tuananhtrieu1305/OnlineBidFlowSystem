@@ -15,13 +15,17 @@ import BlindRoom, {PrivateBlindEntry} from '../features/auctions/blind/BlindRoom
 import AdminBlindClues from '../features/auctions/blind/AdminBlindClues';
 import BlindReplay from '../features/auctions/blind/BlindReplay';
 import LeaderboardPage from '../features/leaderboard/LeaderboardPage';
+import NormalAuctionPage from '../pages/NormalAuctionPage';
+import NormalAuctionListPage from '../pages/NormalAuctionListPage';
 
 export default createHashRouter([
   { path: '/register', element: <RegisterPage /> },
   { path: '/login', element: <LoginPage /> },
+  { path: '/normal/:id', element: <NormalAuctionPage /> },
   { element: <AppLayout />, children: [
     { path: '/', element: <HomePage /> },
     { path: '/leaderboard', element: <LeaderboardPage /> },
+    { path: '/normal', element: <NormalAuctionListPage /> },
     { path: '/auctions/:id', element: <DiscoveryDetail /> },
     { path: '/blind', element: <PrivateBlindEntry /> },
     { path: '/blind/:id', element: <BlindRoom /> },

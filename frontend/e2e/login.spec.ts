@@ -96,9 +96,12 @@ test('late unauthorized response from old login cannot clear a new admin session
   await page.getByRole('link',{name:'Ví Coin'}).click();
   await expect.poll(()=>!!pending).toBe(true);
   await page.route('**/api/auth/logout',r=>r.fulfill({status:204}));
+  await page.route('**/api/auth/me',r=>r.fulfill({status:401,json:{}}));
   await page.getByRole('button',{name:'Đăng xuất',exact:true}).click();
-  await page.route('**/api/auth/login',r=>r.fulfill({json:admin}));
-  await page.route('**/api/auth/me',r=>r.fulfill({json:admin}));
+  await page.route('**/api/auth/login',async r=>{
+    await page.route('**/api/auth/me',next=>next.fulfill({json:admin}));
+    await r.fulfill({json:admin});
+  });
   await page.getByLabel('Tên đăng nhập').fill('admin_test');
   await page.getByLabel('Mật khẩu',{exact:true}).fill('password');
   await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();

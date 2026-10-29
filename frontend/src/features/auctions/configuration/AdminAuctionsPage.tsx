@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import { getAuction, listAuctions, type Auction, type AuctionPage, type Filters } from './auctionApi';
 import AuctionForm from './AuctionForm';
+import QuickDemoAuctionButton from './QuickDemoAuctionButton';
 import {auctionStatusLabel} from '../auctionStatus';
 import {watchAuctionUpdates} from '../watchAuctionUpdates';
 import '../../products/products.css';
@@ -26,12 +27,13 @@ function List(){
   return()=>{abort.abort();clearTimeout(timer);stop();};
  },[filters,page,retry]);
  function filter(key:keyof Filters,value:string){setFilters(f=>({...f,[key]:value}));setPage(0);}
- return <><div className="products-heading"><div><p className="guest-kicker">CẤU HÌNH ĐẤU GIÁ</p><h1>Phiên đấu giá</h1><p>Tổ chức phiên từ những sản phẩm đã chuẩn bị.</p></div><Link className="product-primary" to="/admin/auctions/new">＋ Tạo phiên</Link></div>
+ return <><div className="products-heading"><div><p className="guest-kicker">CẤU HÌNH ĐẤU GIÁ</p><h1>Phiên đấu giá</h1><p>Tổ chức phiên từ những sản phẩm đã chuẩn bị.</p></div><div className="auction-create-actions"><Link className="product-primary" to="/admin/auctions/new">＋ Tạo phiên</Link><QuickDemoAuctionButton /></div></div>
  <div className="auction-filters"><label>Tìm phiên<input value={filters.q} maxLength={255} placeholder="Tên sản phẩm hoặc mã phiên" onChange={e=>filter('q',e.target.value)}/></label><label>Trạng thái<select value={filters.status} onChange={e=>filter('status',e.target.value)}><option value="">Tất cả</option>{Object.entries(statuses).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label>Loại đấu giá<select value={filters.auctionType} onChange={e=>filter('auctionType',e.target.value)}><option value="">Tất cả</option><option value="NORMAL">Đấu giá thường</option><option value="BLIND">Đấu giá mù</option></select></label><label>Quyền vào phòng<select value={filters.accessType} onChange={e=>filter('accessType',e.target.value)}><option value="">Tất cả</option><option value="PUBLIC">Công khai</option><option value="PRIVATE">Riêng</option></select></label></div>
  {error?<p role="alert">{error} <button onClick={()=>setRetry(v=>v+1)}>Thử lại</button></p>:loading?<p role="status">Đang tải phiên…</p>:<><div className="product-table-wrap"><table className="product-table"><thead><tr><th>Phiên / sản phẩm</th><th>Loại / quyền vào</th><th>Lịch đấu giá</th><th>Trạng thái</th></tr></thead><tbody>{data?.items.map(a=><tr key={a.id}><td><Link to={'/admin/auctions/'+a.id}><span><strong>{a.product.name}</strong><small>Phiên #{a.id}</small></span></Link></td><td>{a.auctionType==='NORMAL'?'Đấu giá thường':'Đấu giá mù'}<small>{a.accessType==='PUBLIC'?'Công khai':'Phòng riêng'}</small></td><td>{date(a.startTime)}<small>Đến {date(a.endTime)}</small></td><td>{auctionStatusLabel(a)}<small>{a.participantCount} người tham gia</small></td></tr>)}</tbody></table></div>{!data?.items.length&&<div className="product-empty"><h2>Chưa có phiên phù hợp</h2><p>Tạo phiên mới hoặc điều chỉnh bộ lọc.</p></div>}<div className="product-pagination"><button disabled={page===0} onClick={()=>setPage(v=>v-1)}>Trang trước</button><span>Trang {page+1}/{Math.max(data?.totalPages??1,1)}</span><button disabled={!data||page+1>=data.totalPages} onClick={()=>setPage(v=>v+1)}>Trang sau</button></div></>}
  </>;
 }
 function Detail({id,edit}:{id:string;edit:boolean}){
+ const location=useLocation();
  const [a,setA]=useState<Auction|null>(null),[error,setError]=useState(''),[attempt,setAttempt]=useState(0),[visible,setVisible]=useState(false),[notice,setNotice]=useState('');
  useEffect(()=>{
   let alive=true,pending=false;setA(null);setError('');setVisible(false);
@@ -43,9 +45,11 @@ function Detail({id,edit}:{id:string;edit:boolean}){
  if(edit&&a.editable)return <AuctionForm auction={a} reload={()=>setAttempt(v=>v+1)}/>;
  const price=(v:string|null)=>v?new Intl.NumberFormat('vi-VN').format(BigInt(v))+' Coin':'—';
  return <><div className="products-heading"><div><Link to="/admin/auctions">← Phiên đấu giá</Link><h1>Phiên #{a.id}</h1><p>{a.product.name}</p></div>{a.editable&&<Link className="product-primary" to={'/admin/auctions/'+a.id+'/edit'}>Sửa cấu hình</Link>}</div>
+ {location.state?.quickDemo&&<div className="product-info" role="status"><strong>Đã tạo phiên demo #{a.id}</strong><p>NORMAL · PUBLIC · 3 phút, nhịp đầu 90 giây và nhịp cuối 90 giây. Khởi điểm 1.000 Coin, bước 100 Coin. Sản phẩm: {a.product.name}.</p><p>Người chơi vào Đấu giá thường để tìm phiên #{a.id}. Bid sát hạn ở nhịp cuối sẽ gia hạn thời gian.</p></div>}
  {!a.editable&&<p className="product-info">{a.editBlockedReason==='START_TIME_REACHED'?'Đã đến giờ bắt đầu, chờ hệ thống cập nhật. Không thể sửa cấu hình.':'Phiên đã có hoạt động hoặc không còn ở trạng thái sắp diễn ra nên không thể sửa.'}</p>}
  {a.auctionType==='BLIND'&&<p><Link className="product-primary" to={'/admin/auctions/'+a.id+'/clues'}>Thiết lập 4 Clue →</Link></p>}
  <section className="auction-section"><h2>Cấu hình phiên</h2><dl className="auction-info"><div><dt>Sản phẩm</dt><dd><Link to={'/admin/products/'+a.productId}>{a.product.name} ↗</Link></dd></div><div><dt>Trạng thái</dt><dd>{auctionStatusLabel(a)}</dd></div><div><dt>Loại đấu giá</dt><dd>{a.auctionType==='NORMAL'?'Đấu giá thường (NORMAL)':'Đấu giá mù (BLIND)'}</dd></div><div><dt>Quyền vào phòng</dt><dd>{a.accessType==='PUBLIC'?'Công khai (PUBLIC)':'Phòng riêng (PRIVATE)'}</dd></div><div><dt>Giá khởi điểm · Admin</dt><dd>{price(a.startingPrice)}</dd></div><div><dt>Bước giá</dt><dd>{price(a.minBidIncrement)}</dd></div><div><dt>Bắt đầu</dt><dd>{date(a.startTime)}</dd></div><div><dt>Kết thúc</dt><dd>{date(a.endTime)}</dd></div><div><dt>Người tham gia</dt><dd>{a.participantCount} / {a.maxParticipants??'Không giới hạn'}</dd></div></dl>
+ {a.auctionType==='NORMAL'&&<div className="product-info">Luật chốt giá: bid hợp lệ trong {a.normalTiming?.closingWindowSeconds??30}s cuối bảo đảm còn {a.normalTiming?.extensionSeconds??30}s phản hồi. BXH nổi bật trong {a.normalTiming?.leaderboardSeconds??60}s cuối.</div>}
  {a.accessType==='PRIVATE'&&<div className="auction-room-code"><span>Mã phòng</span><strong>{visible?a.roomCode:'••••••••••••'}</strong><button onClick={()=>setVisible(v=>!v)}>{visible?'Ẩn mã':'Hiện mã'}</button><button onClick={()=>{void navigator.clipboard.writeText(a.roomCode??'').then(()=>setNotice('Đã sao chép mã phòng.')).catch(()=>setNotice('Chưa sao chép được. Hãy hiện mã và sao chép thủ công.'));}}>Sao chép mã</button></div>}{notice&&<p role="status">{notice}</p>}</section>
  </>;
 }

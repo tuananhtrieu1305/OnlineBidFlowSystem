@@ -4,11 +4,11 @@ import com.group6.auction.auction.entity.*;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-public record AuctionInput(Long productId,String productVersion,AuctionType type,AuctionAccessType access,long price,Long increment,Integer capacity,LocalDateTime start,LocalDateTime end) {
+public record AuctionInput(Long productId,String productVersion,AuctionType type,AuctionAccessType access,long price,Long increment,Integer capacity,LocalDateTime start,LocalDateTime end,NormalTimingRepository.Timing normalTiming) {
  public static AuctionInput parse(JsonNode node,boolean create){
   try{
    if(node==null||!node.isObject())throw new IllegalArgumentException();
-   var fields=new HashSet<>(Set.of("auctionType","accessType","startingPrice","minBidIncrement","maxParticipants","startTime","endTime"));
+   var fields=new HashSet<>(Set.of("auctionType","accessType","startingPrice","minBidIncrement","maxParticipants","startTime","endTime","normalTiming"));
    if(create)fields.addAll(Set.of("productId","productVersion"));
    node.fieldNames().forEachRemaining(key->{if(!fields.contains(key))throw new IllegalArgumentException();});
    var type=AuctionType.valueOf(text(node,"auctionType"));var access=AuctionAccessType.valueOf(text(node,"accessType"));
@@ -23,9 +23,19 @@ public record AuctionInput(Long productId,String productVersion,AuctionType type
    if(!end.isAfter(start))throw new IllegalArgumentException();
    String version=create?text(node,"productVersion"):null;
    if(create&&(version.isBlank()||version.length()>128))throw new IllegalArgumentException();
-   return new AuctionInput(create?amount(node.get("productId")):null,version,type,access,price,increment,capacity,start,end);
+   NormalTimingRepository.Timing timing=NormalTimingRepository.DEFAULTS;
+   var settings=node.get("normalTiming");
+   if(settings!=null&&!settings.isNull()){
+    if(type!=AuctionType.NORMAL||!settings.isObject())throw new IllegalArgumentException();
+    settings.fieldNames().forEachRemaining(key->{if(!Set.of("closingWindowSeconds","extensionSeconds","leaderboardSeconds").contains(key))throw new IllegalArgumentException();});
+    int window=seconds(settings,"closingWindowSeconds"),extension=seconds(settings,"extensionSeconds"),leaderboard=seconds(settings,"leaderboardSeconds");
+    if(extension<window)throw new IllegalArgumentException();
+    timing=new NormalTimingRepository.Timing(window,extension,leaderboard);
+   }
+   return new AuctionInput(create?amount(node.get("productId")):null,version,type,access,price,increment,capacity,start,end,timing);
   }catch(RuntimeException ex){throw new AuctionConfigurationException(400,"INVALID_AUCTION_CONFIGURATION");}
  }
+ private static int seconds(JsonNode n,String key){var v=n.get(key);if(v==null||!v.isIntegralNumber()||!v.canConvertToInt()||v.intValue()<1||v.intValue()>3600)throw new IllegalArgumentException();return v.intValue();}
  private static String text(JsonNode n,String key){var v=n.get(key);if(v==null||!v.isTextual())throw new IllegalArgumentException();return v.textValue();}
  private static long amount(JsonNode n){if(n==null||!n.isTextual()||!n.textValue().matches("[1-9][0-9]{0,18}"))throw new IllegalArgumentException();return Long.parseLong(n.textValue());}
  private static LocalDateTime time(String text){

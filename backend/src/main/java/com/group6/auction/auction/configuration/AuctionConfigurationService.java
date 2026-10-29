@@ -18,11 +18,12 @@ import java.security.*;
 public class AuctionConfigurationService {
  private final AuctionRepository auctions;private final ProductRepository products;private final UserRepository users;
  private final JdbcTemplate jdbc;private final Clock clock;private final ObjectMapper json;
+ private final NormalTimingRepository timings;
  private final SecureRandom random=new SecureRandom();
  private static final String BASE="SELECT a.*,p.name AS product_name,p.image_url AS product_image,"+
   "(SELECT COUNT(*) FROM auction_participants ap WHERE ap.auction_id=a.id) AS participants,"+
   "(EXISTS(SELECT 1 FROM bids b WHERE b.auction_id=a.id) OR EXISTS(SELECT 1 FROM chat_messages c WHERE c.auction_id=a.id) OR EXISTS(SELECT 1 FROM coin_transactions t WHERE t.auction_id=a.id)) AS activity FROM auctions a JOIN products p ON p.id=a.product_id";
- public AuctionConfigurationService(AuctionRepository auctions,ProductRepository products,UserRepository users,JdbcTemplate jdbc,Clock clock,ObjectMapper json){this.auctions=auctions;this.products=products;this.users=users;this.jdbc=jdbc;this.clock=clock;this.json=json;}
+ public AuctionConfigurationService(AuctionRepository auctions,ProductRepository products,UserRepository users,JdbcTemplate jdbc,Clock clock,ObjectMapper json,NormalTimingRepository timings){this.timings=timings;this.auctions=auctions;this.products=products;this.users=users;this.jdbc=jdbc;this.clock=clock;this.json=json;}
  @Transactional(readOnly=true)
  public Map<String,Object> detail(long id){var rows=jdbc.query(BASE+" WHERE a.id=?",(rs,n)->view(rs),id);if(rows.isEmpty())throw error(404,"AUCTION_NOT_FOUND");return rows.getFirst();}
  @Transactional(readOnly=true)
@@ -50,6 +51,7 @@ public class AuctionConfigurationService {
   if(!ProductVersion.of(product).equals(input.productVersion()))throw error(412,"PRODUCT_CHANGED");
   future(input);
   var auction=auctions.saveAndFlush(Auction.create(product.getId(),admin.getId(),input.type(),input.access(),input.price(),input.increment(),input.capacity(),input.access()==AuctionAccessType.PRIVATE?code():null,input.start(),input.end()));
+  if(input.type()==AuctionType.NORMAL)timings.save(auction.getId(),input.normalTiming(),input.end());
   return detail(auction.getId());
  }
  @Transactional(isolation=Isolation.READ_COMMITTED)
@@ -62,7 +64,7 @@ public class AuctionConfigurationService {
   future(input);
   String code=input.access()==AuctionAccessType.PUBLIC?null:auction.getRoomCode()==null?code():auction.getRoomCode();
   auction.configure(input.type(),input.access(),input.price(),input.increment(),input.capacity(),code,input.start(),input.end());
-  auctions.flush();return detail(id);
+  auctions.flush();if(input.type()==AuctionType.NORMAL)timings.save(id,input.normalTiming(),input.end());return detail(id);
  }
  private void future(AuctionInput input){if(!input.start().isAfter(LocalDateTime.ofInstant(clock.instant(),ZoneOffset.UTC)))throw error(409,"START_TIME_PASSED");}
  private String code(){String alphabet="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";StringBuilder code=new StringBuilder();for(int i=0;i<12;i++)code.append(alphabet.charAt(random.nextInt(alphabet.length())));return code.toString();}
@@ -72,6 +74,7 @@ public class AuctionConfigurationService {
   for(String key:List.of("auction_type","access_type","status","room_code"))v.put(camel(key),rs.getString(key));
   v.put("maxParticipants",rs.getObject("max_participants",Integer.class));
   for(String key:List.of("start_time","end_time","finished_at")){var time=rs.getObject(key,LocalDateTime.class);v.put(camel(key),time==null?null:time.toInstant(ZoneOffset.UTC).toString());}
+  if("NORMAL".equals(v.get("auctionType")))v.put("normalTiming",timings.get(rs.getLong("id")));
   try{v.put("version","\""+HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(json.writeValueAsBytes(v)))+"\"");}catch(Exception ex){throw new IllegalStateException(ex);}
   Map<String,Object> product=new LinkedHashMap<>();product.put("id",rs.getString("product_id"));product.put("name",rs.getString("product_name"));product.put("imageUrl",rs.getString("product_image"));v.put("product",product);
   long participants=rs.getLong("participants");v.put("participantCount",""+participants);
