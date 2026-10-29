@@ -32,14 +32,14 @@ class AuctionStartIT {
   return id;
  }
  String status(long id){return jdbc.queryForObject("SELECT status FROM auctions WHERE id=?",String.class,id);}
- @Test void startsDueNormalAndBlindPublicAndPrivateAndIsIdempotent(){
+ @Test void startsDueNormalOnlyWhileBlindWaitsForFourPlayersAndIsIdempotent(){
   List<Long> ids=new ArrayList<>();
   for(String type:List.of("NORMAL","BLIND"))for(String access:List.of("PUBLIC","PRIVATE"))
    ids.add(auction(type,access,"UPCOMING",now,now.plusHours(1)));
   service.startDue(now);
-  ids.forEach(id->assertThat(status(id)).isEqualTo("RUNNING"));
+  ids.forEach(id->assertThat(status(id)).isEqualTo("NORMAL".equals(jdbc.queryForObject("SELECT auction_type FROM auctions WHERE id=?",String.class,id))?"RUNNING":"UPCOMING"));
   service.startDue(now);
-  ids.forEach(id->assertThat(status(id)).isEqualTo("RUNNING"));
+  ids.forEach(id->assertThat(status(id)).isEqualTo("NORMAL".equals(jdbc.queryForObject("SELECT auction_type FROM auctions WHERE id=?",String.class,id))?"RUNNING":"UPCOMING"));
   assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM coin_transactions WHERE auction_id IN (SELECT id FROM auctions WHERE product_id=?)",Long.class,product)).isZero();
  }
  @Test void neverStartsFutureExpiredOrFinishedAuctions(){

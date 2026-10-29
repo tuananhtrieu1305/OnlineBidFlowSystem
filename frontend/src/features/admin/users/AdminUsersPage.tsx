@@ -7,7 +7,7 @@ import type { History } from '../../wallet/walletApi';
 import '../../products/products.css';
 import './users.css';
 const coin=(value:string)=>new Intl.NumberFormat('vi-VN').format(BigInt(value));
-const types:Record<string,string>={DEPOSIT:'Nạp Coin',LOCK:'Khóa Coin',UNLOCK:'Mở khóa Coin',PAYMENT:'Thanh toán'};
+const types:Record<string,string>={DEPOSIT:'Nạp Coin',LOCK:'Khóa Coin',UNLOCK:'Mở khóa Coin',PAYMENT:'Thanh toán',CLUE_TRADE:'Mua / bán Clue'};
 function errorText(error:unknown){const status=axios.isAxiosError(error)?error.response?.status:0;return status===403?'Bạn không có quyền xem dữ liệu này.':status===404?'Không tìm thấy tài khoản.':'Chưa tải được dữ liệu. Kiểm tra kết nối và thử lại.';}
 export default function AdminUsersPage(){
  const {user,loading,failure}=useAuth();const {id}=useParams();

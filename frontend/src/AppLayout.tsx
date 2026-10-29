@@ -23,6 +23,7 @@ export default function AppLayout() {
         <p className="guest-nav-label">KHÔNG GIAN ĐẤU GIÁ</p>
         <nav aria-label="Điều hướng chính">
           <NavLink to="/" end className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}><span aria-hidden="true">▦</span> Khám phá</NavLink>
+          <NavLink to="/leaderboard" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}><span aria-hidden="true">◇</span> Bảng xếp hạng</NavLink>
           {user?.role === 'ADMIN' && <NavLink to="/admin" end className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Quản trị</NavLink>}
           {user?.role === 'ADMIN' && <NavLink to="/admin/products" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Sản phẩm</NavLink>}
           {user?.role === 'ADMIN' && <NavLink to="/admin/users" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Người dùng</NavLink>}
@@ -30,6 +31,7 @@ export default function AppLayout() {
           {user?.role === 'ADMIN' && <NavLink to="/admin/auctions" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Phiên đấu giá</NavLink>}
           {user?.role === 'USER' && <NavLink to="/wallet" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>◈ Ví Coin</NavLink>}
           {user?.role === 'USER' && <NavLink to="/normal" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Đấu giá thường</NavLink>}
+          {user?.role === 'USER' && <NavLink to="/blind" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>◈ Phòng đấu giá kín</NavLink>}
         </nav>
         <div className="guest-account">
           {loading ? <p role="status">Đang kiểm tra phiên đăng nhập…</p> : user ? <>

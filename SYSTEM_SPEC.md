@@ -134,22 +134,35 @@ Nếu product chưa từng SOLD:
 
 Hiển thị thông báo chưa có dữ liệu lịch sử.
 
+## Phòng và Clue
+
+Mỗi phiên BLIND tối đa 4 USER. Admin thiết lập đúng 4 Clue thật, khác nhau, trước khi người chơi vào phòng. Phiên chỉ bắt đầu khi đã đến giờ mở phòng và cả 4 người cùng đang kết nối. Server phân ngẫu nhiên một Clue riêng cho mỗi người, không trùng nhau; người reconnect giữ nguyên Clue và slot. Khi đã bắt đầu, người rời phòng không được thay thế và phiên tiếp tục với những người còn lại.
+
+Thời gian tính từ lúc đủ 4 người và bắt đầu thực tế:
+
+1. Quay/mở Clue: 20 giây.
+2. Chat và mua bán Clue: 300 giây.
+3. Đóng giao dịch Clue, tiếp tục thảo luận: 60 giây.
+4. Đặt/sửa bid kín: 100 giây.
+5. Khóa toàn bộ bid: 20 giây cuối.
+6. Công bố kết quả khi kết thúc.
+
+`start_time` cấu hình là thời điểm sớm nhất có thể mở phiên; `end_time` cấu hình là hạn chờ đủ người. Nếu quá hạn vẫn chưa bắt đầu thì UNSOLD. Khi bắt đầu, server ghi lại giờ bắt đầu và kết thúc thực tế.
+
+Người sở hữu Clue có thể rao bán quyền xem với giá Coin tùy chọn, đổi giá, hủy niêm yết và bán lại Clue đã mua. Mỗi người chỉ mua một Clue chưa biết. Clue có thể thuộc nhiều người và được nhiều người rao bán. Giao dịch chuyển Coin ngay, không hoàn lại; người mua phải xác nhận đúng phiên bản giá hiện tại. Listing của người mất kết nối vẫn có hiệu lực. Hệ thống xác thực Clue, không xác thực phát ngôn chat.
+
 ## Bid rule
 
-Mỗi user chỉ được gửi đúng một bid trong một BLIND auction.
+Trong 100 giây đặt giá, mỗi USER có thể tạo và sửa bid bí mật nhiều lần. Mỗi phiên bản được lưu thành một hàng bid; chỉ phiên bản được server xác nhận gần nhất của từng USER được dùng để xếp hạng. Khi giảm bid, phần Coin khóa dư được hoàn trong cùng transaction. Trong 20 giây cuối không được tạo hay sửa bid.
 
 Server kiểm tra:
 
-- Auction đang RUNNING.
-- User chưa bid trước đó.
+- Phiên BLIND đang ở giai đoạn nhận bid.
+- User đã tham gia phòng.
 - amount > 0.
-- User đủ Coin để khóa amount.
+- User đủ Coin để bảo đảm bid mới.
 
-Nếu hợp lệ:
-
-- lưu bid
-- khóa Coin
-- chỉ xác nhận cho chính user gửi bid
+Nếu hợp lệ, server lưu phiên bản bid, điều chỉnh Coin đang khóa và chỉ xác nhận cho chính user gửi bid.
 
 Không broadcast:
 
@@ -162,7 +175,7 @@ Không broadcast:
 
 Khi auction kết thúc:
 
-ORDER BY amount DESC, created_at ASC
+Chỉ lấy bid mới nhất của mỗi người, rồi `ORDER BY amount DESC, created_at ASC, id ASC`.
 
 Bid có:
 
@@ -222,6 +235,7 @@ DEPOSIT
 LOCK
 UNLOCK
 PAYMENT
+CLUE_TRADE
 
 Wallet module là module duy nhất chịu trách nhiệm trực tiếp thay đổi balance.
 
@@ -552,7 +566,7 @@ Ranking mặc định:
 
 # 17. Database Tables
 
-Database có đúng 8 bảng nghiệp vụ chính:
+Database có 8 bảng nghiệp vụ nền tảng:
 
 1. users
 2. wallets
@@ -562,6 +576,8 @@ Database có đúng 8 bảng nghiệp vụ chính:
 6. bids
 7. chat_messages
 8. coin_transactions
+
+BLIND bổ sung 5 bảng riêng: `blind_clues`, `blind_rounds`, `blind_clue_ownership`, `blind_clue_listings`, `blind_clue_trades`.
 
 Không tạo:
 
@@ -628,7 +644,7 @@ auctions -> coin_transactions
 
 NORMAL cho phép cùng một user bid nhiều lần.
 
-BLIND chỉ cho một bid/user/auction.
+BLIND cho phép sửa bid trong 100 giây đặt giá; chỉ phiên bản bid mới nhất của mỗi user có hiệu lực.
 
 Do đó TUYỆT ĐỐI KHÔNG tạo:
 
@@ -636,7 +652,7 @@ UNIQUE(auction_id, user_id)
 
 trên bảng bids.
 
-BLIND one-bid rule phải được kiểm tra ở Java business logic.
+Thời gian và quyền sửa bid BLIND phải được kiểm tra ở Java business logic.
 
 ---
 

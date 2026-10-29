@@ -13,6 +13,10 @@ import SystemWalletPage from '../features/admin/system-wallet/SystemWalletPage';
 import {DiscoveryDetail} from '../features/auctions/discovery/Discovery';
 import NormalAuctionPage from '../pages/NormalAuctionPage';
 import NormalAuctionListPage from '../pages/NormalAuctionListPage';
+import BlindRoom, {PrivateBlindEntry} from '../features/auctions/blind/BlindRoom';
+import AdminBlindClues from '../features/auctions/blind/AdminBlindClues';
+import BlindReplay from '../features/auctions/blind/BlindReplay';
+import LeaderboardPage from '../features/leaderboard/LeaderboardPage';
 
 export default createHashRouter([
   { path: '/register', element: <RegisterPage /> },
@@ -21,7 +25,11 @@ export default createHashRouter([
   { element: <AppLayout />, children: [
     { path: '/', element: <HomePage /> },
     { path: '/normal', element: <NormalAuctionListPage /> },
+    { path: '/leaderboard', element: <LeaderboardPage /> },
     { path: '/auctions/:id', element: <DiscoveryDetail /> },
+    { path: '/blind', element: <PrivateBlindEntry /> },
+    { path: '/blind/:id', element: <BlindRoom /> },
+    { path: '/auctions/:id/replay', element: <BlindReplay /> },
     { path: '/admin', element: <AdminPage /> },
     { path: '/admin/system-wallet', element: <SystemWalletPage /> },
     { path: '/admin/users', element: <AdminUsersPage /> },
@@ -30,6 +38,7 @@ export default createHashRouter([
     { path: '/admin/auctions/new', element: <AdminAuctionsPage /> },
     { path: '/admin/auctions/:id', element: <AdminAuctionsPage /> },
     { path: '/admin/auctions/:id/edit', element: <AdminAuctionsPage /> },
+    { path: '/admin/auctions/:id/clues', element: <AdminBlindClues /> },
     { path: '/admin/products', element: <ProductsPage /> },
     { path: '/admin/products/new', element: <ProductsPage /> },
     { path: '/admin/products/:id', element: <ProductsPage /> },

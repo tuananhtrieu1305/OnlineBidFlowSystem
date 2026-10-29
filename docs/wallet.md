@@ -20,7 +20,7 @@ Giới hạn nạp mặc định 10 lần/phút/tài khoản, cấu hình `app.w
 
 ## Hợp đồng cho NORMAL và BLIND
 
-Phase 3 đã thêm `AuctionWalletIntegration` để nối quyết định đã kiểm tra với ví, kết quả và sự kiện AFTER_COMMIT. Module đấu giá ưu tiên gọi adapter này thay vì tự phối hợp ví/result/socket. Xem [hướng dẫn tích hợp](auction-wallet-integration.md); caller bid/scheduler thực tế vẫn thuộc thành viên phụ trách.
+Phase 3 đã thêm `AuctionWalletIntegration` để nối quyết định đã kiểm tra với ví, kết quả và sự kiện AFTER_COMMIT. Module đấu giá ưu tiên gọi adapter này thay vì tự phối hợp ví/result/socket. Xem [hướng dẫn tích hợp](auction-wallet-integration.md); BLIND đã có caller bid/scheduler, NORMAL còn chờ module tương ứng. Mua bán Clue dùng `ClueTradeTransferService` nội bộ và bút toán `CLUE_TRADE`.
 
 `WalletTransferService` là service nội bộ, không có HTTP endpoint để client tự thay đổi Coin.
 
@@ -36,7 +36,7 @@ Phase 3 đã thêm `AuctionWalletIntegration` để nối quyết định đã k
 
 Caller dùng `@Transactional(isolation = Isolation.READ_COMMITTED)`; service bắt buộc có outer transaction và kiểm tra isolation này. READ_COMMITTED bảo đảm việc tìm ví tham gia không dùng snapshot cũ từ trước khi giữ khóa phiên. Mọi caller tuân theo thứ tự **khóa phiên → toàn bộ ví tăng dần theo ID → ledger**. Không khóa ví trước rồi gọi service. Mỗi transaction xử lý một phiên; nếu xử lý nhiều phiên cần một chiến lược thứ tự khóa riêng.
 
-Ví dụ kết thúc phiên (pseudocode, chưa triển khai nghiệp vụ winner):
+Ví dụ kết thúc phiên (pseudocode cho caller NORMAL còn chờ):
 
 ```java
 @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -58,7 +58,7 @@ public void finish(long auctionId) {
 
 Ví dùng JdbcTemplate cùng DataSource/transaction manager của JPA. Không giữ rồi dùng lại Wallet entity đang managed sau khi gọi JDBC (có thể stale); query lại hoặc refresh nếu cần. Không catch lỗi ví rồi tiếp tục commit bid/result. DEADLOCK/lock timeout phải rollback toàn bộ thao tác; caller quyết định retry cả transaction sau khi kiểm tra trùng bid.
 
-`lockToAmount` và `replaceLeader` chỉ nhận phiên RUNNING. Ví không kiểm tra bước giá, 50% giá khởi điểm, giới hạn một bid BLIND hoặc tính winner. Các điều kiện đó thuộc module đấu giá. Coin phải được khóa đủ để thanh toán winningAmount; điều kiện đủ 50% để tham gia không đồng nghĩa chỉ giữ 50% giá thắng.
+`lockToAmount` và `replaceLeader` chỉ nhận phiên RUNNING. Ví không kiểm tra bước giá, 50% giá khởi điểm, thời gian sửa bid BLIND hoặc tính winner. Các điều kiện đó thuộc module đấu giá. Coin phải được khóa đủ để thanh toán winningAmount; điều kiện đủ 50% để tham gia không đồng nghĩa chỉ giữ 50% giá thắng.
 
 Thanh toán lặp với đúng winner/amount là no-op nếu ledger đã có đúng cặp PAYMENT và không còn hold của phiên. Khác winner/amount bị từ chối. Caller **phải** cập nhật SOLD/UNSOLD cùng transaction, không commit thanh toán mà giữ RUNNING. Ví SYSTEM được tìm bằng wallet_type, phải có đúng một ví; không hardcode ID.
 

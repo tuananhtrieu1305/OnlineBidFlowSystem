@@ -6,7 +6,7 @@ import { deposit, getHistory, getWallet, type Entry, type Wallet } from './walle
 import { formatCoin, validateAmount } from './validation';
 import './wallet.css';
 
-const labels: Record<Entry['type'], string> = { DEPOSIT:'Nạp Coin', LOCK:'Khóa Coin', UNLOCK:'Hoàn Coin', PAYMENT:'Thanh toán' };
+const labels: Record<Entry['type'], string> = { DEPOSIT:'Nạp Coin', LOCK:'Khóa Coin', UNLOCK:'Hoàn Coin', PAYMENT:'Thanh toán', CLUE_TRADE:'Mua / bán Clue' };
 function delta(value: string) { return (BigInt(value)>0n?'+':'')+formatCoin(value); }
 export default function WalletPage() {
  const { user, loading, failure } = useAuth();
@@ -85,7 +85,7 @@ function WalletContent() {
     <option value="">Tất cả</option>{Object.entries(labels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label></div>
    {historyError&&<p role="alert">{historyError} <button onClick={()=>void loadHistory()}>Thử lại</button></p>}
    <div className="wallet-table-scroll"><table><thead><tr><th>Giao dịch</th><th>Thời gian</th><th>Phiên</th><th>Khả dụng</th><th>Đang khóa</th></tr></thead><tbody>
-    {items.map(item=><tr key={item.id}><td><strong>{labels[item.type]}</strong><small>#{item.id}</small></td><td>{new Date(item.createdAt).toLocaleString('vi-VN')}</td><td>{item.auctionId?'#'+item.auctionId:'—'}</td><td>{delta(item.availableDelta)}</td><td>{delta(item.lockedDelta)}</td></tr>)}
+    {items.map(item=><tr key={item.id}><td><strong>{item.type==='CLUE_TRADE'?(BigInt(item.availableDelta)<0n?'Mua Clue':'Bán Clue'):labels[item.type]}</strong><small>#{item.id}</small></td><td>{new Date(item.createdAt).toLocaleString('vi-VN')}</td><td>{item.auctionId?'#'+item.auctionId:'—'}</td><td>{delta(item.availableDelta)}</td><td>{delta(item.lockedDelta)}</td></tr>)}
    </tbody></table></div>
    {!items.length&&!loadingHistory&&!historyError&&<div className="wallet-empty"><span aria-hidden="true">◇</span><h3>Chưa có giao dịch</h3><p>Các lần nạp, khóa và thanh toán Coin sẽ xuất hiện tại đây.</p></div>}
    {loadingHistory&&<p role="status">Đang tải lịch sử…</p>}

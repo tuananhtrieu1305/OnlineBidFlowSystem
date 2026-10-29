@@ -7,6 +7,11 @@ USE auction_db;
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS coin_transactions;
+DROP TABLE IF EXISTS blind_clue_trades;
+DROP TABLE IF EXISTS blind_clue_listings;
+DROP TABLE IF EXISTS blind_clue_ownership;
+DROP TABLE IF EXISTS blind_clues;
+DROP TABLE IF EXISTS blind_rounds;
 DROP TABLE IF EXISTS chat_messages;
 DROP TABLE IF EXISTS bids;
 DROP TABLE IF EXISTS auction_participants;
@@ -134,13 +139,79 @@ CREATE TABLE coin_transactions (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     wallet_id BIGINT UNSIGNED NOT NULL,
     auction_id BIGINT UNSIGNED NULL,
-    transaction_type ENUM('DEPOSIT','LOCK','UNLOCK','PAYMENT') NOT NULL,
+    transaction_type ENUM('DEPOSIT','LOCK','UNLOCK','PAYMENT','CLUE_TRADE') NOT NULL,
     available_delta BIGINT NOT NULL,
     locked_delta BIGINT NOT NULL,
     created_at DATETIME(6) NOT NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_coin_transactions_wallet FOREIGN KEY (wallet_id) REFERENCES wallets (id),
     CONSTRAINT fk_coin_transactions_auction FOREIGN KEY (auction_id) REFERENCES auctions (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- BLIND-only gameplay data. Clues are private until disclosed by their owner.
+CREATE TABLE blind_clues (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    auction_id BIGINT UNSIGNED NOT NULL,
+    slot TINYINT UNSIGNED NOT NULL,
+    content VARCHAR(500) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_blind_clue_slot (auction_id, slot),
+    UNIQUE KEY uk_blind_clue_auction_id (auction_id, id),
+    CONSTRAINT fk_blind_clue_auction FOREIGN KEY (auction_id) REFERENCES auctions (id),
+    CONSTRAINT chk_blind_clue_slot CHECK (slot BETWEEN 1 AND 4)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE blind_rounds (
+    auction_id BIGINT UNSIGNED NOT NULL,
+    started_at DATETIME(6) NOT NULL,
+    trade_ends_at DATETIME(6) NOT NULL,
+    bid_locks_at DATETIME(6) NOT NULL,
+    ends_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (auction_id),
+    CONSTRAINT fk_blind_round_auction FOREIGN KEY (auction_id) REFERENCES auctions (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE blind_clue_ownership (
+    auction_id BIGINT UNSIGNED NOT NULL,
+    clue_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    acquired_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (clue_id, user_id),
+    KEY idx_blind_owned_user (auction_id, user_id),
+    CONSTRAINT fk_blind_owned_clue FOREIGN KEY (auction_id, clue_id) REFERENCES blind_clues (auction_id, id),
+    CONSTRAINT fk_blind_owned_user FOREIGN KEY (user_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE blind_clue_listings (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    auction_id BIGINT UNSIGNED NOT NULL,
+    clue_id BIGINT UNSIGNED NOT NULL,
+    seller_id BIGINT UNSIGNED NOT NULL,
+    price BIGINT UNSIGNED NOT NULL,
+    version BIGINT UNSIGNED NOT NULL,
+    active BOOLEAN NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_blind_listing (clue_id, seller_id),
+    KEY idx_blind_listing_auction (auction_id, active),
+    CONSTRAINT fk_blind_listing_clue FOREIGN KEY (auction_id, clue_id) REFERENCES blind_clues (auction_id, id),
+    CONSTRAINT fk_blind_listing_seller FOREIGN KEY (seller_id) REFERENCES users (id),
+    CONSTRAINT chk_blind_listing_price CHECK (price > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE blind_clue_trades (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    auction_id BIGINT UNSIGNED NOT NULL,
+    clue_id BIGINT UNSIGNED NOT NULL,
+    listing_id BIGINT UNSIGNED NOT NULL,
+    buyer_id BIGINT UNSIGNED NOT NULL,
+    seller_id BIGINT UNSIGNED NOT NULL,
+    price BIGINT UNSIGNED NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_blind_trade_clue FOREIGN KEY (auction_id, clue_id) REFERENCES blind_clues (auction_id, id),
+    CONSTRAINT fk_blind_trade_listing FOREIGN KEY (listing_id) REFERENCES blind_clue_listings (id),
+    CONSTRAINT fk_blind_trade_buyer FOREIGN KEY (buyer_id) REFERENCES users (id),
+    CONSTRAINT fk_blind_trade_seller FOREIGN KEY (seller_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE INDEX idx_auctions_product_status_finished ON auctions (product_id, status, finished_at);
@@ -151,16 +222,16 @@ CREATE INDEX idx_coin_transactions_wallet_created ON coin_transactions (wallet_i
 
 -- Users. Development password for all seed accounts: Password@123
 INSERT INTO users (id, username, password_hash, role) VALUES
-(1, 'admin', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'ADMIN'),
-(2, 'alice', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(3, 'bob', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(4, 'charlie', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(5, 'diana', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(6, 'eric', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(7, 'fiona', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(8, 'george', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(9, 'hana', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER'),
-(10, 'ivan', '$2a$10$zI0fqCDqQAO.Suqgo3Kvf.7dq8ilwZr4hFpgkw43cU1u0aVgOeMR2', 'USER');
+(1, 'admin', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'ADMIN'),
+(2, 'alice', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(3, 'bob', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(4, 'charlie', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(5, 'diana', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(6, 'eric', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(7, 'fiona', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(8, 'george', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(9, 'hana', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER'),
+(10, 'ivan', '$2b$12$FDLuvyqcCSXaVTXT0k2PKOEB2qxMyM9Q2Ff1v8e.KUM6jLUmSryxO', 'USER');
 
 -- Wallets. Wallet id 1 is the only SYSTEM wallet.
 INSERT INTO wallets (id, user_id, wallet_type, available_balance, locked_balance, updated_at) VALUES

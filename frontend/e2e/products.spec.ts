@@ -9,6 +9,7 @@ test.beforeEach(async({},info)=>{
  await page.route('**/api/auth/csrf',r=>r.fulfill({json:{token:'csrf-product'}}));
  await page.route('**/api/admin/products?*',r=>r.fulfill({json:{items:[product],page:0,size:20,totalElements:'1',totalPages:1}}));
  await page.route('**/api/admin/products/25',r=>r.fulfill({json:product}));
+ await page.route('**/api/admin/products/25/statistics?*',r=>r.fulfill({json:{counts:{total:0,upcoming:0,running:0,sold:0,unsold:0},byType:[],prices:{soldCount:0,average:null,median:null,minimum:null,maximum:null,latest:null},trend:[],history:{items:[],page:0,size:10,totalElements:0,totalPages:0}}}));
  await page.goto('app://auction/#/admin/products');
 });
 test.afterEach(async()=>{await app?.close();});
