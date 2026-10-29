@@ -27,9 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Profile("!probe")
 public class BlindService {
     private static final int REVEAL_SECONDS = 20;
-    private static final int TRADE_SECONDS = 300;
     private static final int DISCUSS_SECONDS = 60;
-    private static final int BID_SECONDS = 120;
     private static final int BID_LOCK_SECONDS = 20;
     private final JdbcTemplate jdbc;
     private final Clock clock;
@@ -103,6 +101,34 @@ public class BlindService {
         auction(id,false);
         return Map.of("clues",jdbc.queryForList("SELECT content FROM blind_clues WHERE auction_id=? ORDER BY slot",String.class,id));
     }
+    @Transactional(readOnly=true)
+    public Object adminSettings(long id) {
+        Auction a=auction(id,false);
+        var durations=jdbc.query("SELECT trade_seconds,bid_seconds FROM blind_settings WHERE auction_id=?",
+            (rs,n)->new int[]{rs.getInt(1),rs.getInt(2)},id);
+        long count=jdbc.queryForObject("SELECT COUNT(*) FROM auction_participants WHERE auction_id=?",Long.class,id);
+        long online=membership.sessionIdsForAuction(id).stream()
+            .map(sessions::principalForSessionId).filter(java.util.Optional::isPresent)
+            .map(p->p.orElseThrow().userId()).distinct().count();
+        Map<String,Object> result=new LinkedHashMap<>();
+        result.put("tradeSeconds",durations.isEmpty()?300:durations.getFirst()[0]);
+        result.put("bidSeconds",durations.isEmpty()?100:durations.getFirst()[1]);
+        result.put("status",a.status());result.put("participantCount",count);result.put("onlineCount",online);
+        result.put("scheduledStartAt",iso(a.start()));result.put("lobbyClosesAt",round(id)==null?iso(a.end()):null);
+        result.put("canStartNow","UPCOMING".equals(a.status())&&count==4&&online==4&&now().isBefore(a.end())&&
+            jdbc.queryForObject("SELECT COUNT(*) FROM blind_clues WHERE auction_id=?",Long.class,id)==4);
+        return result;
+    }
+    @Transactional(isolation=Isolation.READ_COMMITTED)
+    public Object saveSettings(long id,Integer tradeSeconds,Integer bidSeconds) {
+        Auction a=auction(id,true);
+        if(!"UPCOMING".equals(a.status())||!now().isBefore(a.end())||round(id)!=null)
+            throw BlindException.conflict("SETTINGS_NOT_EDITABLE");
+        if(tradeSeconds==null||bidSeconds==null||tradeSeconds<1||tradeSeconds>3600||bidSeconds<1||bidSeconds>3600)
+            throw BlindException.bad("INVALID_DURATION");
+        jdbc.update("INSERT INTO blind_settings(auction_id,trade_seconds,bid_seconds) VALUES(?,?,?) ON DUPLICATE KEY UPDATE trade_seconds=VALUES(trade_seconds),bid_seconds=VALUES(bid_seconds)",id,tradeSeconds,bidSeconds);
+        return adminSettings(id);
+    }
     @Transactional(isolation=Isolation.READ_COMMITTED)
     public Object saveClues(long id,List<String> contents) {
         Auction a=auction(id,true);
@@ -151,6 +177,7 @@ public class BlindService {
         result.put("product",product);result.put("ownedClues",owned);result.put("listings",listings);
         result.put("ownBid",bids.isEmpty()?null:bids.getFirst());result.put("historicalStats",stats);
         result.put("revealEndsAt",r==null?null:iso(r.start().plusSeconds(REVEAL_SECONDS)));
+        result.put("scheduledStartAt",r==null?iso(a.start()):null);
         result.put("lobbyClosesAt",r==null?iso(a.end()):null);
         result.put("tradeEndsAt",r==null?null:iso(r.tradeEnd()));
         result.put("bidStartsAt",r==null?null:iso(r.tradeEnd().plusSeconds(DISCUSS_SECONDS)));
@@ -221,20 +248,35 @@ public class BlindService {
     /** Called by the BLIND scheduler after the configured opening time. */
     @Transactional(isolation=Isolation.READ_COMMITTED)
     public void startIfReady(long auctionId) {
+        start(auctionId,false);
+    }
+    @Transactional(isolation=Isolation.READ_COMMITTED)
+    public Object startNow(long auctionId) {
+        start(auctionId,true);
+        return adminSettings(auctionId);
+    }
+    private void start(long auctionId,boolean manual) {
         Auction a=auction(auctionId,true);LocalDateTime time=now();
-        if(!"UPCOMING".equals(a.status())||time.isBefore(a.start())||!time.isBefore(a.end()))return;
+        if(!"UPCOMING".equals(a.status())||(!manual&&time.isBefore(a.start()))||!time.isBefore(a.end())) {
+            if(manual)throw BlindException.conflict("START_NOT_AVAILABLE");
+            return;
+        }
         var players=jdbc.queryForList("SELECT user_id FROM auction_participants WHERE auction_id=? ORDER BY user_id",Long.class,auctionId);
-        if(players.size()!=4)return;
+        if(players.size()!=4){if(manual)throw BlindException.conflict("FOUR_PLAYERS_REQUIRED");return;}
         long online=membership.sessionIdsForAuction(auctionId).stream()
             .map(sessions::principalForSessionId).filter(java.util.Optional::isPresent)
             .map(p->p.orElseThrow().userId()).distinct().filter(players::contains).count();
-        if(online!=4)return;
+        if(online!=4){if(manual)throw BlindException.conflict("FOUR_PLAYERS_ONLINE_REQUIRED");return;}
         var clues=jdbc.queryForList("SELECT id FROM blind_clues WHERE auction_id=? ORDER BY slot",Long.class,auctionId);
-        if(clues.size()!=4)return;
+        if(clues.size()!=4){if(manual)throw BlindException.conflict("FOUR_CLUES_REQUIRED");return;}
         Collections.shuffle(clues,random);
-        LocalDateTime tradeEnd=time.plusSeconds(REVEAL_SECONDS+TRADE_SECONDS);
+        var durations=jdbc.query("SELECT trade_seconds,bid_seconds FROM blind_settings WHERE auction_id=?",
+            (rs,n)->new int[]{rs.getInt(1),rs.getInt(2)},auctionId);
+        int tradeSeconds=durations.isEmpty()?300:durations.getFirst()[0];
+        int bidSeconds=durations.isEmpty()?100:durations.getFirst()[1];
+        LocalDateTime tradeEnd=time.plusSeconds(REVEAL_SECONDS+tradeSeconds);
         LocalDateTime bidStart=tradeEnd.plusSeconds(DISCUSS_SECONDS);
-        LocalDateTime bidLock=bidStart.plusSeconds(BID_SECONDS-BID_LOCK_SECONDS),end=bidStart.plusSeconds(BID_SECONDS);
+        LocalDateTime bidLock=bidStart.plusSeconds(bidSeconds),end=bidLock.plusSeconds(BID_LOCK_SECONDS);
         jdbc.update("UPDATE auctions SET status='RUNNING',start_time=?,end_time=? WHERE id=?",time,end,auctionId);
         jdbc.update("INSERT INTO blind_rounds(auction_id,started_at,trade_ends_at,bid_locks_at,ends_at) VALUES(?,?,?,?,?)",auctionId,time,tradeEnd,bidLock,end);
         for(int i=0;i<4;i++)jdbc.update("INSERT INTO blind_clue_ownership(auction_id,clue_id,user_id,acquired_at) VALUES(?,?,?,?)",auctionId,clues.get(i),players.get(i),time);

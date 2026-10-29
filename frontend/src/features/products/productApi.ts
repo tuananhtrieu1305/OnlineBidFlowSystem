@@ -13,5 +13,11 @@ export async function saveProduct(id: string|undefined, data: object, image: Fil
 }
 export function imageSource(value: string|null) {
  if(!value) return undefined;
- try { const url=new URL(value, serverConfig.apiUrl);return url.origin===new URL(serverConfig.apiUrl).origin&&url.pathname.startsWith('/api/product-images/')?url.href:undefined; } catch { return undefined; }
+ try {
+  const url=new URL(value, serverConfig.apiUrl);
+  if(url.username||url.password)return undefined;
+  if(url.origin===serverConfig.apiUrl&&url.pathname.startsWith('/api/product-images/'))return url.href;
+  if(url.origin==='https://images.unsplash.com'&&url.pathname.startsWith('/photo-'))return url.href;
+  return undefined;
+ } catch { return undefined; }
 }

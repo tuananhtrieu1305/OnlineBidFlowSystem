@@ -16,7 +16,8 @@
 .guest-brand>span { display:grid; place-items:center; background:#145c53; color:#fff; width:32px; height:36px; border-radius:8px; font-size:28px; letter-spacing:-3px; padding-right:3px; }
 .guest-nav-label { font-size:9px; letter-spacing:1.4px; color:#66716b; margin:51px 9px 16px; }
 .guest-nav { display:flex; align-items:center; gap:12px; padding:12px; border-radius:8px; font-size:13px; }
-.guest-nav>span { font-size:21px; line-height:1; }
+.guest-nav-icon { display:block; width:20px; height:20px; flex:none; }
+.guest-nav-icon text { fill:currentColor; stroke:none; font:700 6px Arial,sans-serif; text-anchor:middle; dominant-baseline:middle; }
 .guest-nav.active { background:#dce6df; color:#145c53; font-weight:600; }
 .guest-account { margin-top:auto; padding-top:40px; }
 .guest-mode { display:block; font-size:9px; letter-spacing:1.6px; color:#66716b; padding-top:22px; border-top:1px solid #d8dcd3; }

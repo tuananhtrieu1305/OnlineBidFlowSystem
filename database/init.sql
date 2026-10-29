@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS blind_clue_listings;
 DROP TABLE IF EXISTS blind_clue_ownership;
 DROP TABLE IF EXISTS blind_clues;
 DROP TABLE IF EXISTS blind_rounds;
+DROP TABLE IF EXISTS blind_settings;
 DROP TABLE IF EXISTS chat_messages;
 DROP TABLE IF EXISTS bids;
 DROP TABLE IF EXISTS auction_participants;
@@ -149,6 +150,16 @@ CREATE TABLE coin_transactions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- BLIND-only gameplay data. Clues are private until disclosed by their owner.
+CREATE TABLE blind_settings (
+    auction_id BIGINT UNSIGNED NOT NULL,
+    trade_seconds INT UNSIGNED NOT NULL DEFAULT 300,
+    bid_seconds INT UNSIGNED NOT NULL DEFAULT 100,
+    PRIMARY KEY (auction_id),
+    CONSTRAINT fk_blind_settings_auction FOREIGN KEY (auction_id) REFERENCES auctions (id),
+    CONSTRAINT chk_blind_trade_seconds CHECK (trade_seconds BETWEEN 1 AND 3600),
+    CONSTRAINT chk_blind_bid_seconds CHECK (bid_seconds BETWEEN 1 AND 3600)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE blind_clues (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     auction_id BIGINT UNSIGNED NOT NULL,

@@ -17,6 +17,16 @@ public class BlindController {
     public record PriceInput(String price) {}
     public record BidInput(String amount) {}
     public record BuyInput(String version) {}
+    public record SettingsInput(Integer tradeSeconds, Integer bidSeconds) {}
+
+    @GetMapping("/api/admin/blind/auctions/{id}/settings")
+    public Object adminSettings(@PathVariable long id) { return service.adminSettings(id); }
+    @PutMapping("/api/admin/blind/auctions/{id}/settings")
+    public Object saveSettings(@PathVariable long id, @RequestBody SettingsInput input) {
+        return service.saveSettings(id,input==null?null:input.tradeSeconds(),input==null?null:input.bidSeconds());
+    }
+    @PostMapping("/api/admin/blind/auctions/{id}/start")
+    public Object startNow(@PathVariable long id) { return service.startNow(id); }
 
     @GetMapping("/api/admin/blind/auctions/{id}/clues")
     public Object adminClues(@PathVariable long id) { return service.adminClues(id); }
