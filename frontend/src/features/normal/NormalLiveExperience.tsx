@@ -5,7 +5,7 @@ const coin = (value: number) => `${value.toLocaleString('vi-VN')} Coin`;
 const clock = (seconds: number) => [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60].map(value => String(value).padStart(2, '0')).join(':');
 type Notice = { id: string; text: string; warning?: boolean };
 
-export default function NormalLiveExperience({ auction, now, username, stale }: { auction: NormalAuction; now: number; username: string; stale: boolean }) {
+export default function NormalLiveExperience({ auction, now, username, stale }: { auction: NormalAuction & { joined: boolean }; now: number; username: string; stale: boolean }) {
   const timing = auction.normalTiming ?? { closingWindowSeconds: 30, extensionSeconds: 30, leaderboardSeconds: 60 };
   const running = auction.status === 'RUNNING';
   const finished = ['SOLD', 'UNSOLD'].includes(auction.status);

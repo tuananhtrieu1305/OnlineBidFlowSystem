@@ -6,6 +6,7 @@ import java.util.Optional;
 import com.group6.auction.auction.entity.Auction;
 import com.group6.auction.auction.entity.AuctionAccessType;
 import com.group6.auction.auction.entity.AuctionType;
+import com.group6.auction.auction.entity.AuctionStatus;
 import com.group6.auction.account.repository.UserRepository;
 import com.group6.auction.auction.entity.AuctionParticipant;
 import com.group6.auction.auction.entity.AuctionParticipantId;
@@ -31,6 +32,8 @@ public class JpaRoomDataGateway implements RoomDataGateway {
             var users = userRepository.getIfAvailable();
             if (users == null || users.findById(userId).filter(user -> "USER".equals(user.getRole())).isEmpty())
                 return RoomAccessResult.denied("USER_REQUIRED", "Only player accounts can enter a BLIND room.");
+            if (auction.get().getStatus() == AuctionStatus.RUNNING && !participantExists(auctionId, userId))
+                return RoomAccessResult.denied("AUCTION_NOT_JOINABLE", "The BLIND round has already started.");
         }
         var result = new RoomAccessService(this).validateJoin(userId, auctionId, roomCode);
         if (result.allowed() && !participantExists(auctionId, userId)) ensureParticipant(auctionId, userId);

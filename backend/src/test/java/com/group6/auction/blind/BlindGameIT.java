@@ -163,4 +163,33 @@ class BlindGameIT {
             assertThat(jdbc.queryForObject("SELECT clue_id FROM blind_clue_ownership WHERE auction_id=? AND user_id=?",Long.class,auction,f.users()[0])).isEqualTo(first);
         }finally{for(var socket:sockets){membership.disconnect(socket.getId());sessions.unregister(socket);}}
     }
+
+    @Test void adminCanConfigureDurationsAndStartBeforeScheduledTime(){
+        var f=fixture();long auction=f.auction();
+        jdbc.update("DELETE FROM blind_clue_ownership WHERE auction_id=?",auction);
+        jdbc.update("DELETE FROM blind_rounds WHERE auction_id=?",auction);
+        jdbc.update("UPDATE auctions SET status='UPCOMING',start_time=?,end_time=? WHERE id=?",f.start(),f.start().plusHours(1),auction);
+        var early=f.start().minusMinutes(5);time(early);
+        var sockets=new ArrayList<WebSocketSession>();
+        try{
+            assertThatThrownBy(()->blind.saveSettings(auction,0,70)).isInstanceOf(BlindException.class).hasMessage("INVALID_DURATION");
+            blind.saveSettings(auction,45,70);
+            for(int i=0;i<4;i++){
+                var socket=mock(WebSocketSession.class);when(socket.getId()).thenReturn("blind-admin-test-"+UUID.randomUUID());
+                var principal=new RealtimePrincipal(f.users()[i],f.names()[i],RealtimePrincipal.Role.USER);
+                sessions.register(socket,principal);sockets.add(socket);
+                assertThat(membership.join(socket.getId(),principal,auction,null).allowed()).isTrue();
+                if(i==2)assertThatThrownBy(()->blind.startNow(auction)).isInstanceOf(BlindException.class).hasMessage("FOUR_PLAYERS_ONLINE_REQUIRED");
+            }
+            blind.startIfReady(auction);
+            assertThat(jdbc.queryForObject("SELECT status FROM auctions WHERE id=?",String.class,auction)).isEqualTo("UPCOMING");
+            blind.startNow(auction);
+            assertThat(jdbc.queryForObject("SELECT status FROM auctions WHERE id=?",String.class,auction)).isEqualTo("RUNNING");
+            assertThat(jdbc.queryForObject("SELECT trade_ends_at FROM blind_rounds WHERE auction_id=?",LocalDateTime.class,auction)).isEqualTo(early.plusSeconds(65));
+            assertThat(jdbc.queryForObject("SELECT bid_locks_at FROM blind_rounds WHERE auction_id=?",LocalDateTime.class,auction)).isEqualTo(early.plusSeconds(195));
+            assertThat(jdbc.queryForObject("SELECT ends_at FROM blind_rounds WHERE auction_id=?",LocalDateTime.class,auction)).isEqualTo(early.plusSeconds(215));
+            assertThatThrownBy(()->blind.saveSettings(auction,60,60)).isInstanceOf(BlindException.class).hasMessage("SETTINGS_NOT_EDITABLE");
+            assertThatThrownBy(()->blind.startNow(auction)).isInstanceOf(BlindException.class).hasMessage("START_NOT_AVAILABLE");
+        }finally{for(var socket:sockets){membership.disconnect(socket.getId());sessions.unregister(socket);}}
+    }
 }

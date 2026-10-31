@@ -136,24 +136,24 @@ Hiển thị thông báo chưa có dữ liệu lịch sử.
 
 ## Phòng và Clue
 
-Mỗi phiên BLIND tối đa 4 USER. Admin thiết lập đúng 4 Clue thật, khác nhau, trước khi người chơi vào phòng. Phiên chỉ bắt đầu khi đã đến giờ mở phòng và cả 4 người cùng đang kết nối. Server phân ngẫu nhiên một Clue riêng cho mỗi người, không trùng nhau; người reconnect giữ nguyên Clue và slot. Khi đã bắt đầu, người rời phòng không được thay thế và phiên tiếp tục với những người còn lại.
+Mỗi phiên BLIND tối đa 4 USER. Khi đủ 4 chỗ, USER khác không thể vào; người đã giữ chỗ có thể reconnect. Admin thiết lập đúng 4 Clue thật, khác nhau, trước khi người chơi vào phòng. Phiên bắt đầu khi Admin chọn Start now hoặc đến giờ theo lịch, với điều kiện cả 4 người cùng đang kết nối. Admin đặt thời gian mua bán Clue và thời gian đặt/sửa bid cho từng phiên trước khi bắt đầu. Server phân ngẫu nhiên một Clue riêng cho mỗi người, không trùng nhau; người reconnect giữ nguyên Clue và slot. Khi đã bắt đầu, người rời phòng không được thay thế và phiên tiếp tục với những người còn lại.
 
-Thời gian tính từ lúc đủ 4 người và bắt đầu thực tế:
+Thời gian tính từ lúc phiên bắt đầu thực tế:
 
 1. Quay/mở Clue: 20 giây.
-2. Chat và mua bán Clue: 300 giây.
+2. Chat và mua bán Clue: Admin đặt, mặc định 300 giây.
 3. Đóng giao dịch Clue, tiếp tục thảo luận: 60 giây.
-4. Đặt/sửa bid kín: 100 giây.
+4. Đặt/sửa bid kín: Admin đặt, mặc định 100 giây.
 5. Khóa toàn bộ bid: 20 giây cuối.
 6. Công bố kết quả khi kết thúc.
 
-`start_time` cấu hình là thời điểm sớm nhất có thể mở phiên; `end_time` cấu hình là hạn chờ đủ người. Nếu quá hạn vẫn chưa bắt đầu thì UNSOLD. Khi bắt đầu, server ghi lại giờ bắt đầu và kết thúc thực tế.
+`start_time` cấu hình là giờ bắt đầu tự động theo lịch; Admin có thể bắt đầu sớm bằng Start now khi đủ điều kiện. `end_time` cấu hình là hạn chờ bắt đầu. Nếu quá hạn vẫn chưa bắt đầu thì UNSOLD. Khi bắt đầu, server ghi lại giờ bắt đầu và kết thúc thực tế.
 
 Người sở hữu Clue có thể rao bán quyền xem với giá Coin tùy chọn, đổi giá, hủy niêm yết và bán lại Clue đã mua. Mỗi người chỉ mua một Clue chưa biết. Clue có thể thuộc nhiều người và được nhiều người rao bán. Giao dịch chuyển Coin ngay, không hoàn lại; người mua phải xác nhận đúng phiên bản giá hiện tại. Listing của người mất kết nối vẫn có hiệu lực. Hệ thống xác thực Clue, không xác thực phát ngôn chat.
 
 ## Bid rule
 
-Trong 100 giây đặt giá, mỗi USER có thể tạo và sửa bid bí mật nhiều lần. Mỗi phiên bản được lưu thành một hàng bid; chỉ phiên bản được server xác nhận gần nhất của từng USER được dùng để xếp hạng. Khi giảm bid, phần Coin khóa dư được hoàn trong cùng transaction. Trong 20 giây cuối không được tạo hay sửa bid.
+Trong thời gian đặt giá do Admin cấu hình, mỗi USER có thể tạo và sửa bid bí mật nhiều lần. Mỗi phiên bản được lưu thành một hàng bid; chỉ phiên bản được server xác nhận gần nhất của từng USER được dùng để xếp hạng. Khi giảm bid, phần Coin khóa dư được hoàn trong cùng transaction. Trong 20 giây cuối không được tạo hay sửa bid.
 
 Server kiểm tra:
 
@@ -644,7 +644,7 @@ auctions -> coin_transactions
 
 NORMAL cho phép cùng một user bid nhiều lần.
 
-BLIND cho phép sửa bid trong 100 giây đặt giá; chỉ phiên bản bid mới nhất của mỗi user có hiệu lực.
+BLIND cho phép sửa bid trong thời gian đặt giá do Admin cấu hình; chỉ phiên bản bid mới nhất của mỗi user có hiệu lực.
 
 Do đó TUYỆT ĐỐI KHÔNG tạo:
 

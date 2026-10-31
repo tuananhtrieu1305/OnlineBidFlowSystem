@@ -6,7 +6,7 @@ export type Listing={id:string;clueId:string;sellerId:string;seller:string;price
 export type BlindState={auctionId:string;phase:'WAITING'|'REVEAL'|'TRADE'|'DISCUSS'|'BID'|'LOCKED'|'SETTLING'|'FINISHED';status:string;serverNow:string;participantCount:number;onlineCount:number;
  product:{name:string;description:string|null;image_url:string|null};ownedClues:Clue[];listings:Listing[];
  ownBid:{id:string;amount:string;at:string}|null;historicalStats:{soldCount:number;averagePrice:string|null;minimumPrice:string|null;maximumPrice:string|null};
- lobbyClosesAt:string|null;revealEndsAt:string|null;tradeEndsAt:string|null;bidStartsAt:string|null;bidLocksAt:string|null;endsAt:string|null;
+ scheduledStartAt:string|null;lobbyClosesAt:string|null;revealEndsAt:string|null;tradeEndsAt:string|null;bidStartsAt:string|null;bidLocksAt:string|null;endsAt:string|null;
  result?:{status:string;winnerUserId:string|null;winningPrice:string|null;finishedAt:string|null};};
 const path=(id:string)=>'/api/blind/auctions/'+encodeURIComponent(id);
 export async function getBlindState(id:string){return(await client.get<BlindState>(path(id))).data;}
@@ -16,3 +16,8 @@ export async function buyClue(id:string,listingId:string,version:string){return(
 export async function submitBlindBid(id:string,amount:string){return(await client.post(path(id)+'/bids',{amount},{headers:await csrfHeaders()})).data;}
 export async function getAdminClues(id:string){return(await client.get<{clues:string[]}>('/api/admin/blind/auctions/'+id+'/clues')).data;}
 export async function saveAdminClues(id:string,clues:string[]){return(await client.put('/api/admin/blind/auctions/'+id+'/clues',{clues},{headers:await csrfHeaders()})).data;}
+export type BlindAdminSettings={tradeSeconds:number;bidSeconds:number;status:string;participantCount:number;onlineCount:number;scheduledStartAt:string;lobbyClosesAt:string|null;canStartNow:boolean};
+const adminPath=(id:string)=>'/api/admin/blind/auctions/'+encodeURIComponent(id);
+export async function getAdminBlindSettings(id:string){return(await client.get<BlindAdminSettings>(adminPath(id)+'/settings')).data;}
+export async function saveAdminBlindSettings(id:string,tradeSeconds:number,bidSeconds:number){return(await client.put<BlindAdminSettings>(adminPath(id)+'/settings',{tradeSeconds,bidSeconds},{headers:await csrfHeaders()})).data;}
+export async function startBlindNow(id:string){return(await client.post<BlindAdminSettings>(adminPath(id)+'/start',{}, {headers:await csrfHeaders()})).data;}
