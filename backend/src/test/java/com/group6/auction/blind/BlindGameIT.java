@@ -80,6 +80,16 @@ class BlindGameIT {
         return new Fixture(auction,users,names,start);
     }
 
+    @Test void catalogIncludesPrivateRoomsWithoutExposingCodeOrFloor() throws Exception {
+        var f=fixture();
+        jdbc.update("UPDATE auctions SET access_type='PRIVATE',room_code='SECRET_ROOM_33' WHERE id=?",f.auction());
+        mvc.perform(get("/api/blind/auctions")).andExpect(status().isUnauthorized());
+        String body=mvc.perform(get("/api/blind/auctions").session(userSession(f.names()[0])))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(body).contains("\"id\":"+f.auction(),"\"access\":\"PRIVATE\"","\"joined\":true","\"participantCount\":4");
+        assertThat(body).doesNotContain("SECRET_ROOM_33","roomCode","startingPrice","ownedClues","winningPrice");
+    }
+
     @Test void tradesAreAtomicPrivateAndResellableAndOnlyLatestBidsCompete(){
         var f=fixture();long auction=f.auction(),clue=jdbc.queryForObject("SELECT id FROM blind_clues WHERE auction_id=? AND slot=1",Long.class,auction);
         time(f.start().plusSeconds(21));

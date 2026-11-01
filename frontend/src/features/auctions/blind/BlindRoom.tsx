@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { serverConfig } from '../../../api/axiosClient';
 import { useAuth } from '../../auth/AuthProvider';
@@ -25,22 +25,12 @@ const descriptions: Record<string, string> = {
 };
 const explain = (code: string) => descriptions[code] ?? 'Thao tác chưa thành công (' + code + '). Hãy kiểm tra trạng thái mới nhất.';
 
-export function PrivateBlindEntry() {
- const [id, setId] = useState(''); const navigate = useNavigate(); const { user } = useAuth();
- return <main className="guest-home normal-catalog blind-entry" id="main-content" tabIndex={-1}>
-  <header><p className="normal-eyebrow">ĐẤU GIÁ KÍN</p><h1>Vào phòng BLIND</h1><p>Nhập mã phiên được chia sẻ để mở phòng. Mã phòng riêng sẽ nhập ở bước tiếp theo.</p></header>
-  <section className="blind-entry-card"><span className="blind-entry-step">01 / THAM GIA</span><h2>Tìm phiên đấu giá</h2>
-   <form onSubmit={event => { event.preventDefault(); if (/^[1-9][0-9]{0,18}$/.test(id)) navigate('/blind/' + id); }}>
-    <label htmlFor="blind-auction-id">Mã phiên</label><div><input id="blind-auction-id" inputMode="numeric" pattern="[1-9][0-9]*" required value={id} onChange={event => setId(event.target.value)} placeholder="Ví dụ: 12"/><button className="normal-enter-button">Tiếp tục</button></div>
-   </form>
-   {!user && <p><Link to="/login">Đăng nhập</Link> để tham gia phiên.</p>}
-  </section>
- </main>;
-}
-
 export default function BlindRoom() {
- const { id } = useParams(); const { user, loading } = useAuth();
- const [roomCode, setRoomCode] = useState(''), [attempt, setAttempt] = useState(0);
+ const { id } = useParams(); const { user, loading } = useAuth(); const location = useLocation();
+ const [roomCode, setRoomCode] = useState(() => {
+  const initial = (location.state as { roomCode?: unknown } | null)?.roomCode;
+  return typeof initial === 'string' ? initial : '';
+ }), [attempt, setAttempt] = useState(0);
  const [joined, setJoined] = useState(false), [connected, setConnected] = useState(false), [state, setState] = useState<BlindState | null>(null);
  const [chat, setChat] = useState<Chat[]>([]), [chatText, setChatText] = useState(''), [chatOpen, setChatOpen] = useState(false), [unread, setUnread] = useState(0);
  const [dataView, setDataView] = useState<DataView>('clues'), [error, setError] = useState(''), [notice, setNotice] = useState('');
@@ -88,7 +78,7 @@ export default function BlindRoom() {
  if (loading) return <main className="normal-room blind-room room-loading"><p role="status">Đang kiểm tra phiên…</p></main>;
  if (!user) return <Navigate to="/login" replace/>;
  if (user.role !== 'USER') return <Navigate to="/admin" replace/>;
- if (!validId) return <main className="normal-room blind-room room-loading"><p role="alert">Mã phiên không hợp lệ. <Link to="/blind">Nhập lại mã phiên</Link></p></main>;
+ if (!validId) return <main className="normal-room blind-room room-loading"><p role="alert">Mã phiên không hợp lệ. <Link to="/blind">Quay lại danh sách phiên</Link></p></main>;
 
  const untilScheduled = state?.phase === 'WAITING' && state.scheduledStartAt && Date.parse(state.scheduledStartAt) > seconds + clockOffset;
  const target = state?.phase === 'WAITING' ? (untilScheduled ? state.scheduledStartAt : state.lobbyClosesAt) : state?.phase === 'REVEAL' ? state.revealEndsAt : state?.phase === 'TRADE' ? state.tradeEndsAt : state?.phase === 'DISCUSS' ? state.bidStartsAt : state?.phase === 'BID' ? state.bidLocksAt : state?.endsAt;

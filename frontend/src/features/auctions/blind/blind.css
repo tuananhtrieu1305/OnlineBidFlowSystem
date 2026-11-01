@@ -48,8 +48,7 @@
 @keyframes blind-ticker { from { transform:translateY(-6px); opacity:.6; } to { transform:translateY(6px); opacity:1; } }
 @keyframes blind-open { from { opacity:0; transform:scale(.96); filter:blur(4px); } to { opacity:1; transform:scale(1); filter:blur(0); } }
 
-/* Entry uses the NORMAL catalog's spacing, badges and primary action. */
-.blind-entry { max-width:1280px; }
+/* The room entry keeps the same spacing and primary action as NORMAL. */
 .blind-entry-card { width:min(520px,100%); margin-top:28px; padding:28px; border:1px solid #dce2df; border-radius:8px; background:white; color:#202b29; }
 .blind-entry-step { color:#175c52; font-size:11px; font-weight:600; letter-spacing:1.5px; }
 .blind-entry-card h2 { margin:9px 0 7px; font-size:22px; font-weight:600; }

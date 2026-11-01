@@ -50,6 +50,9 @@ public class BlindService {
     private record Round(LocalDateTime start, LocalDateTime tradeEnd, LocalDateTime bidLock, LocalDateTime end) {}
     private record Listing(long id, long clueId, long sellerId, long price, long version, boolean active) {}
     private record Bid(long id, long userId, long amount, LocalDateTime time) {}
+    public record CatalogProduct(String name, String description, int quantity, String imageUrl) {}
+    public record CatalogAuction(long id, CatalogProduct product, String access, String status,
+                                 String startsAt, String endsAt, boolean joined, int participantCount) {}
 
     private LocalDateTime now() { return LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC).truncatedTo(java.time.temporal.ChronoUnit.MICROS); }
     private String iso(LocalDateTime value) { return value == null ? null : value.toInstant(ZoneOffset.UTC).toString(); }
@@ -94,6 +97,23 @@ public class BlindService {
     private long id(String value) {
         if(value==null||!value.matches("[1-9][0-9]{0,18}"))throw BlindException.bad("INVALID_VERSION");
         try{return Long.parseLong(value);}catch(NumberFormatException ex){throw BlindException.bad("INVALID_VERSION");}
+    }
+
+    @Transactional(readOnly=true)
+    public List<CatalogAuction> catalog(String username) {
+        long viewer=user(username);
+        return jdbc.query("""
+            SELECT a.id,a.access_type,a.status,a.start_time,a.end_time,
+                   p.name,p.description,p.quantity,p.image_url,
+                   EXISTS(SELECT 1 FROM auction_participants mine WHERE mine.auction_id=a.id AND mine.user_id=?) AS joined,
+                   (SELECT COUNT(*) FROM auction_participants players WHERE players.auction_id=a.id) AS participant_count
+            FROM auctions a JOIN products p ON p.id=a.product_id
+            WHERE a.auction_type='BLIND' ORDER BY a.start_time DESC,a.id DESC
+            """,(rs,n)->new CatalogAuction(rs.getLong("id"),
+                new CatalogProduct(rs.getString("name"),rs.getString("description"),rs.getInt("quantity"),rs.getString("image_url")),
+                rs.getString("access_type"),rs.getString("status"),
+                iso(rs.getObject("start_time",LocalDateTime.class)),iso(rs.getObject("end_time",LocalDateTime.class)),
+                rs.getBoolean("joined"),rs.getInt("participant_count")),viewer);
     }
 
     @Transactional(readOnly=true)

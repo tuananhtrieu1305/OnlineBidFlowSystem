@@ -4,7 +4,7 @@
 
 1. Admin tạo phiên BLIND, chọn sản phẩm, giá sàn, quyền PUBLIC/PRIVATE, giờ bắt đầu theo lịch và hạn chờ bắt đầu. Mọi phiên BLIND có sức chứa đúng 4.
 2. Admin mở trang **Thiết lập phòng BLIND** ở chi tiết phiên và lưu 4 manh mối thật, khác nhau trước khi có người tham gia. Tại đây Admin đặt thời gian mua bán Clue và thời gian đặt/sửa bid (mỗi mục 1–3600 giây, mặc định 300 và 100 giây). Có thể đổi hai thời lượng này cho đến khi phiên bắt đầu.
-3. Bốn tài khoản USER vào phòng qua `/blind/{auctionId}`. PRIVATE cần mã phòng do Admin chia sẻ. Đủ 4 chỗ thì không nhận USER mới; người đã giữ chỗ vẫn vào lại được. Phiên vẫn ở trạng thái chờ.
+3. USER mở `/blind` để xem danh sách phiên BLIND, lọc theo trạng thái, quyền PUBLIC/PRIVATE hoặc tên sản phẩm. Chọn phiên PUBLIC để vào thẳng `/blind/{auctionId}`; với PRIVATE, nhập mã phòng do Admin chia sẻ rồi vào phòng. Đủ 4 chỗ thì không nhận USER mới; người đã giữ chỗ vẫn vào lại được. Phiên vẫn ở trạng thái chờ.
 4. Admin có thể chọn **Start now** để bắt đầu trước giờ theo lịch. Nếu không, scheduler tự bắt đầu khi đã đến giờ theo lịch. Cả hai cách đều cần đủ 4 người đang kết nối và 4 Clue. Nếu quá hạn chờ mà chưa bắt đầu, phiên thành UNSOLD.
 5. Khi bắt đầu, server xáo 4 Clue bằng `SecureRandom`, ghi quyền sở hữu vào DB, và đổi `start_time`/`end_time` thành giờ chơi thực tế. Reconnect chỉ đọc lại quyền sở hữu đã ghi, không quay lại.
 
@@ -25,6 +25,7 @@ Bid được lưu theo từng lần xác nhận; chỉ bid cuối của mỗi US
 
 - Admin: `GET/PUT /api/admin/blind/auctions/{id}/clues`.
 - Admin: `GET/PUT /api/admin/blind/auctions/{id}/settings` và `POST /api/admin/blind/auctions/{id}/start`.
+- USER: `GET /api/blind/auctions` trả danh sách phiên PUBLIC/PRIVATE, trạng thái, thông tin sản phẩm, số chỗ đã giữ và quyền tham gia của chính mình; không trả mã phòng, giá sàn, Clue hoặc bid.
 - USER đã vào phòng: `GET /api/blind/auctions/{id}` trả trạng thái, Clue mình sở hữu, listing công khai, bid của mình, thống kê lịch sử và mốc thời gian.
 - USER giai đoạn TRADE: `PUT/DELETE /api/blind/auctions/{id}/listings/{clueId}`, `POST /api/blind/auctions/{id}/listings/{listingId}/buy`.
 - USER giai đoạn BID: `POST /api/blind/auctions/{id}/bids`.

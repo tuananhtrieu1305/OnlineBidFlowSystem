@@ -4,6 +4,46 @@ import path from 'node:path';
 let app:ElectronApplication;
 test.afterEach(async()=>{await app?.close();});
 
+test('BLIND catalog filters public and private rooms and carries the private code into the room',async({},info)=>{
+ const env=Object.fromEntries(Object.entries(process.env).filter((e):e is [string,string]=>e[1]!==undefined));delete env.ELECTRON_RUN_AS_NODE;delete env.ELECTRON_DEV_URL;
+ app=await electron.launch({args:[path.resolve('.'),`--user-data-dir=${info.outputPath('profile')}`],env});const page=await app.firstWindow();
+ const future=(seconds:number)=>new Date(Date.now()+seconds*1000).toISOString();
+ await page.route('**/api/auth/me',route=>route.fulfill({json:{id:3,username:'bob',role:'USER'}}));
+ await page.route('**/api/blind/auctions',route=>route.fulfill({json:[
+  {id:31,product:{name:'Máy ảnh riêng',description:'Máy ảnh cổ',quantity:1,imageUrl:null},access:'PRIVATE',status:'UPCOMING',startsAt:future(600),endsAt:future(3600),joined:false,participantCount:1},
+  {id:32,product:{name:'Đồng hồ công khai',description:'Đồng hồ cơ',quantity:1,imageUrl:null},access:'PUBLIC',status:'UPCOMING',startsAt:future(600),endsAt:future(3600),joined:false,participantCount:0},
+  {id:33,product:{name:'Tranh đang diễn ra',description:null,quantity:1,imageUrl:null},access:'PUBLIC',status:'RUNNING',startsAt:future(-300),endsAt:future(300),joined:false,participantCount:4}
+ ]}));
+ await page.evaluate(()=>{
+  class FakeSocket{
+   static OPEN=1;readyState=1;onopen:((event:Event)=>void)|null=null;onclose:((event:Event)=>void)|null=null;
+   constructor(_url:string){setTimeout(()=>this.onopen?.(new Event('open')),0);}
+   send(raw:string){const message=JSON.parse(raw);if(message.type==='JOIN_ROOM')(window as Window&{__blindCode?:string|null}).__blindCode=message.payload.roomCode;}
+   close(){this.onclose?.(new Event('close'));}
+  }
+  Object.defineProperty(window,'WebSocket',{value:FakeSocket});
+ });
+ await page.goto('app://auction/#/blind');
+ await expect(page.getByRole('heading',{name:'Đấu giá kín'})).toBeVisible();
+ await expect(page.locator('.guest-nav.active')).toHaveCount(1);
+ await expect(page.locator('.normal-auction-card')).toHaveCount(3);
+ await page.screenshot({path:info.outputPath('blind-catalog.png'),fullPage:true});
+ await page.getByRole('button',{name:'Đang diễn ra'}).click();
+ await expect(page.locator('.normal-auction-card')).toHaveCount(1);
+ await expect(page.getByRole('button',{name:'Phiên đã bắt đầu'})).toBeDisabled();
+ await page.getByRole('button',{name:'Tất cả',exact:true}).first().click();
+ await page.getByRole('group',{name:'Loại truy cập'}).getByRole('button',{name:'PRIVATE'}).click();
+ await expect(page.locator('.normal-auction-card')).toHaveCount(1);
+ await page.locator('.normal-auction-card').getByRole('button',{name:'Vào phòng'}).click();
+ await page.getByLabel('Mã phòng',{exact:true}).fill('private-31');
+ await page.getByRole('button',{name:'Tham gia phiên'}).click();
+ await expect.poll(()=>page.evaluate(()=>(window as Window&{__blindCode?:string|null}).__blindCode)).toBe('private-31');
+ await page.goto('app://auction/#/blind');
+ await page.getByRole('group',{name:'Loại truy cập'}).getByRole('button',{name:'PUBLIC'}).click();
+ await page.locator('.normal-auction-card').filter({hasText:'Đồng hồ công khai'}).getByRole('button',{name:'Vào phòng'}).click();
+ await expect.poll(()=>page.evaluate(()=>(window as Window&{__blindCode?:string|null}).__blindCode)).toBeNull();
+});
+
 test('shows only owned Clues, buys one, then confirms a private bid',async({},info)=>{
  const env=Object.fromEntries(Object.entries(process.env).filter((e):e is [string,string]=>e[1]!==undefined));delete env.ELECTRON_RUN_AS_NODE;delete env.ELECTRON_DEV_URL;
  app=await electron.launch({args:[path.resolve('.'),`--user-data-dir=${info.outputPath('profile')}`],env});const page=await app.firstWindow();
