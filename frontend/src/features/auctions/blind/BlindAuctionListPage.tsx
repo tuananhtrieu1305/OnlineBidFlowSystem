@@ -111,7 +111,7 @@ export default function BlindAuctionListPage() {
           <ProductImage product={{ ...product, description: product.description ?? '' }} />
           <h2>{product.name}</h2><p className="normal-card-description">{hidden?'Thông tin sản phẩm sẽ được mở sau khi phiên chốt bid.':product.description || 'Chưa có mô tả sản phẩm.'}</p>
           <div className={`normal-card-status ${item.status.toLowerCase()}`}><strong>{statuses[item.status]}</strong>{item.status === 'RUNNING' && <time aria-label="Thời gian còn lại">{countdown(item.endsAt, now)}</time>}</div>
-          <dl className="normal-card-facts"><div><dt>{item.status === 'UPCOMING' ? item.lobbyOpened ? 'Hạn chờ' : 'Mở phòng' : 'Kết thúc'}</dt><dd>{date(item.status === 'UPCOMING' && !item.lobbyOpened ? item.startsAt : item.endsAt)}</dd></div><div><dt>Vị trí</dt><dd>{item.participantCount}/{item.capacity}</dd></div></dl>
+          <dl className="normal-card-facts"><div><dt>{item.status === 'UPCOMING' ? item.lobbyOpened ? 'Hạn chờ' : 'Mở phòng' : 'Kết thúc'}</dt><dd>{date(item.status === 'UPCOMING' && !item.lobbyOpened ? item.startsAt : item.endsAt)}</dd></div><div><dt>Số người tham gia</dt><dd>{item.participantCount}/{item.capacity}</dd></div></dl>
           <button type="button" className="normal-enter-button" disabled={!canOpen} onClick={() => choose(item)}>{action}</button>
         </article>;
       })}</div>

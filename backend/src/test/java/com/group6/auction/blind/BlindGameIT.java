@@ -67,9 +67,9 @@ class BlindGameIT {
         jdbc.update("INSERT INTO products(name,quantity) VALUES (?,1)",prefix);
         long product=jdbc.queryForObject("SELECT id FROM products WHERE name=?",Long.class,prefix);
         LocalDateTime start=LocalDateTime.of(2031,1,1,0,0);
-        jdbc.update("INSERT INTO auctions(product_id,created_by,auction_type,access_type,status,starting_price,max_participants,start_time,end_time) VALUES (?,1,'BLIND','PUBLIC','RUNNING',500,4,?,?)",product,start,start.plusSeconds(500));
+        jdbc.update("INSERT INTO auctions(product_id,created_by,auction_type,access_type,status,starting_price,max_participants,start_time,end_time) VALUES (?,1,'BLIND','PUBLIC','RUNNING',500,4,?,?)",product,start,start.plusSeconds(480));
         long auction=jdbc.queryForObject("SELECT id FROM auctions WHERE product_id=?",Long.class,product);
-        jdbc.update("INSERT INTO blind_rounds(auction_id,started_at,trade_ends_at,bid_locks_at,ends_at) VALUES (?,?,?,?,?)",auction,start,start.plusSeconds(320),start.plusSeconds(480),start.plusSeconds(500));
+        jdbc.update("INSERT INTO blind_rounds(auction_id,started_at,trade_ends_at,bid_locks_at,ends_at) VALUES (?,?,?,?,?)",auction,start,start.plusSeconds(320),start.plusSeconds(480),start.plusSeconds(480));
         List<Long> clues=new ArrayList<>();
         for(int i=0;i<4;i++){
             jdbc.update("INSERT INTO auction_participants(auction_id,user_id,joined_at) VALUES (?,?,?)",auction,users[i],start);
@@ -131,9 +131,13 @@ class BlindGameIT {
         time(f.start().plusSeconds(381));blind.bid(auction,f.names()[1],"500");
         time(f.start().plusSeconds(382));blind.bid(auction,f.names()[0],"600");
         time(f.start().plusSeconds(383));blind.bid(auction,f.names()[0],"500");
+        time(f.start().plusSeconds(479));
+        assertThat(blind.state(auction,f.names()[2]).toString()).contains("phase=BID");
+        blind.bid(auction,f.names()[2],"400");
         time(f.start().plusSeconds(480));
+        assertThat(blind.state(auction,f.names()[2]).toString()).contains("phase=SETTLING");
         assertThatThrownBy(()->blind.bid(auction,f.names()[2],"600")).isInstanceOf(BlindException.class).hasMessage("BID_WINDOW_CLOSED");
-        time(f.start().plusSeconds(500));blind.finishIfDue(auction);
+        blind.finishIfDue(auction);
         assertThat(jdbc.queryForObject("SELECT winner_user_id FROM auctions WHERE id=?",Long.class,auction)).isEqualTo(f.users()[1]);
         assertThat(jdbc.queryForObject("SELECT available_balance FROM wallets WHERE id=?",Long.class,buyerWallet)).isEqualTo(2450);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM coin_transactions WHERE auction_id=? AND transaction_type='CLUE_TRADE'",Long.class,auction)).isEqualTo(2);
@@ -148,12 +152,24 @@ class BlindGameIT {
 
     @Test void belowFloorFinishesUnsoldAndReleasesBid(){
         var f=fixture();time(f.start().plusSeconds(380));blind.bid(f.auction(),f.names()[0],"499");
-        time(f.start().plusSeconds(500));blind.finishIfDue(f.auction());
+        time(f.start().plusSeconds(480));blind.finishIfDue(f.auction());
         assertThat(jdbc.queryForObject("SELECT status FROM auctions WHERE id=?",String.class,f.auction())).isEqualTo("UNSOLD");
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM coin_transactions WHERE auction_id=? AND transaction_type='PAYMENT'",Long.class,f.auction())).isZero();
         long wallet=jdbc.queryForObject("SELECT id FROM wallets WHERE user_id=?",Long.class,f.users()[0]);
         assertThat(jdbc.queryForObject("SELECT available_balance FROM wallets WHERE id=?",Long.class,wallet)).isEqualTo(3000);
         assertThat(jdbc.queryForObject("SELECT locked_balance FROM wallets WHERE id=?",Long.class,wallet)).isZero();
+    }
+
+    @Test void existingRoundSkipsItsFormerTwentySecondLockedWindow(){
+        var f=fixture();
+        jdbc.update("UPDATE blind_rounds SET ends_at=? WHERE auction_id=?",f.start().plusSeconds(500),f.auction());
+        jdbc.update("UPDATE auctions SET end_time=? WHERE id=?",f.start().plusSeconds(500),f.auction());
+        time(f.start().plusSeconds(479));blind.bid(f.auction(),f.names()[0],"500");
+        time(f.start().plusSeconds(480));
+        assertThat(blind.state(f.auction(),f.names()[0]).toString()).contains("phase=SETTLING");
+        assertThatThrownBy(()->blind.bid(f.auction(),f.names()[0],"600")).isInstanceOf(BlindException.class).hasMessage("BID_WINDOW_CLOSED");
+        blind.finishIfDue(f.auction());
+        assertThat(jdbc.queryForObject("SELECT status FROM auctions WHERE id=?",String.class,f.auction())).isEqualTo("SOLD");
     }
 
     @Test void httpStateExposesOnlyOwnClueAndBidWindowIsEnforced()throws Exception{
@@ -184,7 +200,14 @@ class BlindGameIT {
                 var principal=new RealtimePrincipal(f.users()[i],f.names()[i],RealtimePrincipal.Role.USER);
                 sessions.register(socket,principal);sockets.add(socket);
                 assertThat(membership.join(socket.getId(),principal,auction,null).allowed()).isTrue();
-                if(i==2){blind.startIfReady(auction);assertThat(jdbc.queryForObject("SELECT status FROM auctions WHERE id=?",String.class,auction)).isEqualTo("UPCOMING");}
+                if(i==2){
+                    var lobby=(java.util.Map<?,?>)blind.state(auction,f.names()[0]);
+                    assertThat(lobby.get("phase")).isEqualTo("WAITING");
+                    assertThat(lobby.get("onlineCount")).isEqualTo(3);
+                    assertThat((java.util.List<?>)lobby.get("lobbyParticipants")).hasSize(3);
+                    assertThat(lobby.get("lobbyParticipants").toString()).contains(f.names()[0],f.names()[1],f.names()[2],"online=true");
+                    blind.startIfReady(auction);assertThat(jdbc.queryForObject("SELECT status FROM auctions WHERE id=?",String.class,auction)).isEqualTo("UPCOMING");
+                }
             }
             blind.startIfReady(auction);
             assertThat(jdbc.queryForObject("SELECT status FROM auctions WHERE id=?",String.class,auction)).isEqualTo("RUNNING");
@@ -233,6 +256,8 @@ class BlindGameIT {
             assertThat(jdbc.queryForObject("SELECT status FROM auctions WHERE id=?",String.class,auction)).isEqualTo("RUNNING");
             assertThat(jdbc.queryForObject("SELECT trade_ends_at FROM blind_rounds WHERE auction_id=?",LocalDateTime.class,auction)).isEqualTo(openedAt.plusSeconds(65));
             assertThat(jdbc.queryForObject("SELECT bid_locks_at FROM blind_rounds WHERE auction_id=?",LocalDateTime.class,auction)).isEqualTo(openedAt.plusSeconds(195));
+            assertThat(jdbc.queryForObject("SELECT ends_at FROM blind_rounds WHERE auction_id=?",LocalDateTime.class,auction)).isEqualTo(openedAt.plusSeconds(195));
+            assertThat(jdbc.queryForObject("SELECT end_time FROM auctions WHERE id=?",LocalDateTime.class,auction)).isEqualTo(openedAt.plusSeconds(195));
             assertThatThrownBy(()->blind.saveSettings(auction,60,60)).isInstanceOf(BlindException.class).hasMessage("SETTINGS_NOT_EDITABLE");
         }finally{for(var socket:sockets){membership.disconnect(socket.getId());sessions.unregister(socket);}}
     }

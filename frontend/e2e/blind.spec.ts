@@ -57,7 +57,7 @@ test('shows only owned Clues, buys one, then confirms a private bid',async({},in
   ownedClues:[{id:'12',slot:2,content:'Được sản xuất năm 1980',verified:true,acquiredAt:new Date().toISOString()},...(bought?[{id:'11',slot:1,content:'Chỉ có 500 chiếc',verified:true,acquiredAt:new Date().toISOString()}]:[])],
   listings:bought?[]:[{id:'9',clueId:'11',sellerId:'2',seller:'alice',price:'50',version:'1',slot:1}],
   ownBid:amount?{id:'91',amount,at:new Date().toISOString()}:null,historicalStats:{soldCount:0,averagePrice:null,minimumPrice:null,maximumPrice:null},
-  revealEndsAt:future(-300),tradeEndsAt:future(300),bidStartsAt:future(360),bidLocksAt:future(460),endsAt:future(480)}}));
+  revealEndsAt:future(-300),tradeEndsAt:future(300),bidStartsAt:future(360),endsAt:future(480)}}));
  await page.route('**/api/blind/auctions/33/listings/9/buy',r=>{expect(r.request().postDataJSON()).toEqual({version:'1'});bought=true;phase='BID';return r.fulfill({json:{status:'PURCHASED',price:'50'}});});
  await page.route('**/api/blind/auctions/33/bids',r=>{amount=r.request().postDataJSON().amount;return r.fulfill({json:{id:'91',amount,at:new Date().toISOString()}});});
  await page.evaluate(()=>{

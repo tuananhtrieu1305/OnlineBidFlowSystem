@@ -3,10 +3,10 @@ import { csrfHeaders } from '../../auth/api/sessionApi';
 
 export type Clue={id:string;slot:number;content:string;verified:boolean;acquiredAt:string};
 export type Listing={id:string;clueId:string;sellerId:string;seller:string;price:string;version:string;slot:number};
-export type BlindState={auctionId:string;phase:'WAITING'|'REVEAL'|'TRADE'|'DISCUSS'|'BID'|'LOCKED'|'SETTLING'|'FINISHED';status:string;serverNow:string;participantCount:number;onlineCount:number;capacity:number;
+export type BlindState={auctionId:string;phase:'WAITING'|'REVEAL'|'TRADE'|'DISCUSS'|'BID'|'SETTLING'|'FINISHED';status:string;serverNow:string;participantCount:number;onlineCount:number;capacity:number;lobbyParticipants:{userId:string;username:string;online:boolean}[];
  product:{name:string;description:string|null;image_url:string|null};ownedClues:Clue[];listings:Listing[];hasListedClue:boolean;soldClueIds:string[];
  ownBid:{id:string;amount:string;at:string}|null;topBids?:{userId:string;username:string;amount:string;at:string}[];
- scheduledStartAt:string|null;lobbyClosesAt:string|null;revealEndsAt:string|null;tradeEndsAt:string|null;bidStartsAt:string|null;bidLocksAt:string|null;endsAt:string|null;
+ scheduledStartAt:string|null;lobbyClosesAt:string|null;revealEndsAt:string|null;tradeEndsAt:string|null;bidStartsAt:string|null;endsAt:string|null;
  result?:{status:string;winnerUserId:string|null;winningPrice:string|null;finishedAt:string|null};};
 const path=(id:string)=>'/api/blind/auctions/'+encodeURIComponent(id);
 export async function getBlindState(id:string){return(await client.get<BlindState>(path(id))).data;}

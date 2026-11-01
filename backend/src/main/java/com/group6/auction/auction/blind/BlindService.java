@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class BlindService {
     private static final int REVEAL_SECONDS = 20;
     private static final int DISCUSS_SECONDS = 60;
-    private static final int BID_LOCK_SECONDS = 20;
     private final JdbcTemplate jdbc;
     private final Clock clock;
     private final ClueTradeTransferService clueTransfers;
@@ -47,7 +46,7 @@ public class BlindService {
 
     private record Auction(long id, String type, String status, String access, String code,
                            LocalDateTime start, LocalDateTime end, long floor, long productId, int capacity) {}
-    private record Round(LocalDateTime start, LocalDateTime tradeEnd, LocalDateTime bidLock, LocalDateTime end) {}
+    private record Round(LocalDateTime start, LocalDateTime tradeEnd, LocalDateTime end) {}
     private record Listing(long id, long clueId, long sellerId, long price, long version, boolean active) {}
     private record Bid(long id, long userId, long amount, LocalDateTime time) {}
     public record CatalogProduct(String name, String description, int quantity, String imageUrl) {}
@@ -82,8 +81,10 @@ public class BlindService {
     }
     private Round round(long auctionId) {
         var rows=jdbc.query("SELECT started_at,trade_ends_at,bid_locks_at,ends_at FROM blind_rounds WHERE auction_id=?",
-            (rs,n)->new Round(rs.getObject(1,LocalDateTime.class),rs.getObject(2,LocalDateTime.class),
-                rs.getObject(3,LocalDateTime.class),rs.getObject(4,LocalDateTime.class)),auctionId);
+            (rs,n)->{
+                LocalDateTime oldLock=rs.getObject(3,LocalDateTime.class),end=rs.getObject(4,LocalDateTime.class);
+                return new Round(rs.getObject(1,LocalDateTime.class),rs.getObject(2,LocalDateTime.class),oldLock.isBefore(end)?oldLock:end);
+            },auctionId);
         return rows.isEmpty()?null:rows.getFirst();
     }
     private void trading(Auction auction) {
@@ -93,7 +94,7 @@ public class BlindService {
     }
     private void bidding(Auction auction) {
         var r=round(auction.id());var time=now();
-        if(!"RUNNING".equals(auction.status())||r==null||time.isBefore(r.tradeEnd().plusSeconds(DISCUSS_SECONDS))||!time.isBefore(r.bidLock()))
+        if(!"RUNNING".equals(auction.status())||r==null||time.isBefore(r.tradeEnd().plusSeconds(DISCUSS_SECONDS))||!time.isBefore(r.end()))
             throw BlindException.conflict("BID_WINDOW_CLOSED");
     }
     private long positive(String value) {
@@ -109,7 +110,8 @@ public class BlindService {
     public List<CatalogAuction> catalog(String username) {
         long viewer=user(username);
         return jdbc.query("""
-            SELECT a.id,a.access_type,a.status,a.start_time,a.end_time,
+            SELECT a.id,a.access_type,a.status,a.start_time,
+                   CASE WHEN a.status='RUNNING' THEN COALESCE((SELECT CAST(LEAST(br.bid_locks_at,br.ends_at) AS DATETIME(6)) FROM blind_rounds br WHERE br.auction_id=a.id),a.end_time) ELSE a.end_time END AS end_time,
                    p.name,p.description,p.quantity,p.image_url,
                    CASE WHEN a.status='RUNNING' THEN EXISTS(SELECT 1 FROM blind_clue_ownership mine WHERE mine.auction_id=a.id AND mine.user_id=?) ELSE EXISTS(SELECT 1 FROM auction_participants mine WHERE mine.auction_id=a.id AND mine.user_id=?) END AS joined,
                    (SELECT COUNT(*) FROM auction_participants players WHERE players.auction_id=a.id) AS participant_count, a.max_participants AS capacity,
@@ -185,8 +187,7 @@ public class BlindService {
         else if(time.isBefore(r.start().plusSeconds(REVEAL_SECONDS)))phase="REVEAL";
         else if(time.isBefore(r.tradeEnd()))phase="TRADE";
         else if(time.isBefore(r.tradeEnd().plusSeconds(DISCUSS_SECONDS)))phase="DISCUSS";
-        else if(time.isBefore(r.bidLock()))phase="BID";
-        else if(time.isBefore(r.end()))phase="LOCKED";
+        else if(time.isBefore(r.end()))phase="BID";
         else phase="SETTLING";
         Map<String,Object> product;
         if("FINISHED".equals(phase))product=jdbc.queryForMap("SELECT p.name,p.description,p.image_url FROM products p WHERE p.id=?",a.productId());
@@ -201,9 +202,14 @@ public class BlindService {
         result.put("auctionId",Long.toString(id));result.put("phase",phase);result.put("status",a.status());result.put("serverNow",iso(time));
         result.put("capacity",a.capacity());
         result.put("participantCount",jdbc.queryForObject("SELECT COUNT(*) FROM auction_participants WHERE auction_id=?",Long.class,id));
-        result.put("onlineCount",membership.sessionIdsForAuction(id).stream()
+        var onlineIds=membership.sessionIdsForAuction(id).stream()
             .map(sessions::principalForSessionId).filter(java.util.Optional::isPresent)
-            .map(p->p.orElseThrow().userId()).distinct().count());
+            .map(p->p.orElseThrow().userId()).collect(java.util.stream.Collectors.toSet());
+        result.put("onlineCount",onlineIds.size());
+        result.put("lobbyParticipants","WAITING".equals(phase)?jdbc.query("""
+            SELECT u.id,u.username FROM auction_participants p JOIN users u ON u.id=p.user_id
+            WHERE p.auction_id=? ORDER BY p.joined_at,p.user_id
+            """,(rs,n)->Map.of("userId",rs.getString(1),"username",rs.getString(2),"online",onlineIds.contains(rs.getLong(1))),id):List.of());
         result.put("product",product);result.put("ownedClues",owned);result.put("listings",listings);
         result.put("hasListedClue",jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM blind_clue_listings WHERE auction_id=? AND seller_id=?)",Boolean.class,id,viewer));
         result.put("soldClueIds",jdbc.query("SELECT DISTINCT clue_id FROM blind_clue_trades WHERE auction_id=?",(rs,n)->rs.getString(1),id));
@@ -213,7 +219,6 @@ public class BlindService {
         result.put("lobbyClosesAt",r==null?iso(a.end()):null);
         result.put("tradeEndsAt",r==null?null:iso(r.tradeEnd()));
         result.put("bidStartsAt",r==null?null:iso(r.tradeEnd().plusSeconds(DISCUSS_SECONDS)));
-        result.put("bidLocksAt",r==null?null:iso(r.bidLock()));
         result.put("endsAt",r==null?null:iso(r.end()));
         if("FINISHED".equals(phase)) {
             var outcome=jdbc.query("SELECT status,winner_user_id,winning_price,finished_at FROM auctions WHERE id=?",
@@ -338,9 +343,9 @@ public class BlindService {
         int bidSeconds=durations.isEmpty()?100:durations.getFirst()[1];
         LocalDateTime tradeEnd=time.plusSeconds(REVEAL_SECONDS+tradeSeconds);
         LocalDateTime bidStart=tradeEnd.plusSeconds(DISCUSS_SECONDS);
-        LocalDateTime bidLock=bidStart.plusSeconds(bidSeconds),end=bidLock.plusSeconds(BID_LOCK_SECONDS);
+        LocalDateTime end=bidStart.plusSeconds(bidSeconds);
         jdbc.update("UPDATE auctions SET status='RUNNING',start_time=?,end_time=? WHERE id=?",time,end,auctionId);
-        jdbc.update("INSERT INTO blind_rounds(auction_id,started_at,trade_ends_at,bid_locks_at,ends_at) VALUES(?,?,?,?,?)",auctionId,time,tradeEnd,bidLock,end);
+        jdbc.update("INSERT INTO blind_rounds(auction_id,started_at,trade_ends_at,bid_locks_at,ends_at) VALUES(?,?,?,?,?)",auctionId,time,tradeEnd,end,end);
         for(int i=0;i<online.size();i++)jdbc.update("INSERT INTO blind_clue_ownership(auction_id,clue_id,user_id,acquired_at) VALUES(?,?,?,?)",auctionId,clues.get(i),online.get(i),time);
     }
     @Transactional(isolation=Isolation.READ_COMMITTED)

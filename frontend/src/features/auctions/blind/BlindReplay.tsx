@@ -13,17 +13,18 @@ export default function BlindReplay(){const {id}=useParams();const {user,loading
  useEffect(()=>{if(!id||!user)return;const controller=new AbortController();void client.get<Replay>('/api/auctions/'+id+'/replay',{signal:controller.signal}).then(v=>setData(v.data)).catch(()=>{if(!controller.signal.aborted)setError('Chưa xem được replay. Chỉ người tham gia hoặc Admin được xem sau khi phiên kết thúc.');});return()=>controller.abort();},[id,user]);
  if(loading)return <main className="normal-room blind-replay room-loading"><p role="status">Đang kiểm tra phiên…</p></main>;
  if(!user)return <Navigate to="/login" replace/>;
- const back=user.role==='ADMIN'?'/admin/auctions/'+id:(data?.auctionType==='NORMAL'?'/normal/':'/blind/')+id;
+ const back=user.role==='ADMIN'?'/admin/auctions/'+id:data?.auctionType==='NORMAL'?'/normal/'+id:'/blind';
+ const backLabel=user.role==='ADMIN'?'Về trang quản lý phiên':data?.auctionType==='NORMAL'?'Trở lại phiên':'Về danh sách phòng đấu giá kín';
  return <main className="normal-room blind-replay" id="main-content" tabIndex={-1}>
-  <header className="room-header blind-replay-header"><div className="room-identity"><small>Phiên #{id} · {data?.auctionType==='NORMAL'?'Đấu giá thường':'Đấu giá kín'}</small><h1>{data?.product.name??'Diễn biến phiên'}</h1></div><div className="blind-replay-header-status">REPLAY · KẾT QUẢ</div><Link className="room-exit" to={back} aria-label="Trở lại phiên" title="Trở lại phiên"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></Link></header>
+  <header className="room-header blind-replay-header"><div className="room-identity"><small>Phiên #{id} · {data?.auctionType==='NORMAL'?'Đấu giá thường':'Đấu giá kín'}</small><h1>{data?.product.name??'Diễn biến phiên'}</h1></div><div className="blind-replay-header-status">REPLAY · KẾT QUẢ</div><Link className="room-exit" to={back} aria-label={backLabel} title={backLabel}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></Link></header>
   {error?<div className="blind-replay-loading" role="alert">{error}</div>:!data?<div className="blind-replay-loading" role="status">Đang tải diễn biến phiên…</div>:
    <div className="blind-replay-body">
     <section className="blind-replay-summary"><p className="blind-replay-kicker">KẾT QUẢ CHÍNH THỨC</p><h2>{data.product.name}</h2><p className="blind-replay-status">{data.status==='SOLD'?'Đã bán thành công':data.status==='CANCELLED'?'Đã hủy do không đủ người':'Chưa bán được'}</p>
-     <dl><div><dt>Phiên</dt><dd>#{data.auctionId}</dd></div><div><dt>Giá thắng</dt><dd>{coin(data.result.winningPrice)}</dd></div><div><dt>Sự kiện</dt><dd>{data.events.length}</dd></div></dl>
+     <dl><div><dt>Phiên</dt><dd>#{data.auctionId}</dd></div><div><dt>Giá thắng</dt><dd>{coin(data.result.winningPrice)}</dd></div><div><dt>Mốc diễn biến</dt><dd>{data.events.length}</dd></div></dl>
      {data.auctionType==='BLIND'&&<><h3>Top 3 bid cao nhất</h3>{data.topBids?.length?<ol className="blind-replay-ranking">{data.topBids.map(row=><li key={row.userId}><span>{row.username}</span><strong>{coin(row.amount)}</strong></li>)}</ol>:<p>Chưa có bid nào.</p>}</>}
-     <Link className="blind-replay-back" to={back}>← Trở lại phiên</Link>
+     <Link className="blind-replay-back" to={back}>← {backLabel}</Link>
     </section>
-    <section className="room-data-panel blind-replay-events" aria-label="Diễn biến phiên"><div className="room-data-tabs"><h2>Diễn biến phiên</h2><span>{data.events.length} sự kiện</span></div><ol>{data.events.map((event,index)=><li key={index}><time>{new Date(event.at).toLocaleString('vi-VN')}</time><span className="blind-replay-marker" aria-hidden="true"/><p>{eventText(event)}</p></li>)}</ol></section>
+    <section className="room-data-panel blind-replay-events" aria-label="Diễn biến phiên"><div className="room-data-tabs"><h2>Diễn biến phiên</h2><span>{data.events.length} mốc</span></div><ol>{data.events.map((event,index)=><li key={index}><time>{new Date(event.at).toLocaleString('vi-VN')}</time><span className="blind-replay-marker" aria-hidden="true"/><p>{eventText(event)}</p></li>)}</ol></section>
    </div>}
  </main>;
 }

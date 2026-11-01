@@ -17,7 +17,7 @@ public class DiscoveryService {
  private final Clock clock;
  // Explicit projection: never serialize the admin DTO or a JPA entity publicly.
  private static final String FROM=" FROM auctions a JOIN products p ON p.id=a.product_id";
- private static final String SELECT="SELECT a.id,a.auction_type,a.status,a.start_time,a.end_time,a.starting_price,a.min_bid_increment,p.id AS product_id,p.name,p.description,p.quantity,p.image_url,(SELECT MAX(b.amount) FROM bids b WHERE b.auction_id=a.id) AS highest,EXISTS(SELECT 1 FROM blind_settings bs WHERE bs.auction_id=a.id AND bs.opened_at IS NOT NULL) AS lobby_opened";
+ private static final String SELECT="SELECT a.id,a.auction_type,a.status,a.start_time,CASE WHEN a.auction_type='BLIND' AND a.status='RUNNING' THEN COALESCE((SELECT CAST(LEAST(br.bid_locks_at,br.ends_at) AS DATETIME(6)) FROM blind_rounds br WHERE br.auction_id=a.id),a.end_time) ELSE a.end_time END AS end_time,a.starting_price,a.min_bid_increment,p.id AS product_id,p.name,p.description,p.quantity,p.image_url,(SELECT MAX(b.amount) FROM bids b WHERE b.auction_id=a.id) AS highest,EXISTS(SELECT 1 FROM blind_settings bs WHERE bs.auction_id=a.id AND bs.opened_at IS NOT NULL) AS lobby_opened";
  public DiscoveryService(JdbcTemplate jdbc,Clock clock){this.jdbc=jdbc;this.clock=clock;}
  public Map<String,Object> list(String q,String status,String type,int page,int size){
   q=q.strip();if(q.length()>255||page<0||size<1||size>100||(long)page*size>Integer.MAX_VALUE
