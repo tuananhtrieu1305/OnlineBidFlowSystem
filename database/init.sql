@@ -72,7 +72,7 @@ CREATE TABLE auctions (
     start_time DATETIME(6) NOT NULL,
     end_time DATETIME(6) NOT NULL,
     finished_at DATETIME(6) NULL,
-    status ENUM('UPCOMING','RUNNING','SOLD','UNSOLD') NOT NULL,
+    status ENUM('UPCOMING','RUNNING','SOLD','UNSOLD','CANCELLED') NOT NULL,
     winner_user_id BIGINT UNSIGNED NULL,
     winning_price BIGINT UNSIGNED NULL,
     PRIMARY KEY (id),
@@ -91,7 +91,7 @@ CREATE TABLE auctions (
     ),
     CONSTRAINT chk_auctions_result CHECK (
         (status = 'SOLD' AND winner_user_id IS NOT NULL AND winning_price IS NOT NULL AND finished_at IS NOT NULL)
-        OR (status = 'UNSOLD' AND winner_user_id IS NULL AND winning_price IS NULL AND finished_at IS NOT NULL)
+        OR (status IN ('UNSOLD','CANCELLED') AND winner_user_id IS NULL AND winning_price IS NULL AND finished_at IS NOT NULL)
         OR (status IN ('UPCOMING','RUNNING') AND winner_user_id IS NULL AND winning_price IS NULL AND finished_at IS NULL)
     )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -152,6 +152,7 @@ CREATE TABLE coin_transactions (
 -- BLIND-only gameplay data. Clues are private until disclosed by their owner.
 CREATE TABLE blind_settings (
     auction_id BIGINT UNSIGNED NOT NULL,
+    opened_at DATETIME(6) NULL,
     trade_seconds INT UNSIGNED NOT NULL DEFAULT 300,
     bid_seconds INT UNSIGNED NOT NULL DEFAULT 100,
     PRIMARY KEY (auction_id),
@@ -169,7 +170,7 @@ CREATE TABLE blind_clues (
     UNIQUE KEY uk_blind_clue_slot (auction_id, slot),
     UNIQUE KEY uk_blind_clue_auction_id (auction_id, id),
     CONSTRAINT fk_blind_clue_auction FOREIGN KEY (auction_id) REFERENCES auctions (id),
-    CONSTRAINT chk_blind_clue_slot CHECK (slot BETWEEN 1 AND 4)
+    CONSTRAINT chk_blind_clue_slot CHECK (slot BETWEEN 1 AND 30)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE blind_rounds (

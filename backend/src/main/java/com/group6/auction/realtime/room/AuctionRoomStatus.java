@@ -4,5 +4,6 @@ public enum AuctionRoomStatus {
     UPCOMING,
     RUNNING,
     SOLD,
-    UNSOLD
+    UNSOLD,
+    CANCELLED
 }

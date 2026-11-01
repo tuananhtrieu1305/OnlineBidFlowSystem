@@ -12,6 +12,7 @@ public record ReplayResponse(
         ProductSnapshot product,
         ReplayResultSnapshot result,
         ReplayHistoricalStats historicalStats,
-        List<ReplayTimelineEvent> events
+        List<ReplayTimelineEvent> events,
+        List<ReplayTopBid> topBids
 ) {
 }

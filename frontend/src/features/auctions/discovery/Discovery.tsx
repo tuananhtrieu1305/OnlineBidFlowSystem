@@ -7,22 +7,24 @@ import {auctionStatusLabel} from '../auctionStatus';
 import {watchAuctionUpdates} from '../watchAuctionUpdates';
 import './discovery.css';
 
-type Auction={id:string;auctionType:'NORMAL'|'BLIND';status:string;startTime:string;endTime:string;serverNow?:string;startingPrice?:string;currentPrice?:string;minBidIncrement?:string;product:{id:string;name:string;imageUrl:string|null;description?:string|null;quantity?:number}};
+type Auction={id:string;auctionType:'NORMAL'|'BLIND';status:string;lobbyOpened?:boolean;productRevealed?:boolean;startTime:string;endTime:string;serverNow?:string;startingPrice?:string;currentPrice?:string;minBidIncrement?:string;product:{id:string|null;name:string;imageUrl:string|null;description?:string|null;quantity?:number|null}};
 type AuctionPage={items:Auction[];page:number;totalPages:number;totalElements:string};
-const statuses:Record<string,string>={UPCOMING:'Sắp diễn ra',RUNNING:'Đang diễn ra',SOLD:'Đã bán',UNSOLD:'Chưa bán được'};
+const statuses:Record<string,string>={UPCOMING:'Sắp diễn ra',RUNNING:'Đang diễn ra',SOLD:'Đã bán',UNSOLD:'Chưa bán được',CANCELLED:'Đã hủy'};
 const date=(value:string)=>new Date(value).toLocaleString('vi-VN');
 const coin=(value?:string)=>value===undefined?'—':new Intl.NumberFormat('vi-VN').format(BigInt(value))+' Coin';
+const blindNotOpen=(auction:Auction)=>auction.auctionType==='BLIND'&&auction.status==='UPCOMING'&&(typeof auction.lobbyOpened==='boolean'?!auction.lobbyOpened:Date.parse(auction.startTime)>Date.parse(auction.serverNow??new Date().toISOString()));
+const productHidden=(auction:Auction)=>auction.auctionType==='BLIND'&&!['SOLD','UNSOLD','CANCELLED'].includes(auction.status);
 function ProductImage({auction}:{auction:Auction}){
  const [failed,setFailed]=useState(false);const src=imageSource(auction.product.imageUrl);
  useEffect(()=>setFailed(false),[src]);
- return src&&!failed?<img className="discovery-image" src={src} alt={auction.product.name} onError={()=>setFailed(true)}/>:<div className="discovery-image discovery-placeholder" aria-label="Chưa có ảnh sản phẩm">◇</div>;
+ return src&&!failed?<img className="discovery-image" src={src} alt={productHidden(auction)?'Ảnh sản phẩm đấu giá mù':auction.product.name} onError={()=>setFailed(true)}/>:<div className="discovery-image discovery-placeholder" aria-label="Chưa có ảnh sản phẩm">◇</div>;
 }
 function Price({auction}:{auction:Auction}){
  return auction.auctionType==='BLIND'?<p className="discovery-price">Giá trả được giữ kín.</p>:<p className="discovery-price">{coin(auction.currentPrice)}<small>{auction.status==='UPCOMING'?'Giá khởi điểm':'Giá cao nhất ghi nhận'}</small></p>;
 }
 export function DiscoveryList(){
  const [q,setQ]=useState(''),[type,setType]=useState(''),[status,setStatus]=useState(''),[page,setPage]=useState(0),[reload,setReload]=useState(0);
- const [data,setData]=useState<AuctionPage|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(false);
+ const [data,setData]=useState<AuctionPage|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(false),[notice,setNotice]=useState('');
  useEffect(()=>{
   const controller=new AbortController();let pending=false;setLoading(true);setError(false);setData(null);
   const load=()=>{if(pending)return;pending=true;void client.get<AuctionPage>('/api/discovery/auctions',{params:{q,auctionType:type,status,page,size:12},signal:controller.signal})
@@ -40,10 +42,11 @@ export function DiscoveryList(){
    <button type="button" onClick={()=>setReload(v=>v+1)} disabled={loading}>Làm mới</button>
   </div>
   <p className="discovery-note">Các phiên công khai · Phiên riêng tư không xuất hiện tại đây.</p>
+  {notice&&<p className="discovery-inline-notice" role="status">{notice}</p>}
   {loading?<p role="status">Đang tải phiên đấu giá…</p>:error?<div role="alert">Chưa tải được danh sách phiên. Hãy kiểm tra kết nối. <button onClick={()=>setReload(v=>v+1)}>Thử lại</button></div>:data&&<>
    {!data.items.length?<div className="guest-empty"><h3>Chưa có phiên phù hợp</h3><p>Thử đổi bộ lọc hoặc quay lại sau khi Admin tạo phiên công khai.</p></div>:<div className="discovery-grid">{data.items.map(a=><article className="discovery-card" key={a.id}>
     <ProductImage auction={a}/><div className="discovery-card-body"><div className="discovery-meta"><span>{auctionStatusLabel(a)}</span><span>#{a.id}</span></div>
-    <h3><Link to={'/auctions/'+a.id} aria-label={'Xem phiên '+a.product.name}>{a.product.name}</Link></h3>
+    <h3>{blindNotOpen(a)?<button type="button" className="discovery-card-title" onClick={()=>setNotice('Phiên đấu giá mù chưa diễn ra. Phòng sẽ mở theo lịch hoặc khi Admin chọn Start now.')}>{productHidden(a)?'Sản phẩm bí mật':a.product.name}</button>:<Link to={'/auctions/'+a.id} aria-label={'Xem phiên '+(productHidden(a)?'bí mật':a.product.name)}>{productHidden(a)?'Sản phẩm bí mật':a.product.name}</Link>}</h3>
     <p>{a.auctionType==='NORMAL'?'Đấu giá thường':'Đấu giá mù'}</p><Price auction={a}/>
     <p className="discovery-note">{a.status==='UPCOMING'?'Bắt đầu: ':'Kết thúc: '}{date(a.status==='UPCOMING'?a.startTime:a.endTime)}</p></div>
    </article>)}</div>}
@@ -63,11 +66,11 @@ export function DiscoveryDetail(){
  },[id,reload]);
  return <main id="main-content" className="guest-home discovery" tabIndex={-1}><Link to="/">← <span>Quay lại khám phá</span></Link>
   {error?<div role="alert">{error} <button onClick={()=>setReload(v=>v+1)}>Thử lại</button></div>:!data?<p role="status">Đang tải phiên đấu giá…</p>:<>
-   <div className="discovery-detail"><section><ProductImage auction={data}/><h2>Thông tin sản phẩm</h2><p className="discovery-description">{data.product.description||'Chưa có mô tả sản phẩm.'}</p><p>Số lượng: {data.product.quantity}</p></section>
-   <section><p className="discovery-meta">PHIÊN #{data.id} · {auctionStatusLabel(data)}</p><h1>{data.product.name}</h1><p>{data.auctionType==='NORMAL'?'Đấu giá thường':'Đấu giá mù'} · Công khai</p><Price auction={data}/>
+   <div className="discovery-detail"><section><ProductImage auction={data}/><h2>Thông tin sản phẩm</h2><p className="discovery-description">{productHidden(data)?'Thông tin sẽ được mở sau khi phiên chốt bid.':data.product.description||'Chưa có mô tả sản phẩm.'}</p>{!productHidden(data)&&<p>Số lượng: {data.product.quantity}</p>}</section>
+   <section><p className="discovery-meta">PHIÊN #{data.id} · {auctionStatusLabel(data)}</p><h1>{productHidden(data)?'Sản phẩm bí mật':data.product.name}</h1><p>{data.auctionType==='NORMAL'?'Đấu giá thường':'Đấu giá mù'} · Công khai</p><Price auction={data}/>
     {data.auctionType==='NORMAL'&&<dl><dt>Giá khởi điểm</dt><dd>{coin(data.startingPrice)}</dd><dt>Bước giá tối thiểu</dt><dd>{coin(data.minBidIncrement)}</dd></dl>}
     <dl><dt>Bắt đầu</dt><dd>{date(data.startTime)}</dd><dt>Kết thúc</dt><dd>{date(data.endTime)}</dd></dl>
-    <div className="discovery-notice"><strong>Bạn đang xem thông tin phiên.</strong>{data.auctionType==='BLIND'?<p>{user?.role==='USER'?<Link to={'/blind/'+data.id}>Vào phòng đấu giá mù →</Link>:<><Link to="/login">Đăng nhập</Link> để tham gia phòng BLIND.</>}</p>:<p><Link to={'/normal/'+data.id}>Mở phòng đấu giá thường →</Link></p>}{!user&&<p><Link to="/register">Tạo tài khoản</Link> để chuẩn bị ví Coin.</p>}</div>
+    <div className="discovery-notice"><strong>Bạn đang xem thông tin phiên.</strong>{data.auctionType==='BLIND'?<p>{blindNotOpen(data)?'Phiên đấu giá mù chưa diễn ra. Phòng sẽ mở theo lịch hoặc khi Admin chọn Start now.':user?.role==='USER'?<Link to={'/blind/'+data.id}>Vào phòng đấu giá mù →</Link>:<><Link to="/login">Đăng nhập</Link> để tham gia phòng BLIND.</>}</p>:<p><Link to={'/normal/'+data.id}>Mở phòng đấu giá thường →</Link></p>}{!user&&<p><Link to="/register">Tạo tài khoản</Link> để chuẩn bị ví Coin.</p>}</div>
     <p className="discovery-note">Coin là đơn vị giả lập, chỉ có giá trị trong hệ thống. Thông tin tự cập nhật mỗi 10 giây khi bạn đang xem.</p>
    </section></div>
   </>}

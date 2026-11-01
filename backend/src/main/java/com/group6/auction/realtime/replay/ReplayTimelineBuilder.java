@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,30 @@ public class ReplayTimelineBuilder {
                 .sorted(Comparator.comparing(TimedReplayEvent::at).thenComparingInt(TimedReplayEvent::order))
                 .map(event -> new ReplayTimelineEvent(event.type(), iso(event.at()), event.payload()))
                 .toList();
+    }
+
+    public List<ReplayTimelineEvent> buildBlind(ReplayAuctionData auction, ReplayViewer viewer,
+            List<ReplayBidData> bids, List<ReplayClueTradeData> trades, Map<Long,String> bidderNames) {
+        var events=new ArrayList<TimedReplayEvent>();
+        events.add(new TimedReplayEvent(auction.startTime(),0,"AUCTION_STARTED",auctionStartedPayload(auction)));
+        var previous=new HashMap<Long,Long>();
+        for(var bid:bids.stream().sorted(Comparator.comparing(ReplayBidData::createdAt).thenComparingLong(ReplayBidData::bidId)).toList()){
+            Long old=previous.get(bid.userId());
+            if(old!=null&&old==bid.amount())continue;
+            previous.put(bid.userId(),bid.amount());
+            var payload=bidPayload(bid,viewer);
+            payload.put("username",bidderNames.getOrDefault(bid.userId(),"Người chơi #"+bid.userId()));
+            if(old!=null)payload.put("previousAmount",old);
+            events.add(new TimedReplayEvent(bid.createdAt(),1,old==null?"BID_PLACED":"BID_REVISED",payload));
+        }
+        for(var trade:trades){
+            var payload=orderedMap();payload.put("clueSlot",trade.clueSlot());payload.put("clueContent",trade.clueContent());
+            payload.put("seller",trade.seller());payload.put("buyer",trade.buyer());payload.put("price",trade.price());
+            events.add(new TimedReplayEvent(trade.createdAt(),2,"CLUE_TRADED",payload));
+        }
+        events.add(new TimedReplayEvent(finishedAt(auction),3,"AUCTION_FINISHED",finishedPayload(auction)));
+        return events.stream().sorted(Comparator.comparing(TimedReplayEvent::at).thenComparingInt(TimedReplayEvent::order))
+            .map(event->new ReplayTimelineEvent(event.type(),iso(event.at()),event.payload())).toList();
     }
 
     private List<ReplayBidData> visibleBids(ReplayAuctionData auction, ReplayViewer viewer, List<ReplayBidData> bids) {

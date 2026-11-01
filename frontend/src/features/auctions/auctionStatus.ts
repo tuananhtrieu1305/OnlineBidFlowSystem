@@ -1,5 +1,5 @@
 type TimedAuction={status:string;startTime:string;endTime:string;serverNow?:string};
-export const auctionStatuses:Record<string,string>={UPCOMING:'Sắp diễn ra',RUNNING:'Đang diễn ra',SOLD:'Đã bán',UNSOLD:'Chưa bán được'};
+export const auctionStatuses:Record<string,string>={UPCOMING:'Sắp diễn ra',RUNNING:'Đang diễn ra',SOLD:'Đã bán',UNSOLD:'Chưa bán được',CANCELLED:'Đã hủy'};
 export function auctionStatusLabel(auction:TimedAuction):string{
  const now=Date.parse(auction.serverNow??'');
  if(auction.status==='UPCOMING'||auction.status==='RUNNING'){

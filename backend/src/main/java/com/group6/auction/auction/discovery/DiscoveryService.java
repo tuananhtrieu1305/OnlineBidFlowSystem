@@ -17,14 +17,14 @@ public class DiscoveryService {
  private final Clock clock;
  // Explicit projection: never serialize the admin DTO or a JPA entity publicly.
  private static final String FROM=" FROM auctions a JOIN products p ON p.id=a.product_id";
- private static final String SELECT="SELECT a.id,a.auction_type,a.status,a.start_time,a.end_time,a.starting_price,a.min_bid_increment,p.id AS product_id,p.name,p.description,p.quantity,p.image_url,(SELECT MAX(b.amount) FROM bids b WHERE b.auction_id=a.id) AS highest";
+ private static final String SELECT="SELECT a.id,a.auction_type,a.status,a.start_time,a.end_time,a.starting_price,a.min_bid_increment,p.id AS product_id,p.name,p.description,p.quantity,p.image_url,(SELECT MAX(b.amount) FROM bids b WHERE b.auction_id=a.id) AS highest,EXISTS(SELECT 1 FROM blind_settings bs WHERE bs.auction_id=a.id AND bs.opened_at IS NOT NULL) AS lobby_opened";
  public DiscoveryService(JdbcTemplate jdbc,Clock clock){this.jdbc=jdbc;this.clock=clock;}
  public Map<String,Object> list(String q,String status,String type,int page,int size){
   q=q.strip();if(q.length()>255||page<0||size<1||size>100||(long)page*size>Integer.MAX_VALUE
-   ||(!status.isEmpty()&&!Set.of("UPCOMING","RUNNING","SOLD","UNSOLD").contains(status))
+   ||(!status.isEmpty()&&!Set.of("UPCOMING","RUNNING","SOLD","UNSOLD","CANCELLED").contains(status))
    ||(!type.isEmpty()&&!Set.of("NORMAL","BLIND").contains(type)))throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
   String where=" WHERE a.access_type='PUBLIC'";List<Object> args=new ArrayList<>();
-  if(!q.isEmpty()){where+=" AND p.name LIKE ? ESCAPE '!'";args.add("%"+q.replace("!","!!").replace("%","!%").replace("_","!_")+"%");}
+  if(!q.isEmpty()){where+=" AND (a.auction_type='NORMAL' OR a.status IN ('SOLD','UNSOLD','CANCELLED')) AND p.name LIKE ? ESCAPE '!'";args.add("%"+q.replace("!","!!").replace("%","!%").replace("_","!_")+"%");}
   if(!status.isEmpty()){where+=" AND a.status=?";args.add(status);}
   if(!type.isEmpty()){where+=" AND a.auction_type=?";args.add(type);}
   long total=jdbc.queryForObject("SELECT COUNT(*)"+FROM+where,Long.class,args.toArray());
@@ -42,8 +42,11 @@ public class DiscoveryService {
   result.put("startTime",rs.getObject("start_time",LocalDateTime.class).toInstant(ZoneOffset.UTC).toString());
   result.put("endTime",rs.getObject("end_time",LocalDateTime.class).toInstant(ZoneOffset.UTC).toString());
   result.put("serverNow",clock.instant().toString());
-  product.put("id",rs.getString("product_id"));product.put("name",rs.getString("name"));product.put("imageUrl",rs.getString("image_url"));
-  if(detail){product.put("description",rs.getString("description"));product.put("quantity",rs.getInt("quantity"));}
+  if("BLIND".equals(rs.getString("auction_type")))result.put("lobbyOpened",rs.getBoolean("lobby_opened"));
+  boolean hidden="BLIND".equals(rs.getString("auction_type"))&&!Set.of("SOLD","UNSOLD","CANCELLED").contains(rs.getString("status"));
+  product.put("id",hidden?null:rs.getString("product_id"));product.put("name",hidden?"Sản phẩm bí mật":rs.getString("name"));product.put("imageUrl",rs.getString("image_url"));
+  if(detail){product.put("description",hidden?null:rs.getString("description"));product.put("quantity",hidden?null:rs.getInt("quantity"));}
+  if("BLIND".equals(rs.getString("auction_type")))result.put("productRevealed",!hidden);
   result.put("product",product);
   if("NORMAL".equals(rs.getString("auction_type"))){
    result.put("startingPrice",rs.getString("starting_price"));result.put("minBidIncrement",rs.getString("min_bid_increment"));

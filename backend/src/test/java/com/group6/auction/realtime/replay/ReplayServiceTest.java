@@ -56,37 +56,35 @@ class ReplayServiceTest {
     }
 
     @Test
-    void blindUserReplayIncludesOwnBidOnly() throws Exception {
+    void blindReplayShowsAllBidsRevisionsClueTradesAndTopThreeAfterFinish() throws Exception {
         gateway.auction = blindAuction(AuctionStatus.SOLD);
         gateway.participants.put(key(3L, 2L), true);
-        gateway.bids.add(new ReplayBidData(20L, 3L, 2L, 1600L, at(9, 10)));
-        gateway.bids.add(new ReplayBidData(21L, 3L, 6L, 2400L, at(9, 12)));
-        gateway.historicalResults.add(new ReplayHistoricalResult(1500L, AuctionStatus.SOLD, at(8, 0)));
-        gateway.historicalResults.add(new ReplayHistoricalResult(1800L, AuctionStatus.SOLD, at(8, 30)));
-        gateway.historicalResults.add(new ReplayHistoricalResult(null, AuctionStatus.UNSOLD, at(8, 45)));
+        gateway.bids.add(new ReplayBidData(20L, 3L, 2L, 1500L, at(9, 10)));
+        gateway.bids.add(new ReplayBidData(23L, 3L, 2L, 1500L, at(9, 11))); // Legacy duplicate must not appear as an edit.
+        gateway.bids.add(new ReplayBidData(21L, 3L, 6L, 1400L, at(9, 12)));
+        gateway.bids.add(new ReplayBidData(22L, 3L, 2L, 1600L, at(9, 13)));
+        gateway.bidderNames.put(2L,"alice");gateway.bidderNames.put(6L,"bob");
+        gateway.trades.add(new ReplayClueTradeData(1L,2,"Camera uses film","alice","bob",50L,at(9,11)));
+        gateway.chatMessages.add(new ReplayChatData(5L,3L,6L,"bob","secret chat",at(9,14)));
 
         var replay = service.buildReplay(3L, viewer(2L, RealtimePrincipal.Role.USER));
         var json = objectMapper.writeValueAsString(replay);
 
         assertThat(json).contains("\"auctionType\":\"BLIND\"")
                 .contains("\"amount\":1600")
+                .contains("\"amount\":1400")
+                .contains("Camera uses film")
                 .contains("\"winnerUserId\":2")
                 .contains("\"winningPrice\":1600")
-                .contains("\"soldCount\":2")
-                .contains("\"averageWinningPrice\":1650")
-                .doesNotContain("\"bidId\":21")
-                .doesNotContain("\"amount\":2400")
-                .doesNotContain("\"userId\":6")
-                .doesNotContain("\"ownBid\":false")
+                .doesNotContain("secret chat")
+                .doesNotContain("\"bidId\":23")
+                .doesNotContain("averageWinningPrice")
                 .doesNotContain("\"startingPrice\"")
                 .doesNotContain("estimatedPrice");
-        var bidEvents = replay.events().stream()
-                .filter(event -> event.type().equals("BID_PLACED"))
-                .toList();
-        assertThat(bidEvents).hasSize(1);
-        assertThat(objectMapper.writeValueAsString(bidEvents.getFirst().payload()))
-                .contains("\"ownBid\":true")
-                .doesNotContain("\"userId\":6");
+        assertThat(replay.events()).extracting(ReplayTimelineEvent::type)
+                .containsExactly("AUCTION_STARTED","BID_PLACED","CLUE_TRADED","BID_PLACED","BID_REVISED","AUCTION_FINISHED");
+        assertThat(replay.topBids()).extracting(ReplayTopBid::username).containsExactly("alice","bob");
+        assertThat(replay.topBids()).extracting(ReplayTopBid::amount).containsExactly(1600L,1400L);
     }
 
     @Test
@@ -180,6 +178,8 @@ class ReplayServiceTest {
         private final List<ReplayBidData> bids = new ArrayList<>();
         private final List<ReplayChatData> chatMessages = new ArrayList<>();
         private final List<ReplayHistoricalResult> historicalResults = new ArrayList<>();
+        private final List<ReplayClueTradeData> trades = new ArrayList<>();
+        private final Map<Long,String> bidderNames = new HashMap<>();
 
         @Override
         public Optional<ReplayAuctionData> findAuction(long auctionId) {
@@ -205,5 +205,8 @@ class ReplayServiceTest {
         public List<ReplayHistoricalResult> historicalResultsFor(long productId, LocalDateTime beforeStartTime) {
             return historicalResults;
         }
+
+        @Override public List<ReplayClueTradeData> clueTradesForAuction(long auctionId) { return trades; }
+        @Override public Map<Long,String> bidderNamesForAuction(long auctionId) { return bidderNames; }
     }
 }

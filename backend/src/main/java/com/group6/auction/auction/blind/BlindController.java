@@ -28,8 +28,8 @@ public class BlindController {
     public Object saveSettings(@PathVariable long id, @RequestBody SettingsInput input) {
         return service.saveSettings(id,input==null?null:input.tradeSeconds(),input==null?null:input.bidSeconds());
     }
-    @PostMapping("/api/admin/blind/auctions/{id}/start")
-    public Object startNow(@PathVariable long id) { return service.startNow(id); }
+    @PostMapping("/api/admin/blind/auctions/{id}/open")
+    public Object open(@PathVariable long id) { return service.open(id); }
 
     @GetMapping("/api/admin/blind/auctions/{id}/clues")
     public Object adminClues(@PathVariable long id) { return service.adminClues(id); }

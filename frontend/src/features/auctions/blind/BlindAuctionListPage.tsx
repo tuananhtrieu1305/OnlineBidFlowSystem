@@ -5,7 +5,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import ProductImage from '../../normal/ProductImage';
 import '../../normal/normal.css';
 
-const statuses = { ALL: 'Tất cả', RUNNING: 'Đang diễn ra', UPCOMING: 'Sắp bắt đầu', SOLD: 'Đã bán', UNSOLD: 'Chưa bán' };
+const statuses = { ALL: 'Tất cả', RUNNING: 'Đang diễn ra', UPCOMING: 'Sắp bắt đầu', SOLD: 'Đã bán', UNSOLD: 'Chưa bán', CANCELLED: 'Đã hủy' };
 type Status = keyof typeof statuses;
 type Auction = {
   id: number;
@@ -16,6 +16,8 @@ type Auction = {
   endsAt: string;
   joined: boolean;
   participantCount: number;
+  capacity: number;
+  lobbyOpened: boolean;
 };
 const date = (value: string) => new Date(value).toLocaleString('vi-VN');
 function countdown(end: string, now: number) {
@@ -30,6 +32,7 @@ export default function BlindAuctionListPage() {
   const [items, setItems] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [noticeAuctionId, setNoticeAuctionId] = useState<number | null>(null);
   const [status, setStatus] = useState<Status>('ALL');
   const [access, setAccess] = useState<'ALL' | Auction['access']>('ALL');
   const [search, setSearch] = useState('');
@@ -59,8 +62,10 @@ export default function BlindAuctionListPage() {
   useEffect(() => { if (privateRoom) dialog.current?.showModal(); else dialog.current?.close(); }, [privateRoom]);
 
   function choose(item: Auction) {
-    if (item.status === 'SOLD' || item.status === 'UNSOLD') {
+    if (item.status === 'SOLD' || item.status === 'UNSOLD' || item.status === 'CANCELLED') {
       navigate(`/auctions/${item.id}/replay`);
+    } else if (item.status === 'UPCOMING' && !item.lobbyOpened) {
+      setNoticeAuctionId(item.id);
     } else if (item.access === 'PRIVATE') {
       setCode(''); setPrivateRoom(item);
     } else {
@@ -72,7 +77,8 @@ export default function BlindAuctionListPage() {
     if (privateRoom && code.trim()) navigate(`/blind/${privateRoom.id}`, { state: { roomCode: code.trim() } });
   }
   const filtered = items.filter(item => (status === 'ALL' || item.status === status) && (access === 'ALL' || item.access === access)
-    && `${item.product.name} ${item.product.description ?? ''}`.toLocaleLowerCase('vi-VN').includes(search.trim().toLocaleLowerCase('vi-VN')));
+    && `${item.status === 'UPCOMING' || item.status === 'RUNNING' ? 'Sản phẩm bí mật' : item.product.name} ${item.status === 'UPCOMING' || item.status === 'RUNNING' ? '' : item.product.description ?? ''}`.toLocaleLowerCase('vi-VN').includes(search.trim().toLocaleLowerCase('vi-VN')));
+  const noticeAuction = items.find(item => item.id === noticeAuctionId && item.status === 'UPCOMING' && !item.lobbyOpened);
 
   if (auth.loading) return <main id="main-content" className="guest-home"><p role="status">Đang kiểm tra phiên đăng nhập…</p></main>;
   if (!auth.user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
@@ -88,28 +94,30 @@ export default function BlindAuctionListPage() {
       </div>
       <input type="search" aria-label="Tìm kiếm sản phẩm" placeholder="Tìm kiếm sản phẩm…" value={search} onChange={event => setSearch(event.target.value)} />
     </div>
-    <div aria-live="polite">{error && <p className="normal-catalog-error" role="alert">{error}</p>}</div>
+    <div aria-live="polite">{error && <p className="normal-catalog-error" role="alert">{error}</p>}{noticeAuction && <p className="normal-catalog-notice" role="status">Phiên #{noticeAuction.id} chưa diễn ra. Phòng sẽ mở vào {date(noticeAuction.startsAt)} hoặc khi Admin chọn Start now.</p>}</div>
     {loading ? <p role="status">Đang tải phiên đấu giá kín…</p> : <>
       <p className="normal-results-count">{filtered.length} phiên đấu giá</p>
       {!filtered.length && <p className="normal-catalog-empty">Không có phiên phù hợp với bộ lọc hiện tại.</p>}
       <div className="normal-catalog-grid">{filtered.map(item => {
-        const finished = item.status === 'SOLD' || item.status === 'UNSOLD';
-        const full = item.participantCount >= 4 && !item.joined;
-        const canOpen = finished ? item.joined : item.status === 'RUNNING' ? item.joined : !full;
+        const hidden = item.status === 'UPCOMING' || item.status === 'RUNNING';
+        const product = hidden ? {name:'Sản phẩm bí mật',description:null,quantity:0,imageUrl:item.product.imageUrl} : item.product;
+        const finished = item.status === 'SOLD' || item.status === 'UNSOLD' || item.status === 'CANCELLED';
+        const full = item.participantCount >= item.capacity && !item.joined;
+        const canOpen = finished ? item.joined : item.status === 'RUNNING' ? item.joined : item.status === 'UPCOMING' && !item.lobbyOpened ? true : !full;
         const action = finished ? item.joined ? 'Xem kết quả' : 'Chỉ người tham gia xem kết quả'
-          : item.status === 'RUNNING' && !item.joined ? 'Phiên đã bắt đầu' : full ? 'Phòng đã đủ 4 người' : 'Vào phòng';
-        return <article key={item.id} className="normal-auction-card" aria-label={`Phiên #${item.id} · ${item.product.name}`}>
+          : item.status === 'RUNNING' && !item.joined ? 'Phiên đã bắt đầu' : item.status === 'UPCOMING' && !item.lobbyOpened ? 'Xem thông báo' : full ? 'Phòng đã đủ người' : 'Vào phòng';
+        return <article key={item.id} className="normal-auction-card" aria-label={`Phiên #${item.id} · ${product.name}`}>
           <div className="normal-card-badges"><span>BLIND</span><span className={item.access === 'PRIVATE' ? 'private' : 'public'}>{item.access === 'PRIVATE' ? '▣ ' : ''}{item.access}</span><small>#{item.id}</small></div>
-          <ProductImage product={{ ...item.product, description: item.product.description ?? '' }} />
-          <h2>{item.product.name}</h2><p className="normal-card-description">{item.product.description || 'Chưa có mô tả sản phẩm.'}</p>
+          <ProductImage product={{ ...product, description: product.description ?? '' }} />
+          <h2>{product.name}</h2><p className="normal-card-description">{hidden?'Thông tin sản phẩm sẽ được mở sau khi phiên chốt bid.':product.description || 'Chưa có mô tả sản phẩm.'}</p>
           <div className={`normal-card-status ${item.status.toLowerCase()}`}><strong>{statuses[item.status]}</strong>{item.status === 'RUNNING' && <time aria-label="Thời gian còn lại">{countdown(item.endsAt, now)}</time>}</div>
-          <dl className="normal-card-facts"><div><dt>{item.status === 'UPCOMING' ? 'Bắt đầu' : 'Kết thúc'}</dt><dd>{date(item.status === 'UPCOMING' ? item.startsAt : item.endsAt)}</dd></div><div><dt>Vị trí</dt><dd>{item.participantCount}/4</dd></div></dl>
+          <dl className="normal-card-facts"><div><dt>{item.status === 'UPCOMING' ? item.lobbyOpened ? 'Hạn chờ' : 'Mở phòng' : 'Kết thúc'}</dt><dd>{date(item.status === 'UPCOMING' && !item.lobbyOpened ? item.startsAt : item.endsAt)}</dd></div><div><dt>Vị trí</dt><dd>{item.participantCount}/{item.capacity}</dd></div></dl>
           <button type="button" className="normal-enter-button" disabled={!canOpen} onClick={() => choose(item)}>{action}</button>
         </article>;
       })}</div>
     </>}
     <dialog ref={dialog} className="normal-code-dialog" aria-labelledby="blind-private-room-title" onCancel={() => setPrivateRoom(null)}>
-      <form onSubmit={submit}><h2 id="blind-private-room-title">Vào phòng riêng tư #{privateRoom?.id}</h2><p>{privateRoom?.product.name}</p><label htmlFor="blind-catalog-room-code">Mã phòng</label><input id="blind-catalog-room-code" type="password" autoComplete="off" autoFocus required maxLength={50} value={code} onChange={event => setCode(event.target.value)} />
+      <form onSubmit={submit}><h2 id="blind-private-room-title">Vào phòng riêng tư #{privateRoom?.id}</h2><p>{privateRoom?.status==='UPCOMING'||privateRoom?.status==='RUNNING'?'Sản phẩm bí mật':privateRoom?.product.name}</p><label htmlFor="blind-catalog-room-code">Mã phòng</label><input id="blind-catalog-room-code" type="password" autoComplete="off" autoFocus required maxLength={50} value={code} onChange={event => setCode(event.target.value)} />
         <div className="normal-dialog-actions"><button type="button" onClick={() => setPrivateRoom(null)}>Hủy</button><button className="normal-enter-button" type="submit">Tham gia phiên</button></div>
       </form>
     </dialog>

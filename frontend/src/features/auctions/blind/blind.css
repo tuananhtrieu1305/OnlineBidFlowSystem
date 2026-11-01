@@ -23,6 +23,7 @@
 .blind-clue>small span { color:#4e8067; font-weight:500; }
 .blind-clue>p { margin:10px 0 0; font-size:15px; line-height:1.6; overflow-wrap:anywhere; white-space:pre-wrap; }
 .blind-sell { display:flex; flex-wrap:wrap; align-items:end; gap:8px; margin-top:14px; padding-top:12px; border-top:1px solid var(--room-border); }
+.blind-sell-note { margin:12px 0 0; color:var(--room-muted); font-size:12px; }
 .blind-sell label { flex:1 1 170px; min-width:0; color:var(--room-muted); font-size:12px; }
 .blind-sell input { display:block; width:100%; height:39px; margin-top:5px; }
 .blind-sell button,.blind-listings button { min-height:39px; padding:8px 12px; border:1px solid #9ab9af; border-radius:4px; background:white; color:var(--room-accent); font-size:13px; font-weight:500; }
@@ -33,6 +34,9 @@
 .blind-listings strong { font-size:14px; font-weight:500; }
 .blind-listings article span { color:var(--room-muted); font-size:12px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .blind-listings b { font-size:14px; font-weight:600; color:var(--room-accent); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.blind-room .blind-top-board { flex:none; margin:12px 0; padding:14px; border-radius:6px; }
+.blind-room .blind-top-board h2 { font-size:17px; }
+.blind-room .blind-top-board th,.blind-room .blind-top-board td { padding:8px 6px; font-size:12px; }
 .blind-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; margin:16px; border:1px solid var(--room-border); border-radius:4px; overflow:hidden; }
 .blind-stats>div { min-width:0; padding:16px; border-right:1px solid var(--room-border); border-bottom:1px solid var(--room-border); }
 .blind-stats>div:nth-child(2n) { border-right:0; }
@@ -92,6 +96,10 @@
 .blind-replay-summary dt { color:var(--room-muted); font-size:13px; }
 .blind-replay-summary dd { text-align:right; font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
 .blind-replay-back { color:var(--room-accent); font-size:14px; font-weight:500; text-decoration:underline; }
+.blind-replay-ranking { padding-left:24px; margin:12px 0 24px; }
+.blind-replay-ranking li { padding:6px 0; }
+.blind-replay-ranking li span { margin-right:12px; }
+.blind-replay-ranking li strong { color:var(--room-accent); }
 .blind-replay-events .room-data-tabs { justify-content:space-between; align-items:center; }
 .blind-replay-events .room-data-tabs h2 { font-size:15px; font-weight:600; }
 .blind-replay-events .room-data-tabs span { color:var(--room-muted); font-size:12px; }

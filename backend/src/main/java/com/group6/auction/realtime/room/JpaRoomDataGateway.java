@@ -15,6 +15,7 @@ import com.group6.auction.auction.repository.AuctionRepository;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
@@ -32,7 +33,13 @@ public class JpaRoomDataGateway implements RoomDataGateway {
             var users = userRepository.getIfAvailable();
             if (users == null || users.findById(userId).filter(user -> "USER".equals(user.getRole())).isEmpty())
                 return RoomAccessResult.denied("USER_REQUIRED", "Only player accounts can enter a BLIND room.");
-            if (auction.get().getStatus() == AuctionStatus.RUNNING && !participantExists(auctionId, userId))
+            if (auction.get().getStatus() == AuctionStatus.UPCOMING &&
+                (!Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM blind_settings WHERE auction_id=? AND opened_at IS NOT NULL)",Boolean.class,auctionId)) ||
+                 !LocalDateTime.now(java.time.ZoneOffset.UTC).isBefore(auction.get().getEndTime())))
+                return RoomAccessResult.denied("AUCTION_NOT_JOINABLE", "The BLIND lobby is not open.");
+            if (auction.get().getStatus() == AuctionStatus.RUNNING &&
+                (!participantExists(auctionId, userId) ||
+                 !Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM blind_clue_ownership WHERE auction_id=? AND user_id=?)",Boolean.class,auctionId,userId))))
                 return RoomAccessResult.denied("AUCTION_NOT_JOINABLE", "The BLIND round has already started.");
         }
         var result = new RoomAccessService(this).validateJoin(userId, auctionId, roomCode);
@@ -42,15 +49,17 @@ public class JpaRoomDataGateway implements RoomDataGateway {
     private final ObjectProvider<AuctionRepository> auctionRepository;
     private final ObjectProvider<AuctionParticipantRepository> participantRepository;
     private final ObjectProvider<UserRepository> userRepository;
+    private final JdbcTemplate jdbc;
 
     public JpaRoomDataGateway(
             ObjectProvider<AuctionRepository> auctionRepository,
             ObjectProvider<AuctionParticipantRepository> participantRepository,
-            ObjectProvider<UserRepository> userRepository
+            ObjectProvider<UserRepository> userRepository, JdbcTemplate jdbc
     ) {
         this.auctionRepository = auctionRepository;
         this.participantRepository = participantRepository;
         this.userRepository = userRepository;
+        this.jdbc = jdbc;
     }
 
     @Override
@@ -95,7 +104,7 @@ public class JpaRoomDataGateway implements RoomDataGateway {
         if (auction.getAuctionType() == AuctionType.BLIND) {
             return new AuctionRoomDetails(auction.getId(),
                     auction.getAccessType() == AuctionAccessType.PRIVATE ? AuctionRoomAccessType.PRIVATE : AuctionRoomAccessType.PUBLIC,
-                    status, auction.getRoomCode(), 4);
+                    status, auction.getRoomCode(), auction.getMaxParticipants());
         }
         if (auction.getAccessType() == AuctionAccessType.PRIVATE) {
             return AuctionRoomDetails.privateRoom(
