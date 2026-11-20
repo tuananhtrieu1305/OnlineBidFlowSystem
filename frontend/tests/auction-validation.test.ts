@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {localTime,utcTime,validateAuction,type AuctionFields} from '../src/features/auctions/configuration/validation';
-const fields:AuctionFields={auctionType:'NORMAL',accessType:'PRIVATE',startingPrice:'100',minBidIncrement:'10',maxParticipants:'2',startTime:'2030-01-02T10:00:00',endTime:'2030-01-02T11:00:00',blindClues:['A','B','C','D'],tradeSeconds:'300',bidSeconds:'100'};
+const fields:AuctionFields={auctionType:'NORMAL',accessType:'PRIVATE',startingPrice:'100',minBidIncrement:'10',maxParticipants:'2',startTime:'2030-01-02T10:00:00',endTime:'2030-01-02T11:00:00',blindClues:['A','B','C','D'],systemClues:[],tradeSeconds:'300',bidSeconds:'100'};
 describe('auction time and validation',()=>{
  it('round trips local datetime and rejects normalized invalid dates',()=>{
   expect(localTime(utcTime(fields.startTime)!)).toBe(fields.startTime);
@@ -15,5 +15,13 @@ describe('auction time and validation',()=>{
   expect(validateAuction({...fields,auctionType:'BLIND',accessType:'PUBLIC',minBidIncrement:'',maxParticipants:'4',startTime:''},now)).toHaveProperty('startTime');
   expect(validateAuction({...fields,endTime:fields.startTime},now)).toHaveProperty('endTime');
   expect(validateAuction(fields,new Date('2031-01-01').getTime())).toHaveProperty('startTime');
+ });
+ it('checks the player pool and public clues independently',()=>{
+  const blind={...fields,auctionType:'BLIND' as const,maxParticipants:'4',blindClues:Array.from({length:20},(_,i)=>`Clue ${i}`),systemClues:['Public 1','Public 2']};
+  const now=new Date('2029-01-01').getTime();
+  expect(validateAuction(blind,now)).toEqual({});
+  expect(validateAuction({...blind,blindClues:['A','B','C']},now)).toHaveProperty('blindClues');
+  expect(validateAuction({...blind,systemClues:['Clue 0']},now)).toHaveProperty('systemClues');
+  expect(validateAuction({...blind,systemClues:Array.from({length:11},(_,i)=>`Public ${i}`)},now)).toHaveProperty('systemClues');
  });
 });

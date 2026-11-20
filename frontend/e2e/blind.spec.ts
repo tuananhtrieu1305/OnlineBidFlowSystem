@@ -52,9 +52,10 @@ test('shows only owned Clues, buys one, then confirms a private bid',async({},in
  await page.route('**/api/auth/me',r=>r.fulfill({json:{id:3,username:'bob',role:'USER'}}));
  await page.route('**/api/auth/csrf',r=>r.fulfill({json:{token:'test-csrf'}}));
  await page.route('**/api/wallet',r=>r.fulfill({json:{availableBalance:bought?'2950':'3000',lockedBalance:amount??'0',walletId:'3',updatedAt:new Date().toISOString()}}));
- await page.route('**/api/blind/auctions/33',r=>r.fulfill({json:{auctionId:'33',phase,status:'RUNNING',serverNow:new Date().toISOString(),participantCount:4,onlineCount:4,lobbyClosesAt:null,
+ await page.route('**/api/blind/auctions/33',r=>r.fulfill({json:{auctionId:'33',phase,status:'RUNNING',serverNow:new Date().toISOString(),participantCount:4,onlineCount:4,capacity:4,hasListedClue:false,soldClueIds:[],lobbyClosesAt:null,
   product:{name:'Máy ảnh sưu tầm',description:'Máy ảnh cổ điển.',image_url:null},
   ownedClues:[{id:'12',slot:2,content:'Được sản xuất năm 1980',verified:true,acquiredAt:new Date().toISOString()},...(bought?[{id:'11',slot:1,content:'Chỉ có 500 chiếc',verified:true,acquiredAt:new Date().toISOString()}]:[])],
+  systemClues:phase==='BID'?[{slot:1,content:'Một Clue công khai đầu tiên',revealedAt:new Date().toISOString()},{slot:2,content:'Một Clue công khai thứ hai',revealedAt:new Date().toISOString()}]:[],
   listings:bought?[]:[{id:'9',clueId:'11',sellerId:'2',seller:'alice',price:'50',version:'1',slot:1}],
   ownBid:amount?{id:'91',amount,at:new Date().toISOString()}:null,historicalStats:{soldCount:0,averagePrice:null,minimumPrice:null,maximumPrice:null},
   revealEndsAt:future(-300),tradeEndsAt:future(300),bidStartsAt:future(360),endsAt:future(480)}}));
@@ -77,10 +78,20 @@ test('shows only owned Clues, buys one, then confirms a private bid',async({},in
  await page.getByRole('button',{name:'Mua Clue'}).click();
  await page.getByRole('button',{name:/Manh mối/}).click();
  await expect(page.getByText('Chỉ có 500 chiếc')).toBeVisible();
+ await expect(page.getByText('Một Clue công khai thứ hai')).toBeVisible();
+ const positions=await page.evaluate(()=>{
+  const clues=document.querySelector('.blind-system-clues')!.getBoundingClientRect();
+  const tabs=document.querySelector('.blind-data-panel .room-data-tabs')!.getBoundingClientRect();
+  const content=document.querySelector('#blind-clues-panel')!.getBoundingClientRect();
+  return {clueBottom:clues.bottom,tabTop:tabs.top,tabBottom:tabs.bottom,contentTop:content.top};
+ });
+ expect(positions.clueBottom).toBeLessThanOrEqual(positions.tabTop+1);
+ expect(positions.tabBottom).toBeLessThanOrEqual(positions.contentTop+1);
+ await page.screenshot({path:info.outputPath('blind-system-clues.png')});
  await page.getByLabel('Giá đặt (Coin)').fill('650');
  await page.getByRole('button',{name:'Đặt bid kín'}).click();
  await expect(page.getByText('Bid đã xác nhận của bạn')).toBeVisible();
- await expect(page.locator('.room-price-row').getByText('650 Coin',{exact:true})).toBeVisible();
+ await expect(page.locator('.room-price-row strong').getByText('650 Coin',{exact:true})).toBeVisible();
 });
 
 test('admin configures the BLIND room and starts it when four players are online',async({},info)=>{
