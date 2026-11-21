@@ -38,14 +38,7 @@ export function useLiveVideo(session: LiveSession | undefined, host: boolean, co
       });
   }, [id, host, stream, connected, publisher, session?.status]);
   useEffect(() => {
-    if (
-      !id ||
-      !generation ||
-      !connected ||
-      !publisher ||
-      !videoAvailable ||
-      (host && !stream)
-    ) {
+    if (!id || !generation || !connected || !publisher || !videoAvailable || (host && !stream)) {
       setRemote(null);
       return;
     }
@@ -219,10 +212,15 @@ export function RemoteLiveVideo({ stream }: { stream: MediaStream | null }) {
     }
   }, [stream]);
   return (
-    <section>
+    <section className="live-remote-camera">
       <div className="live-stage">
         <video ref={video} autoPlay playsInline muted={muted} aria-label="Livestream từ host" />
-        {!stream && <span>Đang chờ hình ảnh từ host…</span>}
+        {!stream && (
+          <div className="live-camera-placeholder">
+            <span aria-hidden="true">◉</span>
+            <p>Đang chờ hình ảnh từ host…</p>
+          </div>
+        )}
       </div>
       <button
         type="button"

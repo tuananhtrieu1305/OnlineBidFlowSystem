@@ -5,10 +5,8 @@ import { useAuth } from '../auth/AuthProvider';
 import { formatCoin } from '../wallet/validation';
 import { imageSource } from '../products/productApi';
 import type { LiveLot, LiveSession } from './liveState';
-import studio from './assets/studio.png';
 import './livestream.css';
 
-export { studio };
 export const coin = (amount: string) => formatCoin(amount) + ' Coin';
 export const liveDate = (time: number) =>
   new Date(time).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });

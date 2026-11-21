@@ -21,7 +21,7 @@ export default function Gavel({ resultId, winnerName, amount, productName }: Pro
   function playKnocks() {
     const context = audio.current;
     if (context?.state !== 'running') return;
-    const firstHit = context.currentTime + 0.2;
+    const firstHit = context.currentTime + 0.198;
     for (let hit = 0; hit < 3; hit++) {
       const when = firstHit + hit * 0.45;
       const samples = context.createBuffer(
@@ -55,7 +55,6 @@ export default function Gavel({ resultId, winnerName, amount, productName }: Pro
       // Capture the committed sale so moving to the next lot cannot change this announcement.
       setSale({ id: resultId, winnerName, amount, productName });
       setPhase('striking');
-      playKnocks();
       timers.current = [
         setTimeout(() => setPhase('holding'), strikeDuration),
         setTimeout(() => setPhase('leaving'), strikeDuration + holdDuration),
@@ -87,6 +86,46 @@ export default function Gavel({ resultId, winnerName, amount, productName }: Pro
       void context?.close().catch(() => {});
     };
   }, []);
+
+  useEffect(() => {
+    if (!sale) return;
+    playKnocks();
+    const animations: Animation[] = [];
+    const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced()) document.body.classList.add('live-screen-impact-active');
+    // The hammer touches the block at 44% of each 450 ms strike.
+    const impacts = [0, 1, 2].map((hit) =>
+      setTimeout(
+        () => {
+          if (reduced() || document.hidden) return;
+          const strength = hit === 2 ? 7 : 4;
+          for (const element of document.querySelectorAll(
+            '.guest-workspace, .guest-sidebar, .live-sale-card'
+          )) {
+            const animation = element.animate(
+              [
+                { transform: 'translate(0, 0)' },
+                { transform: `translate(${strength}px, 1px)` },
+                { transform: `translate(${-strength}px, -2px)` },
+                { transform: `translate(${strength * 0.6}px, 2px)` },
+                { transform: `translate(${-strength * 0.3}px, 0)` },
+                { transform: 'translate(0, 0)' }
+              ],
+              { duration: 180, easing: 'ease-out' }
+            );
+            animations.push(animation);
+            void animation.finished.catch(() => {});
+          }
+        },
+        198 + hit * 450
+      )
+    );
+    return () => {
+      impacts.forEach(clearTimeout);
+      animations.forEach((animation) => animation.cancel());
+      document.body.classList.remove('live-screen-impact-active');
+    };
+  }, [sale?.id]);
 
   useEffect(() => {
     for (const src of [hammer, base]) {

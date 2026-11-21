@@ -89,6 +89,13 @@ test.beforeEach(async ({}, info) => {
   page = await app.firstWindow();
   await page.addInitScript(() => {
     (window as any).gavelSounds = [];
+    (window as any).gavelImpacts = [];
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (...args: Parameters<Element['animate']>) {
+      if (this.matches('.guest-workspace, .guest-sidebar, .live-sale-card'))
+        (window as any).gavelImpacts.push(this.className);
+      return animate.apply(this, args);
+    };
     const create = AudioContext.prototype.createBufferSource;
     AudioContext.prototype.createBufferSource = function () {
       const source = create.call(this);
@@ -134,6 +141,151 @@ test.beforeEach(async ({}, info) => {
 });
 test.afterEach(async () => {
   await app?.close();
+});
+
+test('gallery rotates the real image under a spotlight and preserves camera controls across views', async ({}, info) => {
+  await page.route('**/api/product-images/gallery-keyboard.svg', (route) =>
+    route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 360"><defs><linearGradient id="g" x2="0" y2="1"><stop stop-color="#d9c9a4"/><stop offset="1" stop-color="#9a845e"/></linearGradient></defs><ellipse cx="250" cy="252" rx="193" ry="21" fill="#14251c" opacity=".12"/><path d="M57 135 417 113l34 123-359 18z" fill="#5d634e"/><path d="m57 128 360-22 34 123-359 18z" fill="url(#g)" stroke="#c9b78d" stroke-width="3"/><g stroke="#7c765c" stroke-width="15" stroke-dasharray="22 6"><path d="m78 149 325-20m-317 43 323-20m-316 42 322-19m-316 40 320-19"/></g><path d="m167 222 143-9" stroke="#f5edd8" stroke-width="13"/><circle cx="410" cy="135" r="4" fill="#4b7550"/></svg>'
+    })
+  );
+  session = {
+    ...session,
+    version: '2',
+    lots: session.lots.map((l) => ({ ...l, imageUrl: '/api/product-images/gallery-keyboard.svg' }))
+  };
+  update('COMMAND');
+  const stage = page.getByTestId('product-showcase-stage');
+  const picture = stage.locator('.showcase-photo-front img');
+  await expect(picture).toBeVisible();
+  await expect
+    .poll(() => picture.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
+  await page.mouse.move(0, 0);
+  await expect
+    .poll(() =>
+      stage
+        .locator('.showcase-photo-turntable')
+        .evaluate((e) => getComputedStyle(e).animationPlayState)
+    )
+    .toBe('running');
+  const frames = await stage.locator('.showcase-photo-turntable').evaluate(async (e) => {
+    const animation = e.getAnimations()[0];
+    animation.currentTime = 0;
+    const front = getComputedStyle(e).transform;
+    animation.currentTime = 12000;
+    const back = getComputedStyle(e).transform;
+    animation.currentTime = 0;
+    return { front, back };
+  });
+  expect(frames.front).not.toBe(frames.back);
+  await expect(page.locator('.showcase-motion-toggle')).toHaveCount(0);
+  const photo = stage.getByRole('button', {
+    name: 'Bàn phím cơ · Kéo để xoay ảnh',
+    exact: true
+  });
+  await photo.hover();
+  await expect(stage).toHaveAttribute('data-paused', 'false');
+  await expect(page.getByText(/Giữ chuột trên ảnh|Thả chuột để tiếp tục/)).toHaveCount(0);
+  const bounds = await photo.boundingBox();
+  const origin = { x: bounds!.x + bounds!.width / 2, y: bounds!.y + bounds!.height / 2 };
+  await page.mouse.down();
+  await expect(stage).toHaveAttribute('data-paused', 'true');
+  await expect
+    .poll(() =>
+      stage
+        .locator('.showcase-photo-turntable')
+        .evaluate((e) => getComputedStyle(e).animationPlayState)
+    )
+    .toBe('paused');
+  await page.mouse.move(origin.x + 60, origin.y, { steps: 5 });
+  const right = await photo.evaluate((e) =>
+    parseFloat((e as HTMLElement).style.getPropertyValue('--showcase-drag-angle'))
+  );
+  expect(right).toBeGreaterThan(30);
+  const rightTransform = await stage
+    .locator('.showcase-photo-manual')
+    .evaluate((e) => getComputedStyle(e).transform);
+  await page.mouse.move(origin.x - 60, origin.y, { steps: 5 });
+  const left = await photo.evaluate((e) =>
+    parseFloat((e as HTMLElement).style.getPropertyValue('--showcase-drag-angle'))
+  );
+  expect(left).toBeLessThan(-30);
+  expect(
+    await stage.locator('.showcase-photo-manual').evaluate((e) => getComputedStyle(e).transform)
+  ).not.toBe(rightTransform);
+  await page.mouse.move(0, 0);
+  await expect(stage).toHaveAttribute('data-paused', 'true');
+  const beforeRelease = await photo.evaluate((e) =>
+    (e as HTMLElement).style.getPropertyValue('--showcase-drag-angle')
+  );
+  await page.mouse.up();
+  await expect(stage).toHaveAttribute('data-paused', 'false');
+  expect(
+    await photo.evaluate((e) => (e as HTMLElement).style.getPropertyValue('--showcase-drag-angle'))
+  ).toBe(beforeRelease);
+  await photo.focus();
+  await page.keyboard.press('ArrowRight');
+  expect(
+    await photo.evaluate((e) =>
+      parseFloat((e as HTMLElement).style.getPropertyValue('--showcase-drag-angle'))
+    )
+  ).toBeCloseTo(parseFloat(beforeRelease) + 15);
+  await page.keyboard.down('Space');
+  await expect(stage).toHaveAttribute('data-paused', 'true');
+  await page.keyboard.up('Space');
+  await expect(stage).toHaveAttribute('data-paused', 'false');
+  await page.keyboard.down('Enter');
+  await expect(stage).toHaveAttribute('data-paused', 'true');
+  await page.getByRole('button', { name: 'Camera host', exact: true }).focus();
+  await page.keyboard.up('Enter');
+  await expect(stage).toHaveAttribute('data-paused', 'false');
+  await expect(stage.locator('.showcase-light-beam')).toHaveCount(1);
+  await expect(stage.locator('.showcase-pedestal')).toHaveCount(1);
+  const camera = page.locator('video[aria-label="Livestream từ host"]');
+  await camera.evaluate((e) => {
+    e.dataset.retained = 'same-video';
+  });
+  await page.getByRole('button', { name: 'Camera host', exact: true }).click();
+  await expect(stage).toHaveClass(/is-camera-focused/);
+  await expect(camera).toHaveAttribute('data-retained', 'same-video');
+  await page.getByRole('button', { name: 'Sản phẩm', exact: true }).click();
+  await expect(camera).toHaveAttribute('data-retained', 'same-video');
+  await page.locator('.live-room-grid').screenshot({ path: info.outputPath('gallery-room.png') });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(page.locator('.showcase-motion-hint')).toHaveCount(0);
+  expect(
+    await stage
+      .locator('.showcase-photo-turntable')
+      .evaluate((e) => getComputedStyle(e).animationName)
+  ).toBe('none');
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(820, 650));
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+});
+
+test('gallery handles missing/broken product photos and updates the displayed product', async () => {
+  const stage = page.getByTestId('product-showcase-stage');
+  await expect(stage.getByRole('img', { name: /Chưa có ảnh: Bàn phím cơ/ })).toBeVisible();
+  await page.route('**/api/product-images/missing.png', (r) =>
+    r.fulfill({ status: 404, body: '' })
+  );
+  session = {
+    ...session,
+    version: '2',
+    lots: session.lots.map((l) => ({ ...l, imageUrl: '/api/product-images/missing.png' }))
+  };
+  update('COMMAND');
+  await expect(stage.getByRole('img', { name: /Không tải được ảnh: Bàn phím cơ/ })).toBeVisible();
+  await expect(stage).toHaveAttribute('data-paused', 'true');
+  session = {
+    ...session,
+    version: '3',
+    lots: session.lots.map((l) => ({ ...l, id: '80002', name: 'Chuột', imageUrl: null }))
+  };
+  update('COMMAND');
+  await expect(stage.getByRole('img', { name: /Chưa có ảnh: Chuột/ })).toBeVisible();
+  await expect(stage.getByRole('img', { name: /Bàn phím cơ/ })).toHaveCount(0);
 });
 
 test('ending replaces the viewer room with a personal summary without interrupting the final gavel', async ({}, info) => {
@@ -241,6 +393,10 @@ test('hides the gavel until a committed sale, shows a large centered overlay for
   await expect(grandstand.getByText('Người thắng', { exact: true })).toHaveCount(0);
   await expect(grandstand.locator('.is-leading')).toHaveCount(0);
   await expect(overlay.getByText('137 Coin', { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => (window as any).gavelImpacts.length)).toBe(9);
+  const impacts = await page.evaluate(() => (window as any).gavelImpacts as string[]);
+  for (const target of ['guest-workspace', 'guest-sidebar', 'live-sale-card'])
+    expect(impacts.filter((name) => name.split(' ').includes(target))).toHaveLength(3);
   await overlay
     .locator('.live-sale-card')
     .evaluate((element) =>
@@ -266,11 +422,14 @@ test('hides the gavel until a committed sale, shows a large centered overlay for
   await expect(overlay).toHaveCount(0);
   update('LOT_SOLD');
   await expect(overlay).toHaveCount(0);
+  await expect(page.locator('body')).not.toHaveClass(/live-screen-impact-active/);
+  expect(await page.evaluate(() => (window as any).gavelImpacts.length)).toBe(9);
   expect(await page.evaluate(() => (window as any).gavelSounds.length)).toBe(3);
   await page.reload();
   await expect(page.getByText('Bạn đã thắng', { exact: true })).toBeVisible();
   await expect(page.locator('.live-gavel-scene')).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).gavelSounds.length)).toBe(0);
+  expect(await page.evaluate(() => (window as any).gavelImpacts.length)).toBe(0);
 });
 
 test('renders ten upholstered chairs, fills occupied seats, and keeps usernames on one line', async ({}, info) => {
@@ -363,4 +522,6 @@ test('does not show a gavel for an unsold product and respects reduced motion', 
     await page.locator('.live-gavel-hammer').evaluate((e) => getComputedStyle(e).animationName)
   ).toBe('none');
   await expect(overlay).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).gavelSounds.length)).toBe(3);
+  expect(await page.evaluate(() => (window as any).gavelImpacts.length)).toBe(0);
 });

@@ -2,6 +2,8 @@
 
 ## Behavior
 
+The gallery interface presents the current product photo on a lit wooden display. Its front uses the real uploaded/catalog image; the reverse is a neutral branded display back, not an invented view of the product. Viewers and hosts can switch between product and camera views without recreating the video element. Drag the photo horizontally to rotate it; releasing anywhere resumes automatic rotation from the adjusted angle. Keyboard users can use Left/Right arrows to rotate, or hold Space/Enter to pause. Rotation also pauses outside the viewport or while the app is hidden; reduced-motion settings disable automatic rotation while preserving deliberate dragging. The gallery theme is shared by discovery, session management, purchases, wallet and results screens.
+
 The host can choose any queued or unsold item using the room's product selector, before starting or while LIVE. Introducing an item does not force the original list order; skipped introductions stay queued. An active leading bid must settle before switching. Sold items cannot be selected again, and a paused session must resume before switching.
 
 The Admin who creates a session owns its controls. At most ten viewer connections enter a room. Guests can browse the catalog; login is required for the room, chat, ICE credentials and bids. Each lot reserves one unit of a real catalog product. First price is at least the starting price; subsequent integer prices must be greater than the current leader. A valid bid reserves Coin and starts a new five-second deadline. The server alone settles the winner into the SYSTEM wallet. Purchases show automatic payment; no second payment button exists.

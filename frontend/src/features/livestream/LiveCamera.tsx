@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { studio } from './LiveShared';
 
 export default function LiveCamera({
   title,
@@ -109,14 +108,28 @@ export default function LiveCamera({
   }
 
   return (
-    <section aria-label="Camera của host">
+    <section className="live-host-camera" aria-label="Camera của host">
       <div className="live-stage">
         {enabled ? (
           <video ref={video} autoPlay playsInline muted aria-label="Camera xem trước của bạn" />
         ) : (
-          <img src={studio} alt="Ảnh minh họa khi camera chưa được bật" />
+          <div className="live-camera-placeholder" role="img" aria-label="Camera đang tắt">
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              aria-hidden="true"
+            >
+              <rect x="3" y="6" width="12" height="12" rx="2" />
+              <path d="m15 10 6-4v12l-6-4M2 2l20 20" />
+            </svg>
+            <p>Camera đang tắt</p>
+          </div>
         )}
-        <span>{enabled ? 'Camera xem trước' : 'Ảnh minh họa'}</span>
+        {enabled && <span>Camera xem trước</span>}
         <div className="live-stage-caption">
           <strong>{title}</strong>
           <small>Xem trước trên thiết bị này</small>

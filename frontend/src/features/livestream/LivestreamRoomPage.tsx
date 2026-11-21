@@ -12,6 +12,7 @@ import EndLiveDialog from './EndLiveDialog';
 import Grandstand from './Grandstand';
 import LiveNotice from './LiveNotice';
 import ViewerLiveSummary from './ViewerLiveSummary';
+import ProductShowcase from './ProductShowcase';
 
 export default function LivestreamRoomPage({ host = false }: { host?: boolean }) {
   return host ? (
@@ -228,11 +229,17 @@ function Room({ host = false }: { host?: boolean }) {
           )}
           <div className={'live-room-grid' + (host ? ' live-host-grid' : '')}>
             <div className="live-stage-column">
-              {host && session.status !== 'ENDED' ? (
-                <LiveCamera title={session.hostName} onStreamChange={media.onStreamChange} />
-              ) : (
-                <RemoteLiveVideo stream={media.remote} />
-              )}
+              <ProductShowcase
+                lot={lot}
+                index={session.currentLotIndex}
+                total={session.lots.length}
+              >
+                {host && session.status !== 'ENDED' ? (
+                  <LiveCamera title={session.hostName} onStreamChange={media.onStreamChange} />
+                ) : (
+                  <RemoteLiveVideo stream={media.remote} />
+                )}
+              </ProductShowcase>
               <div className="live-current-product">
                 <p className="live-muted">
                   Món {session.currentLotIndex + 1} / {session.lots.length} ·{' '}
@@ -249,22 +256,6 @@ function Room({ host = false }: { host?: boolean }) {
                 <h2>{lot.name}</h2>
                 <p>{lot.description}</p>
               </div>
-              <Grandstand
-                session={session}
-                leaderId={lot.status === 'OPEN' ? lot.leaderId : null}
-              />
-              <section className="live-panel">
-                <h2>{host ? 'Hàng chờ đấu giá' : 'Sản phẩm trong phiên'}</h2>
-                <LotQueue
-                  session={session}
-                  disabled={inProgress || pending}
-                  onReopen={
-                    host
-                      ? (lotId) => void act({ type: 'REOPEN', sessionId: session.id, lotId })
-                      : undefined
-                  }
-                />
-              </section>
             </div>
             <aside className="live-bid-column">
               <section className="live-panel live-bid-panel">
@@ -517,6 +508,24 @@ function Room({ host = false }: { host?: boolean }) {
                 )}
               </details>
             </aside>
+            <div className="live-audience-column">
+              <Grandstand
+                session={session}
+                leaderId={lot.status === 'OPEN' ? lot.leaderId : null}
+              />
+              <section className="live-panel">
+                <h2>{host ? 'Hàng chờ đấu giá' : 'Sản phẩm trong phiên'}</h2>
+                <LotQueue
+                  session={session}
+                  disabled={inProgress || pending}
+                  onReopen={
+                    host
+                      ? (lotId) => void act({ type: 'REOPEN', sessionId: session.id, lotId })
+                      : undefined
+                  }
+                />
+              </section>
+            </div>
           </div>
           {host && confirmEnd && (
             <EndLiveDialog

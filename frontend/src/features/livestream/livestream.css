@@ -1608,6 +1608,9 @@
   pointer-events: none;
   animation: live-sale-backdrop-in 180ms ease-out both;
 }
+body.live-screen-impact-active {
+  overflow-x: clip;
+}
 .live-sale-card {
   box-sizing: border-box;
   width: min(100%, 600px);
