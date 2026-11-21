@@ -157,6 +157,20 @@ test('gallery rotates the real image under a spotlight and preserves camera cont
   };
   update('COMMAND');
   const stage = page.getByTestId('product-showcase-stage');
+  const room = page.getByTestId('auction-room');
+  await expect(room.locator('.live-grandstand.is-integrated')).toHaveCount(1);
+  const continuity = await room.evaluate((element) => {
+    const stage = element.querySelector('.showcase-stage')!.getBoundingClientRect();
+    const audience = element.querySelector('.showcase-room-audience')!.getBoundingClientRect();
+    return {
+      gap: audience.top - stage.bottom,
+      floor: getComputedStyle(element.querySelector('.live-audience-floor')!).backgroundColor,
+      image: getComputedStyle(element).backgroundImage
+    };
+  });
+  expect(Math.abs(continuity.gap)).toBeLessThan(1);
+  expect(continuity.floor).toBe('rgba(0, 0, 0, 0)');
+  expect(continuity.image).toContain('auction-salon-v1');
   const picture = stage.locator('.showcase-photo-front img');
   await expect(picture).toBeVisible();
   await expect

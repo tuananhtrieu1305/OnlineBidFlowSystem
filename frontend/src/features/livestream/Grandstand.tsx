@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import type { LiveSession } from './liveState';
 
-function Chair({ occupied }: { occupied: boolean }) {
+function Chair({ occupied, rear = false }: { occupied: boolean; rear?: boolean }) {
   const id = useId().replace(/:/g, '');
   return (
     <svg className="live-chair" viewBox="0 0 120 128" aria-hidden="true">
@@ -21,46 +21,80 @@ function Chair({ occupied }: { occupied: boolean }) {
         </linearGradient>
       </defs>
       <ellipse cx="60" cy="119" rx="46" ry="6" fill="#50371f" opacity=".14" />
-      <g fill={'url(#' + id + 'wood)'}>
-        <path d="M24 88h10l-4 31h-7zm62 0h10l1 31h-7z" />
-        <path d="M30 64h8l-2 42h-6zm52 0h8v42h-6z" />
-        <path d="M24 25Q24 10 40 9h40q16 1 16 16l-4 57H28z" />
-      </g>
-      <path
-        d="M30 28q0-12 12-12h36q12 0 12 12l-3 50H33z"
-        fill={'url(#' + id + 'fabric)'}
-        stroke={occupied ? '#1b5c50' : '#ac9a82'}
-      />
-      <path d="M36 30q0-8 8-8h32q8 0 8 8l-2 39H38z" fill="none" stroke="#fff" opacity=".16" />
-      <path d="M29 76l62 0 10 19q0 9-11 10H30q-11-1-11-10z" fill={'url(#' + id + 'wood)'} />
-      <path d="M35 71h50l11 19q-2 7-12 7H36q-10 0-12-7z" fill={'url(#' + id + 'seat)'} />
-      <path d="M27 91q33 7 66 0" fill="none" stroke="#fff" opacity=".2" />
-      <g fill={'url(#' + id + 'wood)'}>
-        <path d="M16 57q0-5 6-5h9v43H20zM89 52h9q6 0 6 5l-4 38H89z" />
-        <rect x="12" y="50" width="25" height="10" rx="5" />
-        <rect x="83" y="50" width="25" height="10" rx="5" />
-      </g>
-      <path
-        d="M17 53h15m56 0h15"
-        stroke="#d9b48a"
-        strokeWidth="2"
-        strokeLinecap="round"
-        opacity=".6"
-      />
+      {rear ? (
+        <>
+          <g fill={'url(#' + id + 'wood)'}>
+            <path d="M24 87h10l-4 32h-8zm62 0h10l2 32h-8z" />
+            <path d="M23 28q0-15 16-17h42q16 2 16 17l-4 74H27z" />
+            <path d="M16 62h17v31H20zm71 0h17l-4 31H87z" />
+            <rect x="12" y="59" width="25" height="9" rx="4" />
+            <rect x="83" y="59" width="25" height="9" rx="4" />
+          </g>
+          <path
+            d="M30 30q0-12 12-12h36q12 0 12 12l-3 64H33z"
+            fill={'url(#' + id + 'fabric)'}
+            stroke={occupied ? '#1a5148' : '#9c8c74'}
+          />
+          <path
+            d="M36 33q0-8 9-8h30q9 0 9 8l-2 53H38z"
+            fill="none"
+            stroke="#f9e8c4"
+            opacity=".18"
+          />
+          <path d="M30 98h60" stroke="#c59b6c" opacity=".5" />
+          <g fill={occupied ? '#174d42' : '#a2937a'}>
+            <circle cx="47" cy="38" r="1.4" />
+            <circle cx="73" cy="38" r="1.4" />
+            <circle cx="47" cy="76" r="1.4" />
+            <circle cx="73" cy="76" r="1.4" />
+          </g>
+        </>
+      ) : (
+        <>
+          <g fill={'url(#' + id + 'wood)'}>
+            <path d="M24 88h10l-4 31h-7zm62 0h10l1 31h-7z" />
+            <path d="M30 64h8l-2 42h-6zm52 0h8v42h-6z" />
+            <path d="M24 25Q24 10 40 9h40q16 1 16 16l-4 57H28z" />
+          </g>
+          <path
+            d="M30 28q0-12 12-12h36q12 0 12 12l-3 50H33z"
+            fill={'url(#' + id + 'fabric)'}
+            stroke={occupied ? '#1b5c50' : '#ac9a82'}
+          />
+          <path d="M36 30q0-8 8-8h32q8 0 8 8l-2 39H38z" fill="none" stroke="#fff" opacity=".16" />
+          <path d="M29 76l62 0 10 19q0 9-11 10H30q-11-1-11-10z" fill={'url(#' + id + 'wood)'} />
+          <path d="M35 71h50l11 19q-2 7-12 7H36q-10 0-12-7z" fill={'url(#' + id + 'seat)'} />
+          <path d="M27 91q33 7 66 0" fill="none" stroke="#fff" opacity=".2" />
+          <g fill={'url(#' + id + 'wood)'}>
+            <path d="M16 57q0-5 6-5h9v43H20zM89 52h9q6 0 6 5l-4 38H89z" />
+            <rect x="12" y="50" width="25" height="10" rx="5" />
+            <rect x="83" y="50" width="25" height="10" rx="5" />
+          </g>
+          <path
+            d="M17 53h15m56 0h15"
+            stroke="#d9b48a"
+            strokeWidth="2"
+            strokeLinecap="round"
+            opacity=".6"
+          />
+        </>
+      )}
     </svg>
   );
 }
 
 export default function Grandstand({
   session,
-  leaderId
+  leaderId,
+  integrated = false
 }: {
   session: LiveSession;
   leaderId: string | null;
+  integrated?: boolean;
 }) {
   const seats = session.participants.slice(0, 10);
   return (
-    <section className="live-panel live-grandstand">
+    <section className={'live-grandstand' + (integrated ? ' is-integrated' : ' live-panel')}>
       <div className="live-section-title">
         <div>
           <p className="live-audience-kicker">CÙNG THEO DÕI PHIÊN ĐẤU GIÁ</p>
@@ -86,7 +120,7 @@ export default function Grandstand({
                 aria-label={person ? undefined : 'Ghế trống'}
               >
                 <div className="live-seat-art">
-                  <Chair occupied={!!person} />
+                  <Chair occupied={!!person} rear={integrated} />
                   {person && (
                     <span className="live-seat-avatar" aria-hidden="true">
                       {Array.from(person.username.trim())[0]?.toLocaleUpperCase('vi-VN')}

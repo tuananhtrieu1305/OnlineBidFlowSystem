@@ -1,0 +1,11 @@
+# Auction salon background
+
+Asset: `frontend/src/features/livestream/assets/auction-salon-v1.png`.
+
+Generated using the built-in `image_gen` tool for this project. The room is deliberately empty: the product, pedestal, camera feed and participant seats remain interactive UI layers. No people, fixed seat occupancy or product views are embedded in the image.
+
+Visual reference research: [modern interior with wood and dark walls](https://www.pexels.com/photo/modern-interior-with-wood-and-dark-walls-combination-6580383/). No stock photograph was copied into the app.
+
+## Final generation prompt
+
+Use case: stylized-concept / photorealistic architectural background. Create one exceptionally refined, photorealistic empty private auction salon interior background for a working desktop auction app. Portrait 2:3 composition, straight-on symmetrical central perspective from a seated audience eye level, camera slightly looking down to reveal generous floor. Luxurious but understated walnut wood paneling at left and right, a softly recessed deep forest emerald green velvet wall at the back, restrained aged brass architectural details, warm 3000K recessed spotlights near the upper edge, a beautiful subtle central pool of light on the wood floor about 42 percent down the image. Physically believable light falloff, rich natural walnut grain, soft atmospheric light from above, slight haze, premium architectural photography, sophisticated quiet gallery mood, no neon or nightclub look. The rear wall-to-floor transition is about 38 percent down. The lower 60 percent is a continuous dark warm walnut parquet floor with gentle perspective and soft reflections, darker toward the lower corners. Composition is designed as an empty background layer: keep the center free for a product plinth to be drawn by UI, and keep all of the lower half completely empty so two rows of interactive chairs can be overlaid. Show an intimate seamless room, not a vast auditorium. No people, no chairs, no seats, no furniture, no pedestal, no podium, no tables, no display cases, no products, no picture frames, no screens, no signage, no logos, no text, no watermark. Avoid distracting bright spots or ornate chandeliers. Deliver a single cohesive cinematic high quality interior photograph as the final background asset, with no mockup frame or UI.

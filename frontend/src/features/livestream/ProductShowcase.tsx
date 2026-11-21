@@ -7,11 +7,13 @@ export default function ProductShowcase({
   lot,
   index,
   total,
+  audience,
   children
 }: {
   lot: LiveLot;
   index: number;
   total: number;
+  audience?: ReactNode;
   children: ReactNode;
 }) {
   const stage = useRef<HTMLDivElement>(null);
@@ -85,109 +87,114 @@ export default function ProductShowcase({
           </button>
         </div>
       </div>
-      <div
-        ref={stage}
-        className={'showcase-stage' + (camera ? ' is-camera-focused' : '')}
-        data-paused={stopped}
-        data-held={held}
-        data-testid="product-showcase-stage"
-      >
-        <div className="showcase-wall" aria-hidden="true" />
-        <div className="showcase-light-fixture" aria-hidden="true">
-          <i />
-          <span />
-        </div>
-        <div className="showcase-light-beam" aria-hidden="true" />
-        <div className="showcase-floor" aria-hidden="true" />
-        <div className="showcase-pedestal" aria-hidden="true">
-          <div className="showcase-pedestal-top" />
-          <div className="showcase-pedestal-front" />
-          <span>ONLINEBIDFLOW</span>
-        </div>
-        <div className="showcase-product-shadow" aria-hidden="true" />
+      <div className="showcase-room" data-testid="auction-room">
         <div
-          className="showcase-photo-position"
-          ref={photo}
-          key={lot.id + ':' + source}
-          role={hasImage ? 'button' : undefined}
-          tabIndex={hasImage && !camera ? 0 : undefined}
-          aria-label={hasImage ? lot.name + ' · Kéo để xoay ảnh' : undefined}
-          onPointerDown={(event) => {
-            if (!hasImage || camera || event.button !== 0 || !event.isPrimary) return;
-            event.preventDefault();
-            event.currentTarget.setPointerCapture(event.pointerId);
-            drag.current = { id: event.pointerId, x: event.clientX, angle: rotation.current };
-            setHeld(true);
-          }}
-          onPointerMove={(event) => {
-            const active = drag.current;
-            if (!active || active.id !== event.pointerId) return;
-            rotate(active.angle + (event.clientX - active.x) * 0.65);
-          }}
-          onPointerUp={(event) => {
-            if (!event.isPrimary) return;
-            release();
-            if (event.currentTarget.hasPointerCapture(event.pointerId))
-              event.currentTarget.releasePointerCapture(event.pointerId);
-          }}
-          onPointerCancel={release}
-          onLostPointerCapture={release}
-          onKeyDown={(event) => {
-            if (hasImage && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
-              event.preventDefault();
-              rotate(rotation.current + (event.key === 'ArrowRight' ? 15 : -15));
-            }
-            if (hasImage && !reduced && (event.key === ' ' || event.key === 'Enter')) {
-              event.preventDefault();
-              setHeld(true);
-            }
-          }}
-          onKeyUp={(event) => {
-            if (event.key === ' ' || event.key === 'Enter') {
-              event.preventDefault();
-              release();
-            }
-          }}
-          onBlur={release}
+          ref={stage}
+          className={'showcase-stage' + (camera ? ' is-camera-focused' : '')}
+          data-paused={stopped}
+          data-held={held}
+          data-testid="product-showcase-stage"
         >
-          <div className="showcase-photo-arrival">
-            <div className="showcase-photo-manual">
-              <div className="showcase-photo-turntable">
-                <div className="showcase-photo-front">
-                  {hasImage ? (
-                    <img
-                      src={source}
-                      alt={lot.name}
-                      decoding="async"
-                      referrerPolicy="no-referrer"
-                      onError={() => setFailed(source)}
-                    />
-                  ) : (
-                    <div
-                      className="showcase-photo-empty"
-                      role="img"
-                      aria-label={(source ? 'Không tải được ảnh' : 'Chưa có ảnh') + ': ' + lot.name}
-                    >
-                      <span aria-hidden="true">◇</span>
-                      <p>{source ? 'Không tải được ảnh' : 'Chưa có ảnh sản phẩm'}</p>
-                    </div>
-                  )}
-                  <span className="showcase-photo-glint" aria-hidden="true" />
-                </div>
-                <div className="showcase-photo-back" aria-hidden="true">
-                  <b>b.</b>
-                  <span>ONLINEBIDFLOW</span>
-                  <small>ẢNH TRƯNG BÀY</small>
+          <div className="showcase-wall" aria-hidden="true" />
+          <div className="showcase-light-fixture" aria-hidden="true">
+            <i />
+            <span />
+          </div>
+          <div className="showcase-light-beam" aria-hidden="true" />
+          <div className="showcase-floor" aria-hidden="true" />
+          <div className="showcase-pedestal" aria-hidden="true">
+            <div className="showcase-pedestal-top" />
+            <div className="showcase-pedestal-front" />
+            <span>ONLINEBIDFLOW</span>
+          </div>
+          <div className="showcase-product-shadow" aria-hidden="true" />
+          <div
+            className="showcase-photo-position"
+            ref={photo}
+            key={lot.id + ':' + source}
+            role={hasImage ? 'button' : undefined}
+            tabIndex={hasImage && !camera ? 0 : undefined}
+            aria-label={hasImage ? lot.name + ' · Kéo để xoay ảnh' : undefined}
+            onPointerDown={(event) => {
+              if (!hasImage || camera || event.button !== 0 || !event.isPrimary) return;
+              event.preventDefault();
+              event.currentTarget.setPointerCapture(event.pointerId);
+              drag.current = { id: event.pointerId, x: event.clientX, angle: rotation.current };
+              setHeld(true);
+            }}
+            onPointerMove={(event) => {
+              const active = drag.current;
+              if (!active || active.id !== event.pointerId) return;
+              rotate(active.angle + (event.clientX - active.x) * 0.65);
+            }}
+            onPointerUp={(event) => {
+              if (!event.isPrimary) return;
+              release();
+              if (event.currentTarget.hasPointerCapture(event.pointerId))
+                event.currentTarget.releasePointerCapture(event.pointerId);
+            }}
+            onPointerCancel={release}
+            onLostPointerCapture={release}
+            onKeyDown={(event) => {
+              if (hasImage && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+                event.preventDefault();
+                rotate(rotation.current + (event.key === 'ArrowRight' ? 15 : -15));
+              }
+              if (hasImage && !reduced && (event.key === ' ' || event.key === 'Enter')) {
+                event.preventDefault();
+                setHeld(true);
+              }
+            }}
+            onKeyUp={(event) => {
+              if (event.key === ' ' || event.key === 'Enter') {
+                event.preventDefault();
+                release();
+              }
+            }}
+            onBlur={release}
+          >
+            <div className="showcase-photo-arrival">
+              <div className="showcase-photo-manual">
+                <div className="showcase-photo-turntable">
+                  <div className="showcase-photo-front">
+                    {hasImage ? (
+                      <img
+                        src={source}
+                        alt={lot.name}
+                        decoding="async"
+                        referrerPolicy="no-referrer"
+                        onError={() => setFailed(source)}
+                      />
+                    ) : (
+                      <div
+                        className="showcase-photo-empty"
+                        role="img"
+                        aria-label={
+                          (source ? 'Không tải được ảnh' : 'Chưa có ảnh') + ': ' + lot.name
+                        }
+                      >
+                        <span aria-hidden="true">◇</span>
+                        <p>{source ? 'Không tải được ảnh' : 'Chưa có ảnh sản phẩm'}</p>
+                      </div>
+                    )}
+                    <span className="showcase-photo-glint" aria-hidden="true" />
+                  </div>
+                  <div className="showcase-photo-back" aria-hidden="true">
+                    <b>b.</b>
+                    <span>ONLINEBIDFLOW</span>
+                    <small>ẢNH TRƯNG BÀY</small>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+          <div className="showcase-feed">{children}</div>
+          <div className="showcase-stage-caption" aria-hidden="true">
+            <span>GALLERY / LIVE AUCTION</span>
+            <i />
+          </div>
         </div>
-        <div className="showcase-feed">{children}</div>
-        <div className="showcase-stage-caption" aria-hidden="true">
-          <span>GALLERY / LIVE AUCTION</span>
-          <i />
-        </div>
+        {audience && <div className="showcase-room-audience">{audience}</div>}
       </div>
       <div className="showcase-footer">
         <p>

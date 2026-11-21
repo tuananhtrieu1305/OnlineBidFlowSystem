@@ -58,6 +58,150 @@
   perspective: 950px;
   background: #122b27;
 }
+.showcase-room {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: #152b20;
+  background-image:
+    linear-gradient(#08190d12, #071b0c12 55%, #0d150b40), url('./assets/auction-salon-v1.png');
+  background-size: 100% 100%;
+  background-position: center;
+}
+.product-showcase .showcase-room .showcase-stage {
+  background: transparent;
+}
+.product-showcase .showcase-room .showcase-wall,
+.product-showcase .showcase-room .showcase-floor,
+.product-showcase .showcase-room .showcase-light-fixture,
+.product-showcase .showcase-room .showcase-stage-caption {
+  display: none;
+}
+.product-showcase .showcase-room .showcase-light-beam {
+  opacity: 0.32;
+}
+.showcase-room-audience {
+  position: relative;
+  padding: 0 22px 20px;
+}
+.product-showcase .showcase-room .live-grandstand.is-integrated {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.product-showcase .showcase-room .live-grandstand .live-section-title {
+  margin: 0 0 10px;
+  padding: 11px 14px;
+  border: 1px solid #d8bc7c20;
+  border-radius: 9px;
+  background: #11251d99;
+  box-shadow: inset 0 1px #fff5db08;
+}
+.product-showcase .showcase-room .live-grandstand .live-section-title h2 {
+  color: #e3d2ad;
+  font-size: 12px;
+}
+.product-showcase .showcase-room .live-audience-kicker {
+  margin: 0 0 5px;
+  color: #c4b18a;
+  font-size: 7px;
+  letter-spacing: 0.12em;
+}
+.product-showcase .showcase-room .live-grandstand .live-audience-count {
+  background: #d9c7a20d;
+  color: #e2cfaa;
+  border-color: #dfc68b30;
+  font-size: 9px;
+}
+.product-showcase .showcase-room .live-audience-count i {
+  background: #b8c491;
+}
+.product-showcase .showcase-room .live-audience-floor {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.product-showcase .showcase-room .live-audience-stage {
+  display: none;
+}
+.product-showcase .showcase-room .live-grandstand ol {
+  gap: 10px 12px;
+  margin: 0;
+  padding: 0 6px 10px;
+}
+.product-showcase .showcase-room .live-grandstand li {
+  padding-bottom: 12px;
+}
+.product-showcase .showcase-room .live-seat-art {
+  width: min(100%, 90px);
+  transform: none;
+  filter: drop-shadow(0 9px 4px #0007);
+}
+.product-showcase .showcase-room .live-grandstand li:nth-child(-n + 5) .live-seat-art {
+  width: min(100%, 76px);
+}
+.product-showcase .showcase-room .live-grandstand li:nth-child(n + 6) .live-seat-art {
+  width: min(100%, 94px);
+}
+.product-showcase .showcase-room .live-chair {
+  filter: brightness(0.82) saturate(0.78);
+}
+.product-showcase .showcase-room .is-occupied .live-chair {
+  filter: brightness(0.98) saturate(0.8);
+}
+.product-showcase .showcase-room .live-seat-name {
+  color: #f0ddbc;
+  font-size: 10px;
+  text-shadow: 0 1px 3px #000;
+  background: #102019a6;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+.product-showcase .showcase-room .live-grandstand li.is-empty .live-seat-name {
+  color: #d6c39b;
+  font-size: 8px;
+}
+.product-showcase .showcase-room .live-seat-avatar {
+  border-color: #b49b6b;
+  box-shadow: 0 2px 5px #071b16aa;
+  background: linear-gradient(#f6e4bd, #cfba8d);
+  color: #345440;
+}
+.product-showcase .showcase-room .live-grandstand small {
+  z-index: 1;
+  background: #dac18b;
+  color: #48381c;
+  border-color: #b59b62;
+  text-shadow: none;
+}
+.product-showcase .showcase-room .live-audience-legend {
+  color: #d8c49f;
+  margin-top: 0;
+  font-size: 8px;
+}
+.product-showcase .showcase-room .live-audience-legend i {
+  background: #7ca48a;
+}
+.product-showcase .showcase-room .live-audience-legend span:last-child i {
+  background: #aa956e;
+}
+@media (max-width: 600px) {
+  .showcase-room-audience {
+    padding: 0 12px 18px;
+  }
+  .product-showcase .showcase-room .live-grandstand ol {
+    gap: 10px 6px;
+    padding-inline: 0;
+  }
+  .product-showcase .showcase-room .live-grandstand .live-section-title {
+    padding: 10px;
+  }
+}
 .showcase-wall {
   position: absolute;
   inset: 0;

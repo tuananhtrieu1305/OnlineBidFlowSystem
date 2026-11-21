@@ -233,6 +233,13 @@ function Room({ host = false }: { host?: boolean }) {
                 lot={lot}
                 index={session.currentLotIndex}
                 total={session.lots.length}
+                audience={
+                  <Grandstand
+                    integrated
+                    session={session}
+                    leaderId={lot.status === 'OPEN' ? lot.leaderId : null}
+                  />
+                }
               >
                 {host && session.status !== 'ENDED' ? (
                   <LiveCamera title={session.hostName} onStreamChange={media.onStreamChange} />
@@ -509,10 +516,6 @@ function Room({ host = false }: { host?: boolean }) {
               </details>
             </aside>
             <div className="live-audience-column">
-              <Grandstand
-                session={session}
-                leaderId={lot.status === 'OPEN' ? lot.leaderId : null}
-              />
               <section className="live-panel">
                 <h2>{host ? 'Hàng chờ đấu giá' : 'Sản phẩm trong phiên'}</h2>
                 <LotQueue
