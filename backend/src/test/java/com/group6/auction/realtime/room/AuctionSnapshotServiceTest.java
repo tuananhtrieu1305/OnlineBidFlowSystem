@@ -27,7 +27,7 @@ class AuctionSnapshotServiceTest {
                         100L, now.minusMinutes(1), now.plusMinutes(10));
                 long remaining = type == AuctionType.NORMAL
                         ? new NormalAuctionSnapshotBuilder().build(auction, List.of(), List.of()).remainingSeconds()
-                        : new BlindAuctionSnapshotBuilder().build(auction, List.of(), List.of(), List.of(), 2L).remainingSeconds();
+                        : new BlindAuctionSnapshotBuilder().build(auction, List.of(), List.of(), 2L).remainingSeconds();
                 assertThat(remaining).isBetween(590L, 600L);
             }
         } finally { java.util.TimeZone.setDefault(previous); }
@@ -73,7 +73,7 @@ class AuctionSnapshotServiceTest {
     }
 
     @Test
-    void blindSnapshotIncludesOwnBidOnlyAndHistoricalSoldStats() throws Exception {
+    void blindSnapshotHidesProductHistoryAndOtherBids() throws Exception {
         gateway.auction = blindAuction();
         gateway.bids.add(new AuctionSnapshotBid(20L, 3L, 2L, 1600L, at(9, 5)));
         gateway.bids.add(new AuctionSnapshotBid(21L, 3L, 4L, 2400L, at(9, 6)));
@@ -87,12 +87,11 @@ class AuctionSnapshotServiceTest {
         assertThat(json).contains("\"auctionType\":\"BLIND\"")
                 .contains("\"ownBid\"")
                 .contains("\"amount\":1600")
-                .contains("\"soldCount\":2")
-                .contains("\"averageWinningPrice\":1650")
-                .contains("\"minimumWinningPrice\":1500")
-                .contains("\"maximumWinningPrice\":1800");
+                .contains("Sản phẩm bí mật");
         assertThat(json).doesNotContain("\"amount\":2400")
-                .doesNotContain("\"userId\":4");
+                .doesNotContain("\"userId\":4")
+                .doesNotContain("Vintage Camera","Classic film camera","historicalStats","averageWinningPrice");
+        assertThat(json).contains("camera.jpg");
     }
 
     @Test
@@ -107,6 +106,16 @@ class AuctionSnapshotServiceTest {
                 .doesNotContain("bidHistory")
                 .doesNotContain("currentLeader")
                 .doesNotContain("estimatedPrice");
+    }
+
+    @Test
+    void blindSnapshotRevealsProductAfterAuctionFinishes() throws Exception {
+        var running=blindAuction();
+        gateway.auction=new AuctionSnapshotAuction(running.auctionId(),running.productId(),running.auctionType(),
+                AuctionStatus.SOLD,running.accessType(),running.product(),running.startingPrice(),
+                running.startTime(),running.endTime());
+        var json=objectMapper.writeValueAsString(service.buildSnapshot(3L,2L).orElseThrow());
+        assertThat(json).contains("Vintage Camera","Classic film camera").doesNotContain("historicalStats");
     }
 
     private AuctionSnapshotAuction normalAuction() {

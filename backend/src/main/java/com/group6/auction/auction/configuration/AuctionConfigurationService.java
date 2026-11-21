@@ -35,12 +35,12 @@ public class AuctionConfigurationService {
    where+=" AND (p.name LIKE ? ESCAPE '!' OR a.id=?)";params.add("%"+q.replace("!","!!").replace("%","!%").replace("_","!_")+"%");params.add(id);
   }
   String[] values={status,type,access};String[] columns={"status","auction_type","access_type"};
-  List<Set<String>> allowed=List.of(Set.of("UPCOMING","RUNNING","SOLD","UNSOLD"),Set.of("NORMAL","BLIND"),Set.of("PUBLIC","PRIVATE"));
+  List<Set<String>> allowed=List.of(Set.of("UPCOMING","RUNNING","SOLD","UNSOLD","CANCELLED"),Set.of("NORMAL","BLIND"),Set.of("PUBLIC","PRIVATE"));
   for(int i=0;i<3;i++){if(values[i]!=null&&!values[i].isEmpty()){if(!allowed.get(i).contains(values[i]))throw error(400,"INVALID_FILTER");where+=" AND a."+columns[i]+"=?";params.add(values[i]);}}
   long count=jdbc.queryForObject("SELECT COUNT(*) FROM auctions a JOIN products p ON p.id=a.product_id"+where,Long.class,params.toArray());
   params.add(size);params.add((long)page*size);
   var items=jdbc.query(BASE+where+" ORDER BY a.id DESC LIMIT ? OFFSET ?",(rs,n)->{
-   var value=view(rs);for(String key:List.of("roomCode","startingPrice","minBidIncrement","createdBy","winnerUserId","winningPrice","finishedAt","version"))value.remove(key);return value;
+   var value=view(rs);for(String key:List.of("roomCode","startingPrice","minBidIncrement","createdBy","winnerUserId","winningPrice","finishedAt","version","blindSetup"))value.remove(key);return value;
   },params.toArray());
   return Map.of("items",items,"page",page,"size",size,"totalElements",""+count,"totalPages",(count+size-1)/size,"serverNow",clock.instant().toString());
  }
@@ -52,6 +52,7 @@ public class AuctionConfigurationService {
   future(input);
   var auction=auctions.saveAndFlush(Auction.create(product.getId(),admin.getId(),input.type(),input.access(),input.price(),input.increment(),input.capacity(),input.access()==AuctionAccessType.PRIVATE?code():null,input.start(),input.end()));
   if(input.type()==AuctionType.NORMAL)timings.save(auction.getId(),input.normalTiming(),input.end());
+  else saveBlindSetup(auction.getId(),input.blindSetup());
   return detail(auction.getId());
  }
  @Transactional(isolation=Isolation.READ_COMMITTED)
@@ -64,7 +65,14 @@ public class AuctionConfigurationService {
   future(input);
   String code=input.access()==AuctionAccessType.PUBLIC?null:auction.getRoomCode()==null?code():auction.getRoomCode();
   auction.configure(input.type(),input.access(),input.price(),input.increment(),input.capacity(),code,input.start(),input.end());
-  auctions.flush();if(input.type()==AuctionType.NORMAL)timings.save(id,input.normalTiming(),input.end());return detail(id);
+  auctions.flush();if(input.type()==AuctionType.NORMAL)timings.save(id,input.normalTiming(),input.end());
+  else saveBlindSetup(id,input.blindSetup());
+  return detail(id);
+ }
+ private void saveBlindSetup(long id,AuctionInput.BlindSetup setup){
+  jdbc.update("INSERT INTO blind_settings(auction_id,trade_seconds,bid_seconds) VALUES(?,?,?) ON DUPLICATE KEY UPDATE trade_seconds=VALUES(trade_seconds),bid_seconds=VALUES(bid_seconds)",id,setup.tradeSeconds(),setup.bidSeconds());
+  jdbc.update("DELETE FROM blind_clues WHERE auction_id=?",id);
+  for(int i=0;i<setup.clues().size();i++)jdbc.update("INSERT INTO blind_clues(auction_id,slot,content) VALUES(?,?,?)",id,i+1,setup.clues().get(i));
  }
  private void future(AuctionInput input){if(!input.start().isAfter(LocalDateTime.ofInstant(clock.instant(),ZoneOffset.UTC)))throw error(409,"START_TIME_PASSED");}
  private String code(){String alphabet="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";StringBuilder code=new StringBuilder();for(int i=0;i<12;i++)code.append(alphabet.charAt(random.nextInt(alphabet.length())));return code.toString();}
@@ -75,10 +83,16 @@ public class AuctionConfigurationService {
   v.put("maxParticipants",rs.getObject("max_participants",Integer.class));
   for(String key:List.of("start_time","end_time","finished_at")){var time=rs.getObject(key,LocalDateTime.class);v.put(camel(key),time==null?null:time.toInstant(ZoneOffset.UTC).toString());}
   if("NORMAL".equals(v.get("auctionType")))v.put("normalTiming",timings.get(rs.getLong("id")));
+  if("BLIND".equals(v.get("auctionType"))){
+   long id=rs.getLong("id");var setup=jdbc.query("SELECT trade_seconds,bid_seconds,opened_at FROM blind_settings WHERE auction_id=?",(row,n)->Map.of("tradeSeconds",row.getInt(1),"bidSeconds",row.getInt(2),"opened",row.getObject(3)!=null),id);
+   Map<String,Object> blind=new LinkedHashMap<>(setup.isEmpty()?Map.of("tradeSeconds",300,"bidSeconds",100,"opened",false):setup.getFirst());
+   blind.put("clues",jdbc.queryForList("SELECT content FROM blind_clues WHERE auction_id=? ORDER BY slot",String.class,id));v.put("blindSetup",blind);
+  }
   try{v.put("version","\""+HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(json.writeValueAsBytes(v)))+"\"");}catch(Exception ex){throw new IllegalStateException(ex);}
   Map<String,Object> product=new LinkedHashMap<>();product.put("id",rs.getString("product_id"));product.put("name",rs.getString("product_name"));product.put("imageUrl",rs.getString("product_image"));v.put("product",product);
   long participants=rs.getLong("participants");v.put("participantCount",""+participants);
-  String blocked=!"UPCOMING".equals(v.get("status"))?"AUCTION_NOT_EDITABLE":!rs.getObject("start_time",LocalDateTime.class).isAfter(LocalDateTime.ofInstant(clock.instant(),ZoneOffset.UTC))?"START_TIME_REACHED":participants>0||rs.getBoolean("activity")?"AUCTION_HAS_ACTIVITY":null;
+  String blocked=!"UPCOMING".equals(v.get("status"))?"AUCTION_NOT_EDITABLE":
+   "BLIND".equals(v.get("auctionType"))&&Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM blind_settings WHERE auction_id=? AND opened_at IS NOT NULL)",Boolean.class,rs.getLong("id")))?"LOBBY_ALREADY_OPEN":!rs.getObject("start_time",LocalDateTime.class).isAfter(LocalDateTime.ofInstant(clock.instant(),ZoneOffset.UTC))?"START_TIME_REACHED":participants>0||rs.getBoolean("activity")?"AUCTION_HAS_ACTIVITY":null;
   v.put("editable",blocked==null);v.put("editBlockedReason",blocked);v.put("serverNow",clock.instant().toString());return v;
  }
  private String camel(String value){String[] parts=value.split("_");StringBuilder result=new StringBuilder(parts[0]);for(int i=1;i<parts.length;i++)result.append(Character.toUpperCase(parts[i].charAt(0))).append(parts[i].substring(1));return result.toString();}

@@ -32,8 +32,7 @@ public class AuctionSnapshotService {
             var bids = dataGateway.bidsForAuction(auctionId);
             var chatHistory = dataGateway.chatHistoryFor(auctionId, CHAT_HISTORY_LIMIT);
             if (auction.auctionType() == AuctionType.BLIND) {
-                var historicalResults = dataGateway.historicalResultsFor(auction.productId(), auction.startTime());
-                return (Object) blindBuilder.build(auction, bids, historicalResults, chatHistory, userId);
+                return (Object) blindBuilder.build(auction, bids, chatHistory, userId);
             }
             return normalBuilder.build(auction, bids, chatHistory);
         });

@@ -13,7 +13,8 @@ import SystemWalletPage from '../features/admin/system-wallet/SystemWalletPage';
 import {DiscoveryDetail} from '../features/auctions/discovery/Discovery';
 import NormalAuctionPage from '../pages/NormalAuctionPage';
 import NormalAuctionListPage from '../pages/NormalAuctionListPage';
-import BlindRoom, {PrivateBlindEntry} from '../features/auctions/blind/BlindRoom';
+import BlindRoom from '../features/auctions/blind/BlindRoom';
+import BlindAuctionListPage from '../features/auctions/blind/BlindAuctionListPage';
 import AdminBlindClues from '../features/auctions/blind/AdminBlindClues';
 import BlindReplay from '../features/auctions/blind/BlindReplay';
 import LeaderboardPage from '../features/leaderboard/LeaderboardPage';
@@ -29,7 +30,7 @@ export default createHashRouter([
     { path: '/normal', element: <NormalAuctionListPage /> },
     { path: '/leaderboard', element: <LeaderboardPage /> },
     { path: '/auctions/:id', element: <DiscoveryDetail /> },
-    { path: '/blind', element: <PrivateBlindEntry /> },
+    { path: '/blind', element: <BlindAuctionListPage /> },
     { path: '/admin', element: <AdminPage /> },
     { path: '/admin/system-wallet', element: <SystemWalletPage /> },
     { path: '/admin/users', element: <AdminUsersPage /> },

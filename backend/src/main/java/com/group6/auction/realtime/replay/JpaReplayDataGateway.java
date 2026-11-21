@@ -19,6 +19,7 @@ import com.group6.auction.realtime.chat.ChatMessageEntity;
 import com.group6.auction.realtime.chat.ChatMessageRepository;
 import com.group6.auction.realtime.room.ProductSnapshot;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +33,7 @@ public class JpaReplayDataGateway implements ReplayDataGateway {
     private final ObjectProvider<BidRepository> bidRepository;
     private final ObjectProvider<ChatMessageRepository> chatMessageRepository;
     private final ObjectProvider<UserRepository> userRepository;
+    private final JdbcTemplate jdbc;
 
     public JpaReplayDataGateway(
             ObjectProvider<AuctionRepository> auctionRepository,
@@ -39,7 +41,8 @@ public class JpaReplayDataGateway implements ReplayDataGateway {
             ObjectProvider<AuctionParticipantRepository> participantRepository,
             ObjectProvider<BidRepository> bidRepository,
             ObjectProvider<ChatMessageRepository> chatMessageRepository,
-            ObjectProvider<UserRepository> userRepository
+            ObjectProvider<UserRepository> userRepository,
+            JdbcTemplate jdbc
     ) {
         this.auctionRepository = auctionRepository;
         this.productRepository = productRepository;
@@ -47,6 +50,7 @@ public class JpaReplayDataGateway implements ReplayDataGateway {
         this.bidRepository = bidRepository;
         this.chatMessageRepository = chatMessageRepository;
         this.userRepository = userRepository;
+        this.jdbc = jdbc;
     }
 
     @Override
@@ -109,6 +113,26 @@ public class JpaReplayDataGateway implements ReplayDataGateway {
                         auction.getFinishedAt()
                 ))
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReplayClueTradeData> clueTradesForAuction(long auctionId) {
+        return jdbc.query("""
+            SELECT t.id,c.slot,c.content,s.username,b.username,t.price,t.created_at
+            FROM blind_clue_trades t JOIN blind_clues c ON c.id=t.clue_id
+            JOIN users s ON s.id=t.seller_id JOIN users b ON b.id=t.buyer_id
+            WHERE t.auction_id=? ORDER BY t.created_at,t.id
+            """,(rs,n)->new ReplayClueTradeData(rs.getLong(1),rs.getInt(2),rs.getString(3),
+                rs.getString(4),rs.getString(5),rs.getLong(6),rs.getObject(7,LocalDateTime.class)),auctionId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long,String> bidderNamesForAuction(long auctionId) {
+        return jdbc.query("""
+            SELECT DISTINCT u.id,u.username FROM bids b JOIN users u ON u.id=b.user_id WHERE b.auction_id=?
+            """,rs->{var names=new java.util.LinkedHashMap<Long,String>();while(rs.next())names.put(rs.getLong(1),rs.getString(2));return names;},auctionId);
     }
 
     private ReplayAuctionData toReplayAuction(Auction auction, Product product) {

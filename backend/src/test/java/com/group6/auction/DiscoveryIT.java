@@ -18,7 +18,7 @@ class DiscoveryIT {
  String name="discovery_"+UUID.randomUUID().toString().substring(0,8);
  @BeforeAll static void guard(){if(!"true".equals(System.getenv("REGISTRATION_TEST_DATABASE")))throw new IllegalStateException("Test DB required");}
  @BeforeEach void setup(){
-  jdbc.update("INSERT INTO products(name,description,quantity,estimated_price) VALUES (?,'Camera description',1,777777)",name);
+  jdbc.update("INSERT INTO products(name,description,quantity,estimated_price,image_url) VALUES (?,'Camera description',1,777777,'/api/product-images/discovery-test.jpg')",name);
   product=jdbc.queryForObject("SELECT id FROM products WHERE name=?",Long.class,name);
   normal=create("NORMAL","PUBLIC");blind=create("BLIND","PUBLIC");hidden=create("BLIND","PRIVATE");
  }
@@ -30,10 +30,12 @@ class DiscoveryIT {
  HttpResponse<String> get(String route)throws Exception {try(var c=HttpClient.newHttpClient()){return c.send(HttpRequest.newBuilder(URI.create("http://localhost:"+port+route)).GET().build(),HttpResponse.BodyHandlers.ofString());}}
  @Test void publicListAndDetailAreSafeForGuests()throws Exception {
   var r=get("/api/discovery/auctions?q="+name);assertThat(r.statusCode()).isEqualTo(200);
-  var page=json.readTree(r.body());assertThat(page.get("items").size()).isEqualTo(2);
+  var page=json.readTree(r.body());assertThat(page.get("items").size()).isEqualTo(1);
   assertThat(r.body()).doesNotContain("SECRET_ROOM","roomCode","estimatedPrice","createdBy");
   var n=json.readTree(get("/api/discovery/auctions/"+normal).body());assertThat(n.get("startingPrice").asText()).isEqualTo("9007199254740993");assertThat(n.get("startingPrice").isTextual()).isTrue();
-  var b=get("/api/discovery/auctions/"+blind);assertThat(b.statusCode()).isEqualTo(200);assertThat(b.body()).contains("Camera description").doesNotContain("startingPrice","currentPrice","minBidIncrement","9007199254740993","777777");
+  var b=get("/api/discovery/auctions/"+blind);assertThat(b.statusCode()).isEqualTo(200);assertThat(b.body()).contains("Sản phẩm bí mật","\"productRevealed\":false","discovery-test.jpg").doesNotContain(name,"Camera description","startingPrice","currentPrice","minBidIncrement","9007199254740993","777777");
+  jdbc.update("UPDATE auctions SET status='UNSOLD' WHERE id=?",blind);
+  assertThat(get("/api/discovery/auctions/"+blind).body()).contains(name,"Camera description","\"productRevealed\":true");
   assertThat(get("/api/discovery/auctions/"+hidden).statusCode()).isEqualTo(404);
   assertThat(get("/api/admin/auctions").statusCode()).isEqualTo(401);
   assertThat(get("/api/auctions/"+normal+"/replay").statusCode()).isEqualTo(401);
@@ -48,10 +50,9 @@ class DiscoveryIT {
  @Test void paginationUsesStableOrderAndTreatsSearchWildcardsLiterally()throws Exception {
   var first=json.readTree(get("/api/discovery/auctions?q="+name+"&size=1").body());
   var second=json.readTree(get("/api/discovery/auctions?q="+name+"&size=1&page=1").body());
-  assertThat(first.get("totalPages").asInt()).isEqualTo(2);
-  assertThat(first.get("items").get(0).get("id").asText()).isEqualTo(Long.toString(blind));
-  assertThat(second.get("items").get(0).get("id").asText()).isEqualTo(Long.toString(normal));
-  assertThat(json.readTree(get("/api/discovery/auctions?q="+name+"&page=2&size=1").body()).get("items").size()).isZero();
+  assertThat(first.get("totalPages").asInt()).isEqualTo(1);
+  assertThat(first.get("items").get(0).get("id").asText()).isEqualTo(Long.toString(normal));
+  assertThat(second.get("items").size()).isZero();
   for(String literal:java.util.List.of("%25","%5F","!","%27")) {
    assertThat(json.readTree(get("/api/discovery/auctions?q="+name+literal).body()).get("items").size()).isZero();
   }
@@ -71,10 +72,11 @@ class DiscoveryIT {
    var n=json.readTree(get("/api/discovery/auctions/"+normal).body());
    assertThat(n.get("currentPrice").asText()).isEqualTo("9007199254741993");
    assertThat(n.get("startTime").asText()).endsWith("Z");
-   for(String url:java.util.List.of("/api/discovery/auctions/"+blind,"/api/discovery/auctions?q="+name+"&auctionType=BLIND")) {
+   for(String url:java.util.List.of("/api/discovery/auctions/"+blind,"/api/discovery/auctions?auctionType=BLIND")) {
     var r=get(url);assertThat(r.statusCode()).isEqualTo(200);
-    assertThat(r.body()).doesNotContain("888888","777777","startingPrice","currentPrice","minBidIncrement","highest","leader","bids","estimatedPrice","roomCode");
+    assertThat(r.body()).doesNotContain(name,"Camera description","888888","777777","startingPrice","currentPrice","minBidIncrement","highest","leader","bids","estimatedPrice","roomCode");
    }
+   assertThat(json.readTree(get("/api/discovery/auctions?q="+name+"&auctionType=BLIND").body()).get("items").size()).isZero();
    assertThat(n.toString()).doesNotContain("statistics","estimatedPrice","roomCode");
   } finally {jdbc.update("DELETE FROM bids WHERE auction_id IN (?,?)",normal,blind);}
  }

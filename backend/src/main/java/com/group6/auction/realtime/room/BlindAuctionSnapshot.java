@@ -14,7 +14,6 @@ public record BlindAuctionSnapshot(
         AuctionAccessType accessType,
         ProductSnapshot product,
         OwnBidSnapshot ownBid,
-        AuctionHistoricalStats historicalStats,
         long remainingSeconds,
         List<ChatMessageSnapshot> chatHistory
 ) {

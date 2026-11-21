@@ -136,7 +136,7 @@ Hiển thị thông báo chưa có dữ liệu lịch sử.
 
 ## Phòng và Clue
 
-Mỗi phiên BLIND tối đa 4 USER. Khi đủ 4 chỗ, USER khác không thể vào; người đã giữ chỗ có thể reconnect. Admin thiết lập đúng 4 Clue thật, khác nhau, trước khi người chơi vào phòng. Phiên bắt đầu khi Admin chọn Start now hoặc đến giờ theo lịch, với điều kiện cả 4 người cùng đang kết nối. Admin đặt thời gian mua bán Clue và thời gian đặt/sửa bid cho từng phiên trước khi bắt đầu. Server phân ngẫu nhiên một Clue riêng cho mỗi người, không trùng nhau; người reconnect giữ nguyên Clue và slot. Khi đã bắt đầu, người rời phòng không được thay thế và phiên tiếp tục với những người còn lại.
+Mỗi phiên BLIND có sức chứa từ 3 đến 30 USER do Admin chọn. Admin thiết lập đúng cùng số Clue thật, khác nhau (tối đa 30) và thời lượng từng giai đoạn, đồng thời hẹn giờ mở phòng. Đúng giờ hẹn, server mở phòng; Admin có thể bấm Start now để mở sớm. Phòng nhận người chơi trong tối đa 5 phút kể từ khi mở. Khi đủ sức chứa và tất cả đang online, phiên bắt đầu ngay. Hết 5 phút, nếu ít nhất 3 người online thì bắt đầu với đúng những người đó; dưới 3 người thì `CANCELLED`. Server rút ngẫu nhiên số Clue bằng số người thực sự chơi và chia mỗi người một Clue riêng. Người giữ chỗ nhưng offline lúc bắt đầu không được tham gia phiên đang chạy. Người đã được chia Clue có thể reconnect; người mới không được thế chỗ.
 
 Thời gian tính từ lúc phiên bắt đầu thực tế:
 
@@ -147,9 +147,9 @@ Thời gian tính từ lúc phiên bắt đầu thực tế:
 5. Khóa toàn bộ bid: 20 giây cuối.
 6. Công bố kết quả khi kết thúc.
 
-`start_time` cấu hình là giờ bắt đầu tự động theo lịch; Admin có thể bắt đầu sớm bằng Start now khi đủ điều kiện. `end_time` cấu hình là hạn chờ bắt đầu. Nếu quá hạn vẫn chưa bắt đầu thì UNSOLD. Khi bắt đầu, server ghi lại giờ bắt đầu và kết thúc thực tế.
+Trước khi mở, `start_time` của BLIND là giờ mở phòng theo lịch và `end_time` là hạn chờ dự kiến (sau 5 phút). Khi mở theo lịch hoặc Start now, server ghi lại giờ mở thực tế và hạn chờ 5 phút tính từ đó. Khi bắt đầu đấu giá, server cập nhật hai mốc thành giờ bắt đầu và kết thúc thực tế.
 
-Người sở hữu Clue có thể rao bán quyền xem với giá Coin tùy chọn, đổi giá, hủy niêm yết và bán lại Clue đã mua. Mỗi người chỉ mua một Clue chưa biết. Clue có thể thuộc nhiều người và được nhiều người rao bán. Giao dịch chuyển Coin ngay, không hoàn lại; người mua phải xác nhận đúng phiên bản giá hiện tại. Listing của người mất kết nối vẫn có hiệu lực. Hệ thống xác thực Clue, không xác thực phát ngôn chat.
+Mỗi người chỉ có một lượt đăng bán Clue trong phiên; có thể đổi giá tin đang hoạt động, nhưng hủy hoặc bán xong không được đăng lại. Người bán thấy tin của mình nhưng không tự mua. Mỗi Clue chỉ có một giao dịch mua thành công và không thể bán lại; người mua phải chưa biết Clue đó. Giao dịch chuyển Coin ngay, không hoàn lại; người mua phải xác nhận đúng phiên bản giá hiện tại. Listing của người mất kết nối vẫn có hiệu lực. Hệ thống xác thực Clue, không xác thực phát ngôn chat.
 
 ## Bid rule
 
@@ -299,7 +299,7 @@ Không cung cấp statistics cho user.
 
 BLIND RUNNING:
 
-Cung cấp statistics cho user.
+Không cung cấp statistics cho user vì các giá cũ có thể tiết lộ sản phẩm bí mật.
 
 ---
 
@@ -489,8 +489,7 @@ Không gửi historical statistics trong NORMAL RUNNING.
 Có thể gồm:
 
 - auction state
-- basic product info
-- product statistics
+- thông tin sản phẩm đã che đến khi phiên kết thúc
 - own bid
 - chat
 - remaining time
@@ -513,6 +512,7 @@ Replay được dựng lại từ:
 - auctions
 - bids
 - chat_messages
+- blind_clue_trades và blind_clues (chỉ BLIND)
 
 Replay chỉ dùng cho auction đã kết thúc.
 
@@ -529,16 +529,7 @@ theo timestamp.
 
 ## BLIND User Replay
 
-User chỉ cần thấy:
-
-- own bid
-- chat
-- product statistics đã được cung cấp
-- winner
-- winning_price
-- final status
-
-Không công khai toàn bộ hidden bids của user khác.
+Sau khi phiên kết thúc, người tham gia thấy toàn bộ lần đặt/sửa bid, giao dịch Clue kèm nội dung Clue, top 3 bid cuối, sản phẩm và kết quả. Diễn biến BLIND không hiện chat.
 
 Admin có thể xem dữ liệu đầy đủ khi cần quản lý.
 
@@ -660,17 +651,17 @@ Thời gian và quyền sửa bid BLIND phải được kiểm tra ở Java busi
 
 | Information | NORMAL | BLIND |
 |---|---|---|
-| Basic product info | Yes | Yes |
-| Product image | Yes | Yes |
+| Basic product info | Yes | Chỉ sau khi kết thúc |
+| Product image | Yes | Luôn hiện |
 | estimated_price | No | No |
 | starting_price | Yes | No |
 | current_price | Yes | No |
-| Other users' bids | Yes | No |
+| Other users' bids | Yes | Chỉ sau khi kết thúc |
 | Current leader | Yes | No |
-| Historical average winning price | No | Yes |
-| Historical minimum winning price | No | Yes |
-| Historical maximum winning price | No | Yes |
-| Historical SOLD count | No | Yes |
+| Historical average winning price | No | No |
+| Historical minimum winning price | No | No |
+| Historical maximum winning price | No | No |
+| Historical SOLD count | No | No |
 | Own bid | Yes | Yes |
 
 Các quy tắc này phải được enforce tại:

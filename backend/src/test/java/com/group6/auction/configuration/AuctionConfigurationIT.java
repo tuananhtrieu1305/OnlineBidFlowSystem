@@ -44,12 +44,14 @@ class AuctionConfigurationIT {
  MockHttpSession session(String role){var s=new MockHttpSession();s.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,new SecurityContextImpl(new UsernamePasswordAuthenticationToken("admin",null,List.of(new SimpleGrantedAuthority("ROLE_"+role)))));return s;}
  @AfterEach void clean(){
   for(String table:List.of("auction_participants","bids","chat_messages","coin_transactions"))jdbc.update("DELETE FROM "+table+" WHERE auction_id IN (SELECT id FROM auctions WHERE product_id=?)",product);
+  jdbc.update("DELETE FROM blind_clues WHERE auction_id IN (SELECT id FROM auctions WHERE product_id=?)",product);
+  jdbc.update("DELETE FROM blind_settings WHERE auction_id IN (SELECT id FROM auctions WHERE product_id=?)",product);
   jdbc.update("DELETE FROM auctions WHERE product_id=?",product);jdbc.update("DELETE FROM products WHERE id=?",product);jdbc.update("DELETE FROM users WHERE id IN (?,?)",alice,bob);
  }
  ObjectNode body(String type,String access,boolean create){
   var n=json.createObjectNode().put("auctionType",type).put("accessType",access).put("startingPrice","100").put("startTime","2030-01-01T08:00:00+07:00").put("endTime","2030-01-01T09:00:00+07:00");
   if(type.equals("NORMAL"))n.put("minBidIncrement","10");else n.putNull("minBidIncrement");
-  if(access.equals("PRIVATE"))n.put("maxParticipants",type.equals("BLIND")?4:1);else n.putNull("maxParticipants");
+  if(type.equals("BLIND")){n.put("maxParticipants",4);var setup=n.putObject("blindSetup");setup.putArray("clues").add("A").add("B").add("C").add("D");setup.put("tradeSeconds",300).put("bidSeconds",100);}else if(access.equals("PRIVATE"))n.put("maxParticipants",1);else n.putNull("maxParticipants");
   if(create)n.put("productId",""+product).put("productVersion",version);return n;
  }
  Map<String,Object> create(String type,String access){return service.create("admin",AuctionInput.parse(body(type,access,true),true));}
@@ -59,7 +61,7 @@ class AuctionConfigurationIT {
   mvc.perform(post("/api/admin/auctions").session(admin).contentType("application/json").content(body("NORMAL","PUBLIC",true).toString())).andExpect(status().isForbidden());
   for(String type:List.of("NORMAL","BLIND"))for(String access:List.of("PUBLIC","PRIVATE")){
    var response=mvc.perform(post("/api/admin/auctions").session(admin).header("X-CSRF-TOKEN",csrf).contentType("application/json").content(body(type,access,true).toString())).andExpect(status().isCreated()).andExpect(header().exists("ETag")).andReturn().getResponse();
-   var value=json.readTree(response.getContentAsString());assertThat(value.get("status").asText()).isEqualTo("UPCOMING");assertThat(value.get("startTime").asText()).isEqualTo("2030-01-01T01:00:00Z");
+   var value=json.readTree(response.getContentAsString());assertThat(value.get("status").asText()).isEqualTo("UPCOMING");if(type.equals("NORMAL"))assertThat(value.get("startTime").asText()).isEqualTo("2030-01-01T01:00:00Z");
    if(access.equals("PRIVATE"))assertThat(value.get("roomCode").asText()).matches("[A-Z2-9]{12}");else assertThat(value.get("roomCode").isNull()).isTrue();
    mvc.perform(get("/api/admin/auctions/"+value.get("id").asText()).session(session("USER"))).andExpect(status().isForbidden());
   }

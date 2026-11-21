@@ -4,7 +4,9 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
+import com.group6.auction.auction.entity.AuctionStatus;
 import com.group6.auction.realtime.chat.ChatMessageSnapshot;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +15,6 @@ public class BlindAuctionSnapshotBuilder {
     public BlindAuctionSnapshot build(
             AuctionSnapshotAuction auction,
             List<AuctionSnapshotBid> bids,
-            List<AuctionSnapshotHistoricalResult> historicalResults,
             List<ChatMessageSnapshot> chatHistory,
             long userId
     ) {
@@ -26,9 +27,9 @@ public class BlindAuctionSnapshotBuilder {
                 auction.auctionType(),
                 auction.status(),
                 auction.accessType(),
-                auction.product(),
+                Set.of(AuctionStatus.SOLD,AuctionStatus.UNSOLD,AuctionStatus.CANCELLED).contains(auction.status())
+                    ? auction.product() : new ProductSnapshot(0L,"Sản phẩm bí mật",null,auction.product().imageUrl()),
                 ownBid.map(OwnBidSnapshot::from).orElse(null),
-                AuctionHistoricalStats.fromResults(historicalResults),
                 remainingSeconds(auction.endTime()),
                 chatHistory
         );

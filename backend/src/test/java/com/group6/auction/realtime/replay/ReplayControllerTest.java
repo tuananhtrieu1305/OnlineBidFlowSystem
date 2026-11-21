@@ -32,7 +32,7 @@ class ReplayControllerTest {
 
     @Test
     void passesViewerToReplayService() {
-        var replay = new ReplayResponse(1L, "NORMAL", "SOLD", "USER", null, null, null, java.util.List.of());
+        var replay = new ReplayResponse(1L, "NORMAL", "SOLD", "USER", null, null, null, java.util.List.of(), null);
         when(replayService.buildReplay(1L, new ReplayViewer(2L, RealtimePrincipal.Role.USER))).thenReturn(replay);
 
         var response = controller.replay(1L, identity(2L));
