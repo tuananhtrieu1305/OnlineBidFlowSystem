@@ -277,3 +277,48 @@ test('explains an active bid and waits for the server result before allowing end
   await dialog.getByRole('button', { name: 'Xác nhận kết thúc', exact: true }).click();
   await expect(page).toHaveURL(/\/901\/results$/);
 });
+
+test('host previews a podium before explicitly introducing it, with controls visible at minimum window size', async ({}, info) => {
+  session = {
+    ...session,
+    status: 'SCHEDULED',
+    version: '2',
+    lots: [
+      { ...session.lots[0], status: 'QUEUED' },
+      { ...session.lots[0], id: '802', name: 'Máy ảnh', status: 'QUEUED' }
+    ]
+  };
+  update();
+  const chosen: string[] = [];
+  await page.route('**/api/admin/livestreams/901/select', async (route) => {
+    const body = route.request().postDataJSON();
+    chosen.push(body.lotId);
+    session = { ...session, currentLotIndex: 1, version: '3' };
+    await route.fulfill({ json: snapshot() });
+  });
+  await page.getByRole('button', { name: 'Xem sản phẩm Máy ảnh', exact: true }).click();
+  const drawer = page.getByRole('region', { name: 'Sản phẩm trong phiên', exact: true });
+  await expect(drawer.getByRole('heading', { name: 'Máy ảnh', exact: true })).toBeVisible();
+  expect(chosen).toEqual([]);
+  await expect(page.locator('.showcase-lot-caption')).toContainText('Bàn phím');
+  await drawer.getByRole('button', { name: 'Đưa sản phẩm này lên', exact: true }).click();
+  await expect(drawer).toHaveCount(0);
+  expect(chosen).toEqual(['802']);
+  await expect(page.locator('.showcase-lot-caption')).toContainText('Máy ảnh');
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(820, 600));
+  for (const name of ['Bật camera', 'Bật mic', 'Bắt đầu live', 'Kết thúc live', 'Toàn màn hình'])
+    await expect(page.getByRole('button', { name, exact: true })).toBeInViewport();
+  expect(
+    await page.evaluate(() =>
+      [...document.querySelectorAll('.live-grandstand li')].every(
+        (seat) => seat.getBoundingClientRect().bottom <= innerHeight
+      )
+    )
+  ).toBe(true);
+  expect(
+    await page
+      .locator('.live-banner-content')
+      .evaluate((element) => element.getBoundingClientRect().width)
+  ).toBeGreaterThan(200);
+  await page.screenshot({ path: info.outputPath('host-820x600.png') });
+});

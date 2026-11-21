@@ -1,0 +1,1431 @@
+/* Camera-led auction room. All overrides are scoped to the active room. */
+.guest-shell:has(.live-page.is-immersive) {
+  background: #0a1512;
+}
+.guest-shell:has(.live-page.is-immersive) > .guest-sidebar {
+  display: none;
+}
+.guest-shell:has(.live-page.is-immersive) > .guest-workspace {
+  margin: 0;
+}
+.guest-shell .live-page.is-immersive {
+  --room-gold: #dfc58f;
+  --room-panel: #10231fe8;
+  --room-aside: 318px;
+  --room-audience: 260px;
+  position: relative;
+  max-width: none;
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  color: #f4ecda;
+  background: #0b1915;
+}
+.is-immersive > .guest-topbar {
+  display: none;
+}
+.guest-shell .is-immersive .live-room-heading {
+  position: relative;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  height: 78px;
+  margin: 0;
+  padding: 12px 26px;
+  background: linear-gradient(110deg, #10281ff5, #0c1c18fc);
+  border-bottom: 1px solid #d9bc7f30;
+  box-shadow: 0 8px 32px #0003;
+}
+.is-immersive .live-room-heading > div:first-child {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 3px 22px;
+  min-width: 0;
+}
+.guest-shell .is-immersive .live-room-heading .live-back {
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  color: #d6c8a7;
+  white-space: nowrap;
+  padding: 0;
+  margin: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+}
+.guest-shell .is-immersive .live-room-heading .live-back:hover {
+  color: #f0ddb5;
+  background: #d5bd8212;
+  border-color: #d5bd8238;
+}
+.is-immersive .live-room-heading .guest-kicker {
+  display: none;
+}
+.guest-shell .is-immersive .live-room-heading h1 {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.4px;
+  color: #f7efd9;
+  margin: 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.guest-shell .is-immersive .live-room-heading p {
+  margin: 0;
+  color: #a6bbac;
+  font-size: 10px;
+}
+.guest-shell .is-immersive .live-room-heading .live-actions {
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+.guest-shell .is-immersive .live-secondary {
+  min-height: 40px;
+  padding: 10px 14px;
+  border: 1px solid #d1bc8538;
+  border-radius: 10px;
+  color: #e3d5b4;
+  background: #f6e2ae08;
+  box-shadow: inset 0 1px #fff1d00a;
+  font-size: 11px;
+}
+.guest-shell .is-immersive .live-secondary:hover:not(:disabled) {
+  background: #c8ab6226;
+  color: #fff3d0;
+}
+.guest-shell .is-immersive .live-primary {
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid #e9cd9390;
+  color: #172b20;
+  font-size: 13px;
+  font-weight: 600;
+  background: linear-gradient(120deg, #f0dcad, #ceae69);
+  box-shadow:
+    0 6px 22px #d2b77620,
+    inset 0 1px #fff8da;
+}
+.guest-shell .is-immersive .live-primary:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+}
+.guest-shell .is-immersive .live-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.guest-shell .is-immersive .live-fullscreen-toggle {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  padding: 0;
+}
+.guest-shell .is-immersive .live-room-balance {
+  border: 0;
+  padding: 0 0 0 14px;
+  background: none;
+  box-shadow: none;
+  gap: 1px;
+  line-height: 1.3;
+}
+.guest-shell .is-immersive .live-room-balance > span {
+  color: #a6bbac;
+  font-size: 9px;
+}
+.guest-shell .is-immersive .live-room-balance strong {
+  color: #f0d59b;
+  font-size: 19px;
+}
+.guest-shell .is-immersive .live-room-balance a {
+  color: #b4c2b0;
+  font-size: 9px;
+}
+.guest-shell .is-immersive .live-room-grid {
+  position: absolute;
+  inset: 78px 0 0;
+  display: block;
+}
+.is-immersive .live-stage-column {
+  display: block;
+  position: absolute;
+  inset: 0;
+}
+.is-immersive .live-current-product {
+  display: none;
+}
+.guest-shell .is-immersive .product-showcase {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: #101e17;
+  box-shadow: none;
+}
+.is-immersive .showcase-toolbar,
+.is-immersive .showcase-footer {
+  display: none;
+}
+.guest-shell .is-immersive .showcase-room {
+  height: 100%;
+  background-size: cover;
+  background-position: center 58%;
+}
+.is-immersive .showcase-theatre {
+  --curtain-width: clamp(38px, 5vw, 88px);
+  --showcase-product-width: clamp(210px, 27vw, 320px);
+  --showcase-product-left: 12px;
+  --showcase-product-bottom: -55px;
+  --showcase-preview-bottom: -78px;
+  position: absolute;
+  z-index: 1;
+  top: 30px;
+  left: calc((100% - var(--room-aside)) / 2);
+  transform: translateX(-50%);
+  width: calc(100% - var(--room-aside) - 80px);
+  max-width: 1280px;
+  height: calc(100% - var(--room-audience) - 155px);
+  max-height: 560px;
+  min-height: 132px;
+  border: 7px solid #59442c;
+  border-top-width: 11px;
+  border-radius: 12px 12px 3px 3px;
+  background: radial-gradient(ellipse at 50% 20%, #294739, #07140f);
+  box-shadow:
+    0 0 0 1px #ccaa6870,
+    0 0 0 6px #271e17,
+    0 25px 55px #0009,
+    inset 0 0 30px #000;
+}
+.is-immersive .showcase-feed {
+  z-index: 1;
+  position: absolute;
+  inset: 12px var(--curtain-width) 0;
+  width: auto;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: #07140f;
+  box-shadow: none;
+}
+.showcase-theatre-glow {
+  position: absolute;
+  inset: auto -10% -95px;
+  height: 120px;
+  background: radial-gradient(ellipse, #e1b46525, transparent 70%);
+  pointer-events: none;
+}
+.showcase-curtain {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  bottom: -3px;
+  left: 0;
+  width: calc(var(--curtain-width) + 10px);
+  pointer-events: none;
+  clip-path: polygon(0 0, 100% 0, 96% 28%, 63% 62%, 68% 69%, 92% 100%, 0 100%);
+  filter: drop-shadow(8px 0 5px #0009);
+}
+.showcase-curtain > div {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    #260e16 0,
+    #602330 9%,
+    #8a3a46 16%,
+    #3c1420 24%,
+    #6d2c39 32%,
+    #28101a 42%
+  );
+  box-shadow:
+    inset 1px 0 #d2937730,
+    inset -8px 0 14px #1a0715a0;
+  animation: theatre-curtain-light 9s ease-in-out infinite alternate;
+}
+.showcase-curtain-right {
+  left: auto;
+  right: 0;
+  transform: scaleX(-1);
+}
+.showcase-curtain-right > div {
+  animation-delay: -4s;
+}
+.showcase-curtain > i {
+  position: absolute;
+  top: 62%;
+  left: 0;
+  width: 68%;
+  height: 5px;
+  border-radius: 50%;
+  background: linear-gradient(#fae1a5, #b28a45, #e0bc77);
+  transform: rotate(-9deg);
+  box-shadow: 0 3px 4px #180b09;
+}
+.showcase-curtain > i::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 1px;
+  width: 5px;
+  height: 22px;
+  border-radius: 3px 3px 0 0;
+  background: repeating-linear-gradient(90deg, #ac8447 0 1px, #e0b977 1px 2px);
+  transform: rotate(9deg);
+}
+.showcase-theatre-valance {
+  position: absolute;
+  z-index: 4;
+  top: -5px;
+  left: -1px;
+  right: -1px;
+  height: 29px;
+  border-radius: 0 0 45% 45% / 0 0 80% 80%;
+  border-bottom: 2px solid #c4a264;
+  background: repeating-linear-gradient(90deg, #3e1421 0, #7d3440 5%, #441724 10%);
+  box-shadow: 0 6px 10px #0009;
+  pointer-events: none;
+  text-align: center;
+}
+.showcase-theatre-valance > span {
+  display: inline-block;
+  position: relative;
+  top: -11px;
+  padding: 4px 14px;
+  border: 1px solid #bfa26780;
+  border-radius: 2px;
+  background: linear-gradient(110deg, #735836, #b39864, #685033);
+  color: #f4e1b9;
+  font-size: 6px;
+  letter-spacing: 0.25em;
+  box-shadow: 0 2px 5px #0005;
+  text-shadow: 0 1px #493722;
+}
+.showcase-theatre-platform {
+  position: absolute;
+  z-index: 4;
+  left: -32px;
+  right: -32px;
+  height: 110px;
+  top: calc(100% - 5px);
+  pointer-events: none;
+  filter: drop-shadow(0 16px 11px #0009);
+}
+.showcase-theatre-platform > i {
+  position: absolute;
+  inset: 0 0 24px;
+  background:
+    repeating-linear-gradient(0deg, #2c1a0d22 0 1px, transparent 1px 7px),
+    linear-gradient(100deg, #5f3d26, #b58a58 48%, #65432c);
+  clip-path: polygon(3% 0, 97% 0, 100% 100%, 0 100%);
+  border-bottom: 2px solid #c4a17070;
+  box-shadow: inset 0 8px 16px #e6c58f26;
+}
+.showcase-theatre-platform > span {
+  position: absolute;
+  inset: 82px 0 0;
+  border-radius: 0 0 3px 3px;
+  border-bottom: 4px solid #342319;
+  background:
+    repeating-linear-gradient(0deg, #d1b07812 0 1px, #0000 1px 4px),
+    linear-gradient(90deg, #3e291b, #765337 48%, #38271d);
+  box-shadow: inset 0 -3px #b8985726;
+}
+@keyframes theatre-curtain-light {
+  to {
+    filter: brightness(1.12);
+  }
+}
+.is-immersive .showcase-feed > section {
+  height: 100%;
+}
+.is-immersive .showcase-feed .live-stage {
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 0;
+  background: transparent;
+}
+.is-immersive .showcase-feed .live-stage video {
+  object-fit: contain;
+}
+.is-immersive .showcase-feed .live-stage > span,
+.is-immersive .showcase-feed .live-stage-caption {
+  display: none;
+}
+.is-immersive .showcase-feed .live-camera-placeholder {
+  background: radial-gradient(ellipse at 50% 30%, #12312922, #07181166);
+  gap: 14px;
+  padding: 12px;
+}
+.is-immersive .showcase-feed .live-camera-placeholder p {
+  font-size: 13px;
+  color: #d6caa9;
+  letter-spacing: 0.03em;
+}
+.is-immersive .showcase-feed .live-camera-placeholder > svg,
+.is-immersive .showcase-feed .live-camera-placeholder > span {
+  width: 35px;
+  height: 35px;
+  font-size: 28px;
+  color: #d9bf84;
+}
+.is-immersive .showcase-feed .live-camera-controls,
+.is-immersive .showcase-feed .live-audio-toggle {
+  position: absolute;
+  z-index: 6;
+  top: auto;
+  left: auto;
+  right: 10px;
+  bottom: 10px;
+  margin: 0;
+  display: flex;
+  gap: 8px;
+}
+.is-immersive .showcase-feed .live-camera-controls .live-secondary,
+.is-immersive .showcase-feed .live-audio-toggle {
+  border-radius: 50%;
+  background: #112a23dc;
+  backdrop-filter: blur(12px);
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+}
+.is-immersive .showcase-feed .live-error {
+  position: absolute;
+  top: auto;
+  bottom: 64px;
+  left: 12px;
+  right: 12px;
+  max-width: none;
+  z-index: 7;
+}
+.showcase-camera-vignette {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, #08171133, transparent 50%, #081711bb),
+    linear-gradient(0deg, #0b180ff5 0, #0b180f80 18%, transparent 60%, #06130c50);
+}
+.showcase-on-air {
+  position: absolute;
+  z-index: 3;
+  top: 8px;
+  left: 26px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #e9dcc0;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+.showcase-on-air > i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e4b45f;
+  box-shadow: 0 0 0 4px #e4b45f18;
+  animation: room-beacon 3s ease-in-out infinite;
+}
+.showcase-on-air > span {
+  color: #b5bea970;
+  font-size: 8px;
+  margin-left: 14px;
+}
+.guest-shell .is-immersive .showcase-room .showcase-stage {
+  position: absolute;
+  z-index: 5;
+  left: var(--showcase-product-left);
+  bottom: var(--showcase-product-bottom);
+  width: var(--showcase-product-width);
+  height: clamp(280px, 40vh, 380px);
+  overflow: visible;
+  background: transparent;
+  pointer-events: none;
+}
+.is-immersive .showcase-stage .showcase-photo-position {
+  width: 52%;
+  height: 54%;
+  max-width: 185px;
+  bottom: 81px;
+  pointer-events: auto;
+  touch-action: none;
+}
+.is-immersive .showcase-stage .showcase-photo-front {
+  padding: 6px;
+  border-width: 2px;
+  border-radius: 6px;
+}
+.is-immersive .showcase-stage .showcase-pedestal {
+  width: 85%;
+  height: 68px;
+  bottom: 30px;
+  max-width: none;
+}
+.is-immersive .showcase-stage .showcase-product-shadow {
+  bottom: 82px;
+}
+.is-immersive .showcase-product-light {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  bottom: 15px;
+  left: var(--showcase-product-left);
+  width: var(--showcase-product-width);
+  pointer-events: none;
+}
+.guest-shell .is-immersive .showcase-room .showcase-product-light .showcase-light-fixture {
+  display: block;
+  top: -8px;
+  z-index: 2;
+}
+.showcase-light-mount {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: -1px;
+  width: 26px;
+  height: 5px;
+  transform: translateX(-50%);
+  border: 1px solid #d9bf8070;
+  border-radius: 50%;
+  background: linear-gradient(#baa073, #665237);
+  box-shadow: 0 2px 3px #0006;
+}
+.guest-shell .is-immersive .showcase-room .showcase-product-light .showcase-light-beam {
+  display: block;
+  z-index: 0;
+  top: 24px;
+  bottom: 0;
+  left: 7.5%;
+  width: 85%;
+  opacity: 0.85;
+  background: linear-gradient(#ffe8ac29, #efd99c09 68%, #ffe8b91a);
+  filter: blur(3px);
+  animation: ceiling-light-glow 8s ease-in-out infinite alternate;
+}
+.showcase-product-light::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 7.5%;
+  width: 85%;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #f8d28a22, transparent 70%);
+  filter: blur(3px);
+}
+@keyframes ceiling-light-glow {
+  to {
+    opacity: 0.65;
+  }
+}
+.showcase-lot-caption {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: -18px;
+  display: grid;
+  gap: 5px;
+  text-align: center;
+  animation: showcase-arrive 0.5s ease-out both;
+}
+.showcase-lot-caption > span {
+  font-size: 7px;
+  letter-spacing: 0.17em;
+  color: #cebd99;
+}
+.showcase-lot-caption > h2 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 16px;
+  color: #f8edcf;
+  text-shadow: 0 2px 12px #000;
+  font-weight: 500;
+}
+.showcase-previews {
+  position: absolute;
+  z-index: 5;
+  left: 350px;
+  bottom: var(--showcase-preview-bottom);
+  display: flex;
+  gap: 8px;
+}
+.guest-shell .is-immersive .showcase-mini {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 120px;
+  height: 176px;
+  padding: 0 4px;
+  color: #d9c9a3;
+  border: 0;
+  background: none;
+  transition: transform 0.25s;
+}
+.guest-shell .is-immersive .showcase-mini:hover {
+  transform: translateY(-5px);
+  color: #fff3d6;
+}
+.showcase-mini-orbit {
+  position: absolute;
+  width: 72px;
+  height: 84px;
+  bottom: 74px;
+  perspective: 600px;
+}
+.showcase-mini-orbit > img,
+.showcase-mini-empty {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #eae5d4;
+  border: 2px solid #b89b66;
+  border-radius: 4px;
+  padding: 3px;
+  animation: room-mini-turn 12s ease-in-out infinite alternate;
+  box-shadow: 0 5px 14px #0007;
+}
+.showcase-mini-empty {
+  background: #17362c;
+  color: #bba475;
+  font-size: 27px;
+}
+.showcase-mini:nth-child(2) .showcase-mini-orbit > * {
+  animation-delay: -5s;
+}
+.showcase-mini-plinth {
+  position: absolute;
+  bottom: 43px;
+  width: 100%;
+  height: 38px;
+  border-radius: 50% / 35%;
+  border: 1px solid #c19b5b55;
+  background: linear-gradient(#b08756 0, #6b492c 27%, #352518 30%, #725238 70%, #34271c);
+  box-shadow: 0 12px 15px #0005;
+}
+.showcase-mini-name {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+}
+.showcase-mini > small {
+  font-size: 8px;
+  color: #b0af97;
+  padding-top: 3px;
+}
+.guest-shell .is-immersive .showcase-room-audience {
+  position: absolute;
+  z-index: 3;
+  bottom: 0;
+  left: 26px;
+  right: calc(var(--room-aside) + 26px);
+  height: var(--room-audience);
+  padding: 0;
+}
+.guest-shell .is-immersive .live-bid-column {
+  position: absolute;
+  z-index: 5;
+  top: 20px;
+  right: 22px;
+  bottom: 78px;
+  width: calc(var(--room-aside) - 22px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b79d6655 transparent;
+  padding: 0 2px 4px;
+}
+.guest-shell .is-immersive .live-panel {
+  color: #e5dcc7;
+  background: var(--room-panel);
+  border: 1px solid #dcc68a38;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow:
+    0 16px 35px #0004,
+    inset 0 1px #fff4d00b;
+  backdrop-filter: blur(18px);
+}
+.guest-shell .is-immersive .live-price-heading {
+  margin: 0;
+  padding: 0 0 19px;
+  background: none;
+  box-shadow: none;
+  border: none;
+}
+.guest-shell .is-immersive .live-price-heading p {
+  color: #a5b9aa;
+  font-size: 10px;
+  margin-bottom: 8px;
+}
+.guest-shell .is-immersive .live-price-heading > strong {
+  display: block;
+  color: #f4dba3;
+  font-size: 32px;
+  letter-spacing: -1px;
+  font-weight: 500;
+  animation: room-price-arrive 0.35s ease-out both;
+}
+.guest-shell .is-immersive .live-countdown {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #d1c08f20;
+  background: #e1e4be07;
+  border-radius: 10px;
+}
+.guest-shell .is-immersive .live-countdown span {
+  color: #a9b8a8;
+  font-size: 10px;
+}
+.guest-shell .is-immersive .live-countdown strong {
+  color: #e6d3a7;
+  font-size: 27px;
+}
+.guest-shell .is-immersive .live-countdown-track {
+  background: #d5c99a18;
+  height: 3px;
+  margin-top: 10px;
+}
+.guest-shell .is-immersive .live-countdown-track > span {
+  background: linear-gradient(90deg, #8d9f6b, #eed396);
+}
+.guest-shell .is-immersive .live-countdown.is-urgent {
+  background: #b675321a;
+  border-color: #d5984a70;
+  box-shadow: 0 0 20px #d5984a12;
+}
+.guest-shell .is-immersive .live-countdown.is-urgent strong {
+  color: #f1ba74;
+}
+.guest-shell .is-immersive .live-winner {
+  background: #c5d8b60a;
+  border: 1px solid #bdc5a31c;
+  border-radius: 10px;
+  padding: 13px;
+  margin: 14px 0;
+}
+.guest-shell .is-immersive .live-winner > span {
+  color: #a1b6a5;
+  font-size: 10px;
+}
+.guest-shell .is-immersive .live-winner strong {
+  color: #e9dfc6;
+  font-size: 13px;
+}
+.guest-shell .is-immersive .live-winner p {
+  color: #c2b693;
+  font-size: 10px;
+}
+.guest-shell .is-immersive .live-winner.is-sold {
+  border-color: #d9bd7960;
+  background: #d1b97412;
+}
+.guest-shell .is-immersive label,
+.guest-shell .is-immersive .live-field-hint,
+.guest-shell .is-immersive .live-muted {
+  color: #a8b9a9;
+  font-size: 10px;
+}
+.guest-shell .is-immersive input,
+.guest-shell .is-immersive select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  background: #071711c9;
+  color: #f5e9ca;
+  border: 1px solid #d9c28b42;
+  border-radius: 9px;
+  font-size: 14px;
+  box-shadow: inset 0 2px 8px #0002;
+}
+.guest-shell .is-immersive option {
+  background: #10291f;
+  color: #f5e9ca;
+}
+.guest-shell .is-immersive input:disabled {
+  opacity: 0.5;
+}
+.guest-shell .is-immersive input::placeholder {
+  color: #8c9e8a;
+}
+.guest-shell .is-immersive .live-field-hint {
+  margin: 8px 0 14px;
+  line-height: 1.7;
+}
+.is-immersive .live-bid-form > button,
+.is-immersive .live-host-controls > button {
+  width: 100%;
+}
+.guest-shell .is-immersive .live-bid-history {
+  padding: 14px 18px;
+  font-size: 10px;
+}
+.guest-shell .is-immersive .live-bid-history summary {
+  color: #b7bea5;
+}
+.guest-shell .is-immersive .live-bid-history li {
+  border-color: #d1ba7d20;
+}
+.is-immersive .live-room-status-stack {
+  position: absolute;
+  z-index: 8;
+  top: 198px;
+  left: 26px;
+  width: 430px;
+  max-width: calc(100% - var(--room-aside) - 50px);
+  scrollbar-width: thin;
+  scrollbar-color: #d2bb7b50 transparent;
+  display: grid;
+  gap: 8px;
+  max-height: 145px;
+  overflow-y: auto;
+  pointer-events: none;
+}
+.guest-shell .is-immersive .live-room-connection {
+  width: fit-content;
+  padding: 5px 10px;
+  border-color: #c9d0b22b;
+  background: #0a231cbe;
+  color: #c6d3b8;
+  font-size: 8px;
+  margin: 0;
+}
+.guest-shell .is-immersive .live-room-status-stack .live-banner {
+  grid-template-columns: minmax(0, 1fr) auto;
+  pointer-events: auto;
+  margin: 0;
+  padding: 12px;
+  background: #142c24f5;
+  border-color: #d5b97760;
+  color: #e8d9b3;
+  box-shadow: 0 5px 18px #0003;
+  font-size: 10px;
+}
+.guest-shell .is-immersive .live-banner-title {
+  color: #f0ddb5;
+}
+.is-immersive .live-room-dock {
+  position: absolute;
+  bottom: 18px;
+  right: 26px;
+  z-index: 9;
+  display: flex;
+  gap: 8px;
+}
+.guest-shell .is-immersive .live-room-dock button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  background: #10271ff2;
+  backdrop-filter: blur(16px);
+}
+.is-immersive .live-room-dock button[aria-expanded='true'] {
+  border-color: #d9bd82;
+}
+.is-immersive .live-room-dock small {
+  display: grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  font-size: 9px;
+  background: #d1bc8320;
+  color: #e0cca1;
+  border-radius: 5px;
+}
+.is-immersive .live-room-drawer {
+  position: absolute;
+  z-index: 12;
+  left: 24px;
+  top: 20px;
+  bottom: 22px;
+  width: min(410px, calc(100% - var(--room-aside) - 52px));
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #dec48c50;
+  border-radius: 16px;
+  background: #10241ff5;
+  color: #eadfc4;
+  backdrop-filter: blur(24px);
+  box-shadow: 0 20px 90px #0008;
+  animation: room-drawer-arrive 0.25s ease-out both;
+}
+.is-immersive .live-room-drawer > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px;
+  border-bottom: 1px solid #d6bf8626;
+}
+.is-immersive .live-room-drawer > header span {
+  font-size: 7px;
+  letter-spacing: 0.18em;
+  color: #bda576;
+}
+.guest-shell .is-immersive .live-room-drawer > header h2 {
+  color: #f0e2c6;
+  font-size: 18px;
+  margin: 6px 0 0;
+}
+.is-immersive .live-room-drawer-body {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  scrollbar-width: thin;
+}
+.guest-shell .is-immersive .live-room-drawer .live-panel {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+  backdrop-filter: none;
+}
+.is-immersive .live-chat > h2 {
+  display: none;
+}
+.guest-shell .is-immersive .live-chat .live-messages {
+  max-height: none;
+  height: auto;
+  min-height: 150px;
+  margin-bottom: 20px;
+}
+.guest-shell .is-immersive .live-messages > p {
+  border: 1px solid #d9c08b15;
+  padding: 12px;
+  border-radius: 9px;
+  background: #f7e2b405;
+  animation: room-price-arrive 0.25s ease-out;
+}
+.guest-shell .is-immersive .live-messages strong {
+  color: #d3bd87;
+}
+.guest-shell .is-immersive .live-messages span {
+  color: #dfdfce;
+}
+.guest-shell .is-immersive .live-queue li {
+  background: #e2d7af08;
+  border-color: #dac28c20;
+}
+.guest-shell .is-immersive .live-queue strong,
+.guest-shell .is-immersive .live-room-drawer h2 {
+  color: #dfd5bb;
+}
+.live-preview-detail {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 22px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #d4bd7f30;
+}
+.live-preview-detail > img {
+  height: 180px;
+  width: 100%;
+  object-fit: contain;
+  padding: 14px;
+  background: #eae5d4;
+  border-radius: 12px;
+}
+.live-preview-detail > span {
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  color: #bba577;
+}
+.live-preview-detail h3 {
+  font-size: 20px;
+  color: #f0e4c7;
+}
+.live-preview-detail p {
+  font-size: 12px;
+  color: #aebda9;
+  line-height: 1.8;
+}
+.live-preview-detail > strong {
+  font-size: 12px;
+  color: #d8c18d;
+}
+@keyframes room-beacon {
+  50% {
+    box-shadow: 0 0 0 7px #e4b45f05;
+    opacity: 0.65;
+  }
+}
+@keyframes room-mini-turn {
+  from {
+    transform: rotateY(-24deg) translateY(0);
+  }
+  to {
+    transform: rotateY(24deg) translateY(-4px);
+  }
+}
+@keyframes room-price-arrive {
+  from {
+    opacity: 0.25;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes room-seat-arrive {
+  from {
+    opacity: 0;
+    scale: 0.5;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes room-drawer-arrive {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@media (min-width: 1600px) {
+  .guest-shell .live-page.is-immersive {
+    --room-aside: 360px;
+  }
+  .guest-shell .is-immersive .live-panel {
+    padding: 25px;
+  }
+  .guest-shell .is-immersive .live-price-heading > strong {
+    font-size: 38px;
+  }
+}
+@media (max-width: 1050px) {
+  .guest-shell .live-page.is-immersive {
+    --room-aside: 290px;
+    --room-audience: 210px;
+  }
+  .showcase-previews {
+    left: 270px;
+    gap: 0;
+  }
+  .guest-shell .is-immersive .showcase-mini {
+    width: 84px;
+  }
+  .showcase-on-air > span {
+    display: none;
+  }
+  .is-immersive .live-room-heading > div:first-child {
+    gap: 4px 12px;
+  }
+  .guest-shell .is-immersive .live-room-heading .live-back {
+    padding-right: 0;
+  }
+  .guest-shell .is-immersive .live-room-heading h1 {
+    font-size: 15px;
+  }
+}
+@media (max-height: 760px) and (min-width: 821px) {
+  .guest-shell .is-immersive .showcase-room .showcase-stage {
+    height: 270px;
+    bottom: var(--showcase-product-bottom);
+  }
+  .showcase-previews {
+    bottom: var(--showcase-preview-bottom);
+  }
+  .guest-shell .is-immersive .live-panel {
+    padding: 16px;
+  }
+  .guest-shell .is-immersive .live-price-heading {
+    padding-bottom: 12px;
+  }
+  .guest-shell .is-immersive .live-winner {
+    margin: 10px 0;
+    padding: 10px;
+  }
+}
+@media (max-width: 820px) {
+  .guest-shell .live-page.is-immersive {
+    --room-aside: 260px;
+  }
+  .guest-shell .is-immersive .live-room-heading {
+    padding: 10px 16px;
+  }
+  .guest-shell .is-immersive .live-room-heading .live-back {
+    padding: 0;
+  }
+  .is-immersive .showcase-theatre {
+    --showcase-product-left: 0px;
+    --showcase-product-width: 225px;
+  }
+  .guest-shell .is-immersive .showcase-room .showcase-stage {
+    left: var(--showcase-product-left);
+    width: var(--showcase-product-width);
+    height: 235px;
+    bottom: var(--showcase-product-bottom);
+  }
+  .showcase-previews {
+    left: 218px;
+    bottom: var(--showcase-preview-bottom);
+  }
+  .guest-shell .is-immersive .showcase-mini {
+    width: 72px;
+  }
+  .guest-shell .is-immersive .showcase-mini:nth-child(2) {
+    display: none;
+  }
+  .guest-shell .is-immersive .showcase-room-audience {
+    height: var(--room-audience);
+    left: 18px;
+    right: calc(var(--room-aside) + 18px);
+  }
+  .guest-shell .is-immersive .live-bid-column {
+    right: 12px;
+    width: calc(var(--room-aside) - 12px);
+  }
+  .guest-shell .is-immersive .live-panel {
+    padding: 14px;
+  }
+  .guest-shell .is-immersive .live-price-heading > strong {
+    font-size: 27px;
+  }
+  .is-immersive .live-room-dock {
+    right: 12px;
+    gap: 5px;
+  }
+  .guest-shell .is-immersive .live-room-dock button {
+    padding: 8px;
+    font-size: 10px;
+  }
+}
+@media (max-width: 620px) {
+  .guest-shell .live-page.is-immersive {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .guest-shell .is-immersive .live-room-heading {
+    height: 76px;
+    gap: 8px;
+    padding: 8px;
+  }
+  .guest-shell .is-immersive .live-room-heading h1 {
+    max-width: 185px;
+    font-size: 13px;
+  }
+  .guest-shell .is-immersive .live-room-heading .live-actions {
+    gap: 5px;
+  }
+  .guest-shell .is-immersive .live-room-balance {
+    padding-left: 0;
+  }
+  .guest-shell .is-immersive .live-room-balance strong {
+    font-size: 14px;
+  }
+  .guest-shell .is-immersive .live-room-heading .live-actions > a,
+  .guest-shell
+    .is-immersive
+    .live-room-heading
+    .live-actions
+    > button:not(.live-fullscreen-toggle) {
+    padding: 7px;
+    font-size: 9px;
+  }
+  .guest-shell .is-immersive .live-room-grid {
+    position: relative;
+    inset: auto;
+  }
+  .is-immersive .live-stage-column {
+    position: relative;
+    height: 540px;
+  }
+  .is-immersive .showcase-feed {
+    right: 0;
+    bottom: 100px;
+  }
+  .guest-shell .is-immersive .showcase-room .showcase-stage {
+    bottom: var(--showcase-product-bottom);
+  }
+  .guest-shell .is-immersive .showcase-room-audience {
+    right: 18px;
+  }
+  .guest-shell .is-immersive .live-bid-column {
+    position: relative;
+    width: auto;
+    inset: auto;
+    margin: 0 14px;
+    overflow: visible;
+    padding-bottom: 80px;
+  }
+  .is-immersive .live-room-status-stack {
+    max-width: calc(100% - 40px);
+  }
+  .is-immersive .live-room-dock {
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+  }
+  .is-immersive .live-room-drawer {
+    position: fixed;
+    top: 90px;
+    bottom: 78px;
+    left: 12px;
+    width: calc(100% - 24px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-immersive *,
+  .is-immersive *::before,
+  .is-immersive *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition: none !important;
+  }
+}
+
+.guest-shell .is-immersive .live-room-status-stack .live-banner-content > strong {
+  color: #f0ddb5;
+  font-size: 11px;
+}
+.guest-shell .is-immersive .live-room-status-stack .live-banner-content p {
+  color: #c0cbb7;
+  font-size: 10px;
+}
+.guest-shell .is-immersive .live-room-status-stack .live-banner-icon {
+  display: none;
+}
+
+.showcase-lot-caption h2 button {
+  pointer-events: auto;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  border: 0;
+}
+.showcase-lot-caption h2 button:hover {
+  color: #f5d594;
+}
+.showcase-on-air:not(.is-live) > i {
+  animation: none;
+  background: #9da897;
+  box-shadow: none;
+}
+.guest-shell .is-immersive .live-lots li {
+  border-color: #dac28c20;
+}
+.guest-shell .is-immersive .live-lots li.is-current {
+  background: #cfb77712;
+  border-radius: 8px;
+  padding-inline: 8px;
+  border-color: #dac28c30;
+  box-shadow: inset 2px 0 #a88e55;
+}
+.guest-shell .is-immersive .live-lots strong {
+  color: #dfd5bb;
+}
+.guest-shell .is-immersive .live-lots p,
+.guest-shell .is-immersive .live-lot-number {
+  color: #b2bca7;
+}
+.guest-shell .is-immersive .live-lot-detail {
+  color: inherit;
+  background: none;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  padding: 4px 0;
+}
+.guest-shell .is-immersive .live-lot-detail:hover {
+  color: #f2dba5;
+}
+.is-immersive .showcase-retiring-photo {
+  position: absolute;
+  left: 50%;
+  bottom: 81px;
+  width: 52%;
+  height: 54%;
+  max-width: 185px;
+  pointer-events: none;
+  animation: room-product-retire 0.4s ease-in both;
+}
+.showcase-retiring-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 6px;
+  border: 2px solid #ad9467;
+  border-radius: 6px;
+  background: #fffdf5;
+}
+@keyframes room-product-retire {
+  from {
+    opacity: 0.7;
+    transform: translateX(-50%) rotateY(-10deg);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-75%) translateY(32px) rotateY(35deg) scale(0.8);
+  }
+}
+.guest-shell .is-immersive .live-countdown.is-urgent strong {
+  animation: room-urgent 0.8s ease-in-out infinite alternate;
+}
+@keyframes room-urgent {
+  to {
+    text-shadow: 0 0 12px #efbb6a55;
+    color: #ffe1b4;
+  }
+}
+
+@media (max-height: 640px) and (min-width: 621px) {
+  .is-immersive .live-room-status-stack {
+    top: 125px;
+    left: 136px;
+    max-width: calc(100% - var(--room-aside) - 150px);
+    max-height: 120px;
+  }
+  .guest-shell .is-immersive .live-room-connection {
+    font-size: 7px;
+  }
+  .guest-shell .is-immersive .showcase-room .showcase-stage {
+    height: 215px;
+    bottom: var(--showcase-product-bottom);
+  }
+  .showcase-previews {
+    bottom: var(--showcase-preview-bottom);
+  }
+}
+
+.guest-shell .is-immersive .live-bid-form {
+  margin-top: 0;
+}
+@media (max-height: 640px) and (min-width: 621px) {
+  .guest-shell .is-immersive .live-bid-panel {
+    padding: 12px;
+  }
+  .guest-shell .is-immersive .live-price-heading {
+    padding-bottom: 8px;
+  }
+  .guest-shell .is-immersive .live-price-heading p {
+    margin-bottom: 4px;
+  }
+  .guest-shell .is-immersive .live-price-heading > strong {
+    font-size: 25px;
+  }
+  .guest-shell .is-immersive .live-countdown {
+    padding: 8px;
+  }
+  .guest-shell .is-immersive .live-countdown strong {
+    font-size: 23px;
+  }
+  .guest-shell .is-immersive .live-countdown-track {
+    margin-top: 8px;
+  }
+  .guest-shell .is-immersive .live-winner {
+    padding: 8px;
+    margin: 8px 0;
+    gap: 2px;
+  }
+  .guest-shell .is-immersive label {
+    margin-bottom: 4px;
+  }
+  .guest-shell .is-immersive input {
+    min-height: 40px;
+    padding: 8px 10px;
+  }
+  .guest-shell .is-immersive .live-field-hint {
+    margin: 6px 0 9px;
+    font-size: 9px;
+    line-height: 1.45;
+  }
+}
+
+@media (max-height: 640px) and (min-width: 621px) {
+  .is-immersive .showcase-feed .live-camera-controls,
+  .is-immersive .showcase-feed .live-audio-toggle {
+    top: auto;
+  }
+  .showcase-previews {
+    bottom: var(--showcase-preview-bottom);
+  }
+}
+
+@media (max-width: 1050px) {
+  .is-immersive .showcase-theatre {
+    width: calc(100% - var(--room-aside) - 56px);
+  }
+}
+
+@media (max-height: 640px) and (min-width: 621px) {
+  .is-immersive .showcase-theatre {
+    --showcase-product-width: 210px;
+  }
+  .guest-shell .is-immersive .showcase-room .showcase-stage {
+    width: var(--showcase-product-width);
+    height: 205px;
+  }
+  .showcase-previews {
+    left: 225px;
+  }
+}
+@media (max-width: 620px) {
+  .is-immersive .showcase-theatre {
+    width: calc(100% - 48px);
+    left: 50%;
+    height: 220px;
+  }
+  .is-immersive .showcase-room-audience {
+    --room-audience: 210px;
+  }
+}
+
+@media (max-height: 640px) and (min-width: 621px) {
+  .is-immersive .showcase-theatre {
+    top: 24px;
+  }
+  .guest-shell .is-immersive .showcase-room .showcase-stage {
+    height: 170px;
+  }
+}
+/* Leave the ceiling fixture visible even at Electron's shortest window size. */
+@media (max-height: 580px) and (min-width: 621px) {
+  .is-immersive .showcase-stage .showcase-photo-position,
+  .is-immersive .showcase-retiring-photo {
+    height: 56px;
+  }
+  .is-immersive .showcase-photo-empty > span {
+    font-size: 20px;
+  }
+  .is-immersive .showcase-photo-empty p {
+    font-size: 8px;
+    line-height: 1.2;
+    margin-top: 2px;
+  }
+}
+@media (max-height: 580px) and (min-width: 621px) {
+  .is-immersive .live-room-status-stack .live-room-connection {
+    justify-self: end;
+  }
+}

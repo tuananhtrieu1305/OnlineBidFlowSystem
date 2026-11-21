@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { validateAmount } from '../wallet/validation';
@@ -13,6 +13,8 @@ import Grandstand from './Grandstand';
 import LiveNotice from './LiveNotice';
 import ViewerLiveSummary from './ViewerLiveSummary';
 import ProductShowcase from './ProductShowcase';
+import LiveRoomDrawer from './LiveRoomDrawer';
+import { imageSource } from '../products/productApi';
 
 export default function LivestreamRoomPage({ host = false }: { host?: boolean }) {
   return host ? (
@@ -39,6 +41,31 @@ function Room({ host = false }: { host?: boolean }) {
   const [notice, setNotice] = useState('');
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [selectedLotId, setSelectedLotId] = useState('');
+  const [drawer, setDrawer] = useState<'chat' | 'products' | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const closeDrawer = useCallback(() => {
+    setDrawer(null);
+    setPreviewId(null);
+  }, []);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [fullscreenError, setFullscreenError] = useState('');
+  useEffect(() => {
+    const sync = () => setFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', sync);
+    return () => document.removeEventListener('fullscreenchange', sync);
+  }, []);
+  useEffect(() => {
+    if (session?.status === 'ENDED') closeDrawer();
+  }, [session?.status, closeDrawer]);
+  async function toggleFullscreen() {
+    setFullscreenError('');
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch {
+      setFullscreenError('Chưa mở được toàn màn hình. Bạn vẫn có thể tiếp tục đấu giá.');
+    }
+  }
 
   useLiveRoom(id);
   const media = useLiveVideo(session, host, connected);
@@ -84,6 +111,7 @@ function Room({ host = false }: { host?: boolean }) {
   );
   const selection = selectableLots.some((item) => item.id === selectedLotId) ? selectedLotId : '';
   const endedViewer = !host && session.status === 'ENDED';
+  const preview = session.lots.find((item) => item.id === previewId);
 
   async function bid(event: React.FormEvent) {
     event.preventDefault();
@@ -98,7 +126,7 @@ function Room({ host = false }: { host?: boolean }) {
     if (session && (await act({ type: 'CHAT', sessionId: session.id, text: chat }))) setChat('');
   }
   return (
-    <LivePage host={host} showRules={!endedViewer}>
+    <LivePage host={host} showRules={false} immersive={!endedViewer}>
       <Gavel
         resultId={resultId}
         winnerName={lot.leaderName ?? ''}
@@ -111,8 +139,25 @@ function Room({ host = false }: { host?: boolean }) {
         <>
           <section className="live-heading live-room-heading">
             <div>
-              <Link className="live-back" to={host ? '/admin/livestream' : '/livestream'}>
-                ← {host ? 'Phiên livestream' : 'Danh sách livestream'}
+              <Link
+                className="live-back"
+                to={host ? '/admin/livestream' : '/livestream'}
+                aria-label={host ? 'Về phiên livestream' : 'Về danh sách livestream'}
+                title={host ? 'Về phiên livestream' : 'Về danh sách livestream'}
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M19 12H5m7-7-7 7 7 7" />
+                </svg>
               </Link>
               <p className="guest-kicker">
                 {host ? 'PHÒNG ĐIỀU KHIỂN CỦA HOST' : 'PHÒNG ĐẤU GIÁ TRỰC TIẾP'}
@@ -123,6 +168,31 @@ function Room({ host = false }: { host?: boolean }) {
               </p>
             </div>
             <div className="live-actions">
+              <button
+                className="live-secondary live-fullscreen-toggle"
+                type="button"
+                aria-label={fullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
+                title={fullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
+                onClick={() => void toggleFullscreen()}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  aria-hidden="true"
+                >
+                  <path
+                    d={
+                      fullscreen
+                        ? 'M9 3v6H3m18 0h-6V3M3 15h6v6m6 0v-6h6'
+                        : 'M3 9V3h6m6 0h6v6M3 15v6h6m6 0h6v-6'
+                    }
+                  />
+                </svg>
+              </button>
               {host ? (
                 <>
                   <Link
@@ -157,82 +227,83 @@ function Room({ host = false }: { host?: boolean }) {
               )}
             </div>
           </section>
-          <div
-            className={'live-room-connection' + (connected ? ' is-connected' : '')}
-            role="status"
-          >
-            <span className="live-connection-dot" aria-hidden="true" />
-            <span>{connectionStatus}</span>
-          </div>
-          {media.error && (
-            <LiveNotice
-              tone="warning"
-              title="Kết nối video"
-              action={
-                <button type="button" className="live-secondary" onClick={media.reconnect}>
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M20 7v5h-5M4 17v-5h5" />
-                    <path d="M6.1 7a7 7 0 0 1 11.5-1L20 9M4 15l2.4 3A7 7 0 0 0 17.9 17" />
-                  </svg>
-                  Kết nối lại video
-                </button>
-              }
+          <div className="live-room-status-stack">
+            {fullscreenError && (
+              <LiveNotice tone="warning" title="Toàn màn hình">
+                {fullscreenError}
+              </LiveNotice>
+            )}
+            <div
+              className={'live-room-connection' + (connected ? ' is-connected' : '')}
+              role="status"
             >
-              {media.error}
-            </LiveNotice>
-          )}
-          {session.status === 'PAUSED' && (
-            <LiveNotice
-              tone="warning"
-              title="Phiên đang tạm dừng"
-              action={
-                host ? (
-                  <button
-                    className="live-primary"
-                    disabled={pending || !connected || !session.publisherReady}
-                    onClick={() => void act({ type: 'RESUME', sessionId: session.id })}
-                  >
-                    Tiếp tục đấu
+              <span className="live-connection-dot" aria-hidden="true" />
+              <span>{connectionStatus}</span>
+            </div>
+            {media.error && (
+              <LiveNotice
+                tone="warning"
+                title="Kết nối video"
+                action={
+                  <button type="button" className="live-secondary" onClick={media.reconnect}>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M20 7v5h-5M4 17v-5h5" />
+                      <path d="M6.1 7a7 7 0 0 1 11.5-1L20 9M4 15l2.4 3A7 7 0 0 0 17.9 17" />
+                    </svg>
+                    Kết nối lại video
                   </button>
-                ) : undefined
-              }
-            >
-              Phiên tạm dừng. Chờ host trở lại trong tối đa 5 phút. Thời gian đấu được giữ nguyên.
-            </LiveNotice>
-          )}
-          {session.status === 'ENDED' && (
-            <LiveNotice tone="success" title="Đã kết thúc phiên">
-              Phiên đã kết thúc. Các kết quả đã chốt được lưu bên dưới.
-            </LiveNotice>
-          )}
-          {session.status === 'SCHEDULED' && (
-            <LiveNotice title={host ? 'Chuẩn bị lên sóng' : 'Đang chờ bắt đầu'}>
-              {host
-                ? 'Kiểm tra camera và danh sách hàng trước khi mở live.'
-                : 'Phiên chưa bắt đầu. Bạn có thể đăng ký nhắc tại trang thông tin phiên.'}
-            </LiveNotice>
-          )}
-          {error && (
-            <LiveNotice tone="error" title="Chưa thực hiện được thao tác">
-              {error}
-            </LiveNotice>
-          )}
+                }
+              >
+                {media.error}
+              </LiveNotice>
+            )}
+            {session.status === 'PAUSED' && (
+              <LiveNotice tone="warning" title="Phiên đang tạm dừng">
+                Phiên tạm dừng. Chờ host trở lại trong tối đa 5 phút. Thời gian đấu được giữ nguyên.
+              </LiveNotice>
+            )}
+            {session.status === 'ENDED' && (
+              <LiveNotice tone="success" title="Đã kết thúc phiên">
+                Phiên đã kết thúc. Các kết quả đã chốt được lưu bên dưới.
+              </LiveNotice>
+            )}
+            {session.status === 'SCHEDULED' && (
+              <LiveNotice title={host ? 'Chuẩn bị lên sóng' : 'Đang chờ bắt đầu'}>
+                {host
+                  ? 'Kiểm tra camera và danh sách hàng trước khi mở live.'
+                  : 'Phiên chưa bắt đầu. Bạn có thể đăng ký nhắc tại trang thông tin phiên.'}
+              </LiveNotice>
+            )}
+            {error && (
+              <LiveNotice tone="error" title="Chưa thực hiện được thao tác">
+                {error}
+              </LiveNotice>
+            )}
+          </div>
           <div className={'live-room-grid' + (host ? ' live-host-grid' : '')}>
             <div className="live-stage-column">
               <ProductShowcase
                 lot={lot}
                 index={session.currentLotIndex}
                 total={session.lots.length}
+                status={session.status}
+                previews={session.lots.filter(
+                  (item) => item.id !== lot.id && item.status !== 'SOLD'
+                )}
+                onPreview={(item) => {
+                  setPreviewId(item.id);
+                  setDrawer('products');
+                }}
                 audience={
                   <Grandstand
                     integrated
@@ -268,7 +339,9 @@ function Room({ host = false }: { host?: boolean }) {
               <section className="live-panel live-bid-panel">
                 <div className="live-price-heading">
                   <p>{sold ? 'Giá chốt' : lot.leaderId ? 'Giá hiện tại' : 'Giá khởi điểm'}</p>
-                  <strong data-testid="live-current-price">{coin(lot.currentPrice)}</strong>
+                  <strong key={lot.id + ':' + lot.currentPrice} data-testid="live-current-price">
+                    {coin(lot.currentPrice)}
+                  </strong>
                 </div>
                 <div
                   className={
@@ -279,13 +352,15 @@ function Room({ host = false }: { host?: boolean }) {
                     <span>
                       {session.status === 'ENDED'
                         ? 'Phiên đã kết thúc'
-                        : sold
-                          ? 'Đã chốt giá'
-                          : lot.status === 'PRESENTING' || session.status === 'SCHEDULED'
-                            ? 'Đang chờ host mở đấu'
-                            : lot.leaderId
-                              ? 'Thời gian chốt giá'
-                              : 'Chờ lượt đặt đầu tiên'}
+                        : session.status === 'PAUSED'
+                          ? 'Đã tạm dừng'
+                          : sold
+                            ? 'Đã chốt giá'
+                            : lot.status === 'PRESENTING' || session.status === 'SCHEDULED'
+                              ? 'Đang chờ host mở đấu'
+                              : lot.leaderId
+                                ? 'Thời gian chốt giá'
+                                : 'Chờ lượt đặt đầu tiên'}
                     </span>
                     <strong data-testid="live-countdown">
                       {(Math.ceil(remaining / 100) / 10).toLocaleString('vi-VN', {
@@ -332,6 +407,16 @@ function Room({ host = false }: { host?: boolean }) {
                 </div>
                 {host ? (
                   <div className="live-host-actions">
+                    {session.status === 'PAUSED' && (
+                      <button
+                        className="live-primary"
+                        type="button"
+                        disabled={pending || !connected || !session.publisherReady}
+                        onClick={() => void act({ type: 'RESUME', sessionId: session.id })}
+                      >
+                        Tiếp tục đấu
+                      </button>
+                    )}
                     {session.status === 'SCHEDULED' && (
                       <button
                         className="live-primary"
@@ -430,15 +515,17 @@ function Room({ host = false }: { host?: boolean }) {
                         ? 'Đang gửi…'
                         : sold
                           ? 'Đã chốt giá'
-                          : ownLeader && isOpen
-                            ? 'Bạn đang dẫn đầu'
-                            : !user
-                              ? 'Đăng nhập để đặt giá'
-                              : !isOpen
-                                ? 'Chưa mở đấu giá'
-                                : amount && !validateAmount(amount)
-                                  ? 'Đặt ' + coin(amount)
-                                  : 'Đặt giá'}
+                          : session.status === 'PAUSED'
+                            ? 'Phiên đang tạm dừng'
+                            : ownLeader && isOpen
+                              ? 'Bạn đang dẫn đầu'
+                              : !user
+                                ? 'Đăng nhập để đặt giá'
+                                : !isOpen
+                                  ? 'Chưa mở đấu giá'
+                                  : amount && !validateAmount(amount)
+                                    ? 'Đặt ' + coin(amount)
+                                    : 'Đặt giá'}
                     </button>
                   </form>
                 )}
@@ -452,49 +539,6 @@ function Room({ host = false }: { host?: boolean }) {
                     Xem món đã thắng
                   </Link>
                 )}
-              </section>
-              <section className="live-panel live-chat">
-                <h2>Trò chuyện</h2>
-                <div className="live-messages" aria-label="Tin nhắn trong phòng">
-                  {!session.messages.length && (
-                    <p className="live-muted">Cùng chào host và những người đang xem live.</p>
-                  )}
-                  {session.messages.slice(-8).map((message) => (
-                    <p key={message.id}>
-                      <strong>{message.username}</strong>
-                      <span>{message.text}</span>
-                    </p>
-                  ))}
-                </div>
-                <form onSubmit={(event) => void sendChat(event)}>
-                  <label className="live-sr-only" htmlFor="live-chat-input">
-                    Tin nhắn
-                  </label>
-                  <input
-                    id="live-chat-input"
-                    maxLength={500}
-                    required
-                    value={chat}
-                    disabled={
-                      !user || !['LIVE', 'PAUSED'].includes(session.status) || !connected || pending
-                    }
-                    onChange={(event) => setChat(event.target.value)}
-                    placeholder={user ? 'Gửi lời cổ vũ…' : 'Đăng nhập để trò chuyện'}
-                  />
-                  <button
-                    className="live-secondary"
-                    disabled={
-                      !user ||
-                      !['LIVE', 'PAUSED'].includes(session.status) ||
-                      !connected ||
-                      pending ||
-                      !chat.trim()
-                    }
-                    type="submit"
-                  >
-                    Gửi
-                  </button>
-                </form>
               </section>
               <details className="live-panel live-bid-history">
                 <summary>Lịch sử trả giá ({lot.bids.length})</summary>
@@ -515,21 +559,131 @@ function Room({ host = false }: { host?: boolean }) {
                 )}
               </details>
             </aside>
-            <div className="live-audience-column">
-              <section className="live-panel">
-                <h2>{host ? 'Hàng chờ đấu giá' : 'Sản phẩm trong phiên'}</h2>
-                <LotQueue
-                  session={session}
-                  disabled={inProgress || pending}
-                  onReopen={
-                    host
-                      ? (lotId) => void act({ type: 'REOPEN', sessionId: session.id, lotId })
-                      : undefined
-                  }
-                />
-              </section>
-            </div>
+            {drawer === 'chat' && (
+              <LiveRoomDrawer title="Trò chuyện" onClose={closeDrawer}>
+                <section className="live-panel live-chat">
+                  <h2>Trò chuyện</h2>
+                  <div className="live-messages" aria-label="Tin nhắn trong phòng">
+                    {!session.messages.length && (
+                      <p className="live-muted">Cùng chào host và những người đang xem live.</p>
+                    )}
+                    {session.messages.slice(-8).map((message) => (
+                      <p key={message.id}>
+                        <strong>{message.username}</strong>
+                        <span>{message.text}</span>
+                      </p>
+                    ))}
+                  </div>
+                  <form onSubmit={(event) => void sendChat(event)}>
+                    <label className="live-sr-only" htmlFor="live-chat-input">
+                      Tin nhắn
+                    </label>
+                    <input
+                      id="live-chat-input"
+                      maxLength={500}
+                      required
+                      value={chat}
+                      disabled={
+                        !user ||
+                        !['LIVE', 'PAUSED'].includes(session.status) ||
+                        !connected ||
+                        pending
+                      }
+                      onChange={(event) => setChat(event.target.value)}
+                      placeholder={user ? 'Gửi lời cổ vũ…' : 'Đăng nhập để trò chuyện'}
+                    />
+                    <button
+                      className="live-secondary"
+                      disabled={
+                        !user ||
+                        !['LIVE', 'PAUSED'].includes(session.status) ||
+                        !connected ||
+                        pending ||
+                        !chat.trim()
+                      }
+                      type="submit"
+                    >
+                      Gửi
+                    </button>
+                  </form>
+                </section>
+              </LiveRoomDrawer>
+            )}
+            {drawer === 'products' && (
+              <LiveRoomDrawer title="Sản phẩm trong phiên" onClose={closeDrawer}>
+                {preview && (
+                  <article className="live-preview-detail">
+                    {imageSource(preview.imageUrl) && (
+                      <img src={imageSource(preview.imageUrl)} alt={preview.name} />
+                    )}
+                    <span>XEM TRƯỚC SẢN PHẨM</span>
+                    <h3>{preview.name}</h3>
+                    <p>{preview.description}</p>
+                    <strong>Giá khởi điểm · {coin(preview.startingPrice)}</strong>
+                    {host && (
+                      <button
+                        className="live-primary"
+                        type="button"
+                        disabled={
+                          pending ||
+                          !connected ||
+                          inProgress ||
+                          !['LIVE', 'SCHEDULED'].includes(session.status) ||
+                          !['QUEUED', 'UNSOLD'].includes(preview.status) ||
+                          preview.id === lot.id
+                        }
+                        onClick={async () => {
+                          if (
+                            await act({ type: 'SELECT', sessionId: session.id, lotId: preview.id })
+                          )
+                            closeDrawer();
+                        }}
+                      >
+                        Đưa sản phẩm này lên
+                      </button>
+                    )}
+                  </article>
+                )}
+                <section className="live-panel">
+                  <h2>{host ? 'Hàng chờ đấu giá' : 'Sản phẩm trong phiên'}</h2>
+                  <LotQueue
+                    session={session}
+                    onPreview={setPreviewId}
+                    disabled={inProgress || pending}
+                    onReopen={
+                      host
+                        ? (lotId) => void act({ type: 'REOPEN', sessionId: session.id, lotId })
+                        : undefined
+                    }
+                  />
+                </section>
+              </LiveRoomDrawer>
+            )}
           </div>
+          <nav className="live-room-dock" aria-label="Tiện ích phòng live">
+            <button
+              className="live-secondary"
+              type="button"
+              aria-expanded={drawer === 'products'}
+              onClick={() => {
+                setDrawer(drawer === 'products' ? null : 'products');
+                setPreviewId(null);
+              }}
+            >
+              <span aria-hidden="true">◇</span> Sản phẩm <small>{session.lots.length}</small>
+            </button>
+            <button
+              className="live-secondary"
+              type="button"
+              aria-expanded={drawer === 'chat'}
+              onClick={() => {
+                setDrawer(drawer === 'chat' ? null : 'chat');
+                setPreviewId(null);
+              }}
+            >
+              <span aria-hidden="true">☵</span> Trò chuyện <small>{session.messages.length}</small>
+            </button>
+          </nav>
           {host && confirmEnd && (
             <EndLiveDialog
               session={session}
