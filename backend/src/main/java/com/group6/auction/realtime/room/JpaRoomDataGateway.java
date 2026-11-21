@@ -69,7 +69,7 @@ public class JpaRoomDataGateway implements RoomDataGateway {
         if (repository == null) {
             return Optional.empty();
         }
-        return repository.findById(auctionId).map(this::toDetails);
+        return repository.findById(auctionId).filter(a -> a.getAuctionType() != com.group6.auction.auction.entity.AuctionType.LIVESTREAM).map(this::toDetails);
     }
 
     @Override

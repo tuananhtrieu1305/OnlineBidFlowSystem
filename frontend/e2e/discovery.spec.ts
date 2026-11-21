@@ -1,3 +1,4 @@
+import { stubLivestreamCatalog } from './fixtures/livestream';
 import {_electron as electron,expect,test} from '@playwright/test';
 import path from 'node:path';
 test('guest discovers real-shaped auctions, filters, opens blind detail and retries errors',async({},info)=>{
@@ -5,7 +6,7 @@ test('guest discovers real-shaped auctions, filters, opens blind detail and retr
  const executablePath=process.env.E2E_EXECUTABLE;
  const app=await electron.launch({...(executablePath?{executablePath}:{}),args:[...(executablePath?[]:[path.resolve('.')]),`--user-data-dir=${info.outputPath('profile')}`],env});
  try{
-  const page=await app.firstWindow();await page.route('**/api/auth/me',r=>r.fulfill({status:401,json:{}}));
+  const page=await app.firstWindow(); await stubLivestreamCatalog(page);await page.route('**/api/auth/me',r=>r.fulfill({status:401,json:{}}));
   const auction={id:'222',auctionType:'BLIND',status:'UPCOMING',startTime:'2027-01-01T10:00:00Z',endTime:'2027-01-01T11:00:00Z',product:{id:'1',name:'Máy ảnh sưu tầm',description:'Máy ảnh còn nguyên hộp',quantity:1,imageUrl:null}};
   let fail=false;
   await page.route('**/api/discovery/auctions**',r=>fail?r.fulfill({status:500,json:{}}):r.fulfill({json:r.request().url().includes('/222')?auction:{items:[auction],page:0,totalPages:1,totalElements:'1'}}));

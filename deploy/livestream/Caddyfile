@@ -1,0 +1,7 @@
+{
+    auto_https disable_redirects
+}
+https://{$RADMIN_SERVER_IP}:8443 {
+    tls internal
+    reverse_proxy backend:8080
+}

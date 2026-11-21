@@ -1,10 +1,11 @@
+import { stubLivestreamCatalog } from './fixtures/livestream';
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test';
 import path from 'node:path';
 let app:ElectronApplication,page:Page;
 const product={id:'25',name:'Máy ảnh Canon AE-1',description:'Máy ảnh phim đã kiểm tra.',quantity:1,estimatedPrice:'2500',imageUrl:null,editable:true,editBlockedReason:null,version:'"v1"'};
 test.beforeEach(async({},info)=>{
  const env=Object.fromEntries(Object.entries(process.env).filter((e):e is [string,string]=>e[1]!==undefined));delete env.ELECTRON_RUN_AS_NODE;delete env.ELECTRON_DEV_URL;
- app=await electron.launch({args:[path.resolve('.'),`--user-data-dir=${info.outputPath('profile')}`],env});page=await app.firstWindow();
+ app=await electron.launch({args:[path.resolve('.'),`--user-data-dir=${info.outputPath('profile')}`],env});page=await app.firstWindow(); await stubLivestreamCatalog(page);
  await page.route('**/api/auth/me',r=>r.fulfill({json:{id:1,username:'admin',role:'ADMIN'}}));
  await page.route('**/api/auth/csrf',r=>r.fulfill({json:{token:'csrf-product'}}));
  await page.route('**/api/admin/products?*',r=>r.fulfill({json:{items:[product],page:0,size:20,totalElements:'1',totalPages:1}}));

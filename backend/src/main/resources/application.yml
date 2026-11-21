@@ -14,6 +14,9 @@ spring:
   jackson:
     deserialization:
       accept-float-as-int: false
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 0
   servlet:
     multipart:
       max-file-size: 5MB
@@ -32,6 +35,9 @@ spring:
     show-sql: false
 
 app:
+  livestream:
+    turn-host: ${TURN_HOST:}
+    turn-secret: ${TURN_SECRET:}
   products:
     image-dir: ${PRODUCT_IMAGE_DIR:.runtime/product-images}
   cors:

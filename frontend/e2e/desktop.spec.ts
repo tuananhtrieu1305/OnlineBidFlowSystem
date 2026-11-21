@@ -1,3 +1,4 @@
+import { stubLivestreamCatalog } from './fixtures/livestream';
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test';
 import path from 'node:path';
 
@@ -14,7 +15,7 @@ test.beforeEach(async ({}, testInfo) => {
     args: [...(executablePath ? [] : [path.resolve('.')]), `--user-data-dir=${testInfo.outputPath('profile')}`],
     env
   });
-  page = await app.firstWindow();
+  page = await app.firstWindow(); await stubLivestreamCatalog(page);
 });
 
 test.afterEach(async () => { await app?.close(); });

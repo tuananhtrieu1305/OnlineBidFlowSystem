@@ -16,6 +16,7 @@ export default function AdminPage() {
         <div className="admin-action-card"><div className="admin-action-copy"><h2>Ví hệ thống</h2><p>Xem số dư và lịch sử nhận Coin từ đấu giá.</p></div><Link className="admin-action-button" to="/admin/system-wallet">Xem ví hệ thống <span aria-hidden="true">→</span></Link></div>
         <div className="admin-action-card"><div className="admin-action-copy"><h2>Cấu hình phiên đấu giá</h2><p>Chuẩn bị loại phiên, quyền vào phòng, giá và lịch.</p></div><Link className="admin-action-button" to="/admin/auctions">Quản lý phiên <span aria-hidden="true">→</span></Link></div>
         <div className="admin-action-card"><div className="admin-action-copy"><h2>Bảng xếp hạng</h2><p>Xem thành tích người chơi từ các phiên đấu giá đã kết thúc.</p></div><Link className="admin-action-button" to="/leaderboard">Xem bảng xếp hạng <span aria-hidden="true">→</span></Link></div>
+        <div className="admin-action-card"><div className="admin-action-copy"><h2>Phiên livestream</h2><p>Chuẩn bị sản phẩm và điều hành đấu giá trực tiếp.</p></div><Link className="admin-action-button" to="/admin/livestream">Quản lý livestream <span aria-hidden="true">→</span></Link></div>
       </div>
     </section>
   </main>;

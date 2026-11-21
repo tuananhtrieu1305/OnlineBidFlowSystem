@@ -17,11 +17,16 @@ public class ProductService {
  public record ProductPage(List<AdminProductResponse> items,int page,int size,String totalElements,int totalPages){}
  @Transactional(readOnly=true)
  public ProductPage list(String query,int page,int size){
+  return list(query,page,size,false);
+ }
+ @Transactional(readOnly=true)
+ public ProductPage list(String query,int page,int size,boolean availableOnly){
   String q=query==null?"":query.strip();
   if(q.codePointCount(0,q.length())>255||page<0||size<1||size>100||(long)page*size>Integer.MAX_VALUE)throw new ProductException(400,"INVALID_FILTER");
   long exact=-1;try{if(q.matches("[1-9][0-9]{0,18}"))exact=Long.parseLong(q);}catch(NumberFormatException ignored){}
   String pattern="%"+q.replace("!","!!").replace("%","!%").replace("_","!_")+"%";
-  var result=products.search(pattern,exact,PageRequest.of(page,size,Sort.by(Sort.Direction.DESC,"id")));
+  var pageable=PageRequest.of(page,size,Sort.by(Sort.Direction.DESC,"id"));
+  var result=availableOnly?products.searchAvailable(pattern,exact,pageable):products.search(pattern,exact,pageable);
   Set<Long> used=result.isEmpty()?Set.of():new HashSet<>(products.usedIds(result.getContent().stream().map(Product::getId).toList()));
   return new ProductPage(result.stream().map(p->response(p,used.contains(p.getId()))).toList(),page,size,""+result.getTotalElements(),result.getTotalPages());
  }

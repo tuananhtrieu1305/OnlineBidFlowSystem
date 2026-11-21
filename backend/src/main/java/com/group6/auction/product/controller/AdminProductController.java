@@ -12,7 +12,7 @@ import java.net.URI;
 public class AdminProductController {
  private final ProductService products;private final ProductImageStorage images;
  public AdminProductController(ProductService products,ProductImageStorage images){this.products=products;this.images=images;}
- @GetMapping public Object list(@RequestParam(defaultValue="") String q,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size){return products.list(q,page,size);}
+ @GetMapping public Object list(@RequestParam(defaultValue="") String q,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size,@RequestParam(defaultValue="false") boolean availableOnly){return products.list(q,page,size,availableOnly);}
  @GetMapping("/{id}") public ResponseEntity<AdminProductResponse> detail(@PathVariable String id){var result=products.detail(id(id));return ResponseEntity.ok().eTag(result.version()).body(result);}
  @PostMapping(consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
  public ResponseEntity<AdminProductResponse> create(@RequestPart("data") JsonNode data,@RequestPart(value="image",required=false) MultipartFile image){

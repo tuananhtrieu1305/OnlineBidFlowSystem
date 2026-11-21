@@ -18,6 +18,9 @@ import BlindAuctionListPage from '../features/auctions/blind/BlindAuctionListPag
 import AdminBlindClues from '../features/auctions/blind/AdminBlindClues';
 import BlindReplay from '../features/auctions/blind/BlindReplay';
 import LeaderboardPage from '../features/leaderboard/LeaderboardPage';
+import { LivestreamDetailPage, LivestreamListPage, LivestreamPurchasesPage } from '../features/livestream/LivestreamPages';
+import { HostLivestreamCreatePage, HostLivestreamListPage, HostLivestreamResultsPage } from '../features/livestream/HostLivestreamPages';
+import LivestreamRoomPage from '../features/livestream/LivestreamRoomPage';
 
 export default createHashRouter([
   { path: '/register', element: <RegisterPage /> },
@@ -29,9 +32,18 @@ export default createHashRouter([
     { path: '/', element: <HomePage /> },
     { path: '/normal', element: <NormalAuctionListPage /> },
     { path: '/leaderboard', element: <LeaderboardPage /> },
+    { path: '/livestream', element: <LivestreamListPage /> },
+    { path: '/livestream/registrations', element: <LivestreamListPage registered /> },
+    { path: '/livestream/purchases', element: <LivestreamPurchasesPage /> },
+    { path: '/livestream/:id', element: <LivestreamDetailPage /> },
+    { path: '/livestream/:id/room', element: <LivestreamRoomPage /> },
     { path: '/auctions/:id', element: <DiscoveryDetail /> },
     { path: '/blind', element: <BlindAuctionListPage /> },
     { path: '/admin', element: <AdminPage /> },
+    { path: '/admin/livestream', element: <HostLivestreamListPage /> },
+    { path: '/admin/livestream/new', element: <HostLivestreamCreatePage /> },
+    { path: '/admin/livestream/:id', element: <LivestreamRoomPage host /> },
+    { path: '/admin/livestream/:id/results', element: <HostLivestreamResultsPage /> },
     { path: '/admin/system-wallet', element: <SystemWalletPage /> },
     { path: '/admin/users', element: <AdminUsersPage /> },
     { path: '/admin/users/:id', element: <AdminUsersPage /> },

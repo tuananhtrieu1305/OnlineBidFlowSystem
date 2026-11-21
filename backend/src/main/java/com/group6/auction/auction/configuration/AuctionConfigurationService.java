@@ -25,11 +25,11 @@ public class AuctionConfigurationService {
   "(EXISTS(SELECT 1 FROM bids b WHERE b.auction_id=a.id) OR EXISTS(SELECT 1 FROM chat_messages c WHERE c.auction_id=a.id) OR EXISTS(SELECT 1 FROM coin_transactions t WHERE t.auction_id=a.id)) AS activity FROM auctions a JOIN products p ON p.id=a.product_id";
  public AuctionConfigurationService(AuctionRepository auctions,ProductRepository products,UserRepository users,JdbcTemplate jdbc,Clock clock,ObjectMapper json,NormalTimingRepository timings){this.timings=timings;this.auctions=auctions;this.products=products;this.users=users;this.jdbc=jdbc;this.clock=clock;this.json=json;}
  @Transactional(readOnly=true)
- public Map<String,Object> detail(long id){var rows=jdbc.query(BASE+" WHERE a.id=?",(rs,n)->view(rs),id);if(rows.isEmpty())throw error(404,"AUCTION_NOT_FOUND");return rows.getFirst();}
+ public Map<String,Object> detail(long id){var rows=jdbc.query(BASE+" WHERE a.id=? AND a.auction_type IN ('NORMAL','BLIND')",(rs,n)->view(rs),id);if(rows.isEmpty())throw error(404,"AUCTION_NOT_FOUND");return rows.getFirst();}
  @Transactional(readOnly=true)
  public Map<String,Object> list(String q,String status,String type,String access,int page,int size){
   q=q==null?"":q.strip();if(q.codePointCount(0,q.length())>255||page<0||size<1||size>100||(long)page*size>Integer.MAX_VALUE)throw error(400,"INVALID_FILTER");
-  String where=" WHERE 1=1";List<Object> params=new ArrayList<>();
+  String where=" WHERE a.auction_type IN ('NORMAL','BLIND')";List<Object> params=new ArrayList<>();
   if(!q.isEmpty()){
    long id=-1;try{if(q.matches("[1-9][0-9]{0,18}"))id=Long.parseLong(q);}catch(NumberFormatException ignored){}
    where+=" AND (p.name LIKE ? ESCAPE '!' OR a.id=?)";params.add("%"+q.replace("!","!!").replace("%","!%").replace("_","!_")+"%");params.add(id);
@@ -49,6 +49,7 @@ public class AuctionConfigurationService {
   var admin=users.findByUsername(username).filter(u->"ADMIN".equals(u.getRole())).orElseThrow(()->error(403,"FORBIDDEN"));
   var product=products.findForUpdate(input.productId()).orElseThrow(()->error(404,"PRODUCT_NOT_FOUND"));
   if(!ProductVersion.of(product).equals(input.productVersion()))throw error(412,"PRODUCT_CHANGED");
+  com.group6.auction.product.service.ProductAvailability.requireAvailable(jdbc,product.getId(),product.getQuantity());
   future(input);
   var auction=auctions.saveAndFlush(Auction.create(product.getId(),admin.getId(),input.type(),input.access(),input.price(),input.increment(),input.capacity(),input.access()==AuctionAccessType.PRIVATE?code():null,input.start(),input.end()));
   if(input.type()==AuctionType.NORMAL)timings.save(auction.getId(),input.normalTiming(),input.end());

@@ -23,7 +23,7 @@ public class DiscoveryService {
   q=q.strip();if(q.length()>255||page<0||size<1||size>100||(long)page*size>Integer.MAX_VALUE
    ||(!status.isEmpty()&&!Set.of("UPCOMING","RUNNING","SOLD","UNSOLD","CANCELLED").contains(status))
    ||(!type.isEmpty()&&!Set.of("NORMAL","BLIND").contains(type)))throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-  String where=" WHERE a.access_type='PUBLIC'";List<Object> args=new ArrayList<>();
+  String where=" WHERE a.access_type='PUBLIC' AND a.auction_type IN ('NORMAL','BLIND')";List<Object> args=new ArrayList<>();
   if(!q.isEmpty()){where+=" AND (a.auction_type='NORMAL' OR a.status IN ('SOLD','UNSOLD','CANCELLED')) AND p.name LIKE ? ESCAPE '!'";args.add("%"+q.replace("!","!!").replace("%","!%").replace("_","!_")+"%");}
   if(!status.isEmpty()){where+=" AND a.status=?";args.add(status);}
   if(!type.isEmpty()){where+=" AND a.auction_type=?";args.add(type);}
@@ -33,7 +33,7 @@ public class DiscoveryService {
   return Map.of("items",items,"page",page,"totalPages",(total+size-1)/size,"totalElements",Long.toString(total),"serverNow",clock.instant().toString());
  }
  public Map<String,Object> detail(long id){
-  var rows=jdbc.query(SELECT+FROM+" WHERE a.access_type='PUBLIC' AND a.id=?",(rs,n)->view(rs,true),id);
+  var rows=jdbc.query(SELECT+FROM+" WHERE a.access_type='PUBLIC' AND a.auction_type IN ('NORMAL','BLIND') AND a.id=?",(rs,n)->view(rs,true),id);
   if(rows.isEmpty())throw new ResponseStatusException(HttpStatus.NOT_FOUND);return rows.getFirst();
  }
  private Map<String,Object> view(ResultSet rs,boolean detail)throws SQLException{
