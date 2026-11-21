@@ -1,52 +1,166 @@
-import { useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useState, type ReactNode } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './features/auth/AuthProvider';
 import './guest.css';
+import { LivestreamConnection } from './features/livestream/useLivestream';
+import NavigationIcon, { type NavigationIconName } from './NavigationIcon';
+
+function SidebarLink({
+  to,
+  icon,
+  children,
+  end = false,
+  current = false,
+  sub = false
+}: {
+  to: string;
+  icon: NavigationIconName;
+  children: ReactNode;
+  end?: boolean;
+  current?: boolean;
+  sub?: boolean;
+}) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        'guest-nav' + (sub ? ' guest-nav-sub' : '') + (isActive || current ? ' active' : '')
+      }
+    >
+      <NavigationIcon name={icon} />
+      <span>{children}</span>
+    </NavLink>
+  );
+}
 
 export default function AppLayout() {
   const { user, loading, failure, refresh, logout } = useAuth();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const viewingLiveRoom =
+    location.pathname.startsWith('/livestream/') &&
+    !['/livestream/registrations', '/livestream/purchases'].includes(location.pathname);
   async function signOut() {
     if (pending) return;
-    setPending(true); setError('');
-    try { await logout(); navigate('/', { replace: true }); }
-    catch { setError('Chưa thể đăng xuất. Kiểm tra kết nối và thử lại.'); }
-    finally { setPending(false); }
+    setPending(true);
+    setError('');
+    try {
+      await logout();
+      navigate('/', { replace: true });
+    } catch {
+      setError('Chưa thể đăng xuất. Kiểm tra kết nối và thử lại.');
+    } finally {
+      setPending(false);
+    }
   }
   return (
     <div className="guest-shell">
-      <button className="guest-skip" onClick={() => document.getElementById('main-content')?.focus()}>Đến nội dung chính</button>
+      <LivestreamConnection />
+      <button
+        className="guest-skip"
+        onClick={() => document.getElementById('main-content')?.focus()}
+      >
+        Đến nội dung chính
+      </button>
       <aside className="guest-sidebar" aria-label="Thanh điều hướng">
-        <Link to="/" className="guest-brand"><span aria-hidden="true">b.</span>OnlineBidFlow</Link>
+        <Link to="/" className="guest-brand">
+          <span aria-hidden="true">b.</span>OnlineBidFlow
+        </Link>
         <p className="guest-nav-label">KHÔNG GIAN ĐẤU GIÁ</p>
         <nav aria-label="Điều hướng chính">
-          <NavLink to="/" end className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}><span aria-hidden="true">▦</span> Khám phá</NavLink>
-          {user?.role === 'ADMIN' && <NavLink to="/admin" end className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Quản trị</NavLink>}
-          {user?.role === 'ADMIN' && <NavLink to="/admin/products" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Sản phẩm</NavLink>}
-          {user?.role === 'ADMIN' && <NavLink to="/admin/users" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Người dùng</NavLink>}
-          {user?.role === 'ADMIN' && <NavLink to="/admin/system-wallet" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Ví hệ thống</NavLink>}
-          {user?.role === 'ADMIN' && <NavLink to="/admin/auctions" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>Phiên đấu giá</NavLink>}
-          {user?.role === 'USER' && <NavLink to="/wallet" className={({ isActive }) => isActive ? 'guest-nav active' : 'guest-nav'}>◈ Ví Coin</NavLink>}
+          <SidebarLink to="/" icon="explore" end>
+            Khám phá
+          </SidebarLink>
+          <div
+            className={
+              'guest-nav-group' + (location.pathname.startsWith('/livestream') ? ' is-active' : '')
+            }
+          >
+            <SidebarLink to="/livestream" icon="live" end current={viewingLiveRoom}>
+              Livestream
+            </SidebarLink>
+            {user?.role === 'USER' && (
+              <div className="guest-subnav" role="group" aria-label="Các mục Livestream">
+                <SidebarLink to="/livestream/registrations" icon="calendar" sub>
+                  Phiên đã đăng ký
+                </SidebarLink>
+                <SidebarLink to="/livestream/purchases" icon="trophy" sub>
+                  Món đã thắng
+                </SidebarLink>
+              </div>
+            )}
+          </div>
+          {user?.role === 'ADMIN' && (
+            <>
+              <SidebarLink to="/admin" icon="admin" end>
+                Quản trị
+              </SidebarLink>
+              <SidebarLink to="/admin/products" icon="product">
+                Sản phẩm
+              </SidebarLink>
+              <SidebarLink to="/admin/users" icon="users">
+                Người dùng
+              </SidebarLink>
+              <SidebarLink to="/admin/system-wallet" icon="wallet">
+                Ví hệ thống
+              </SidebarLink>
+              <SidebarLink to="/admin/auctions" icon="auction">
+                Phiên đấu giá
+              </SidebarLink>
+              <SidebarLink to="/admin/livestream" icon="live">
+                Phiên livestream
+              </SidebarLink>
+            </>
+          )}
+          {user?.role === 'USER' && (
+            <SidebarLink to="/wallet" icon="wallet">
+              Ví Coin
+            </SidebarLink>
+          )}
         </nav>
         <div className="guest-account">
-          {loading ? <p role="status">Đang kiểm tra phiên đăng nhập…</p> : user ? <>
-            <span className="guest-mode">{user.role === 'ADMIN' ? 'QUẢN TRỊ VIÊN' : 'TÀI KHOẢN CỦA BẠN'}</span>
-            <h2 className="account-name">{user.username}</h2>
-            <button className="guest-secondary" onClick={() => void signOut()} disabled={pending}>{pending ? 'Đang đăng xuất…' : 'Đăng xuất'}</button>
-            {error && <p role="alert">{error}</p>}
-          </> : <>
-            <span className="guest-mode">{failure ? 'CHƯA XÁC MINH PHIÊN' : 'CHẾ ĐỘ KHÁCH'}</span>
-            <h2>Bắt đầu từ một lựa chọn.</h2>
-            <p>Tạo tài khoản để sẵn sàng tham gia những phiên đấu giá bạn yêu thích.</p>
-            <Link to="/login" className="guest-primary">Đăng nhập</Link>
-            <Link to="/register" className="guest-secondary">Tạo tài khoản <span aria-hidden="true">↗</span></Link>
-          </>}
-          {failure && <><p role="alert">{failure}</p><button className="guest-secondary" onClick={() => void refresh()}>Thử lại</button></>}
+          {loading ? (
+            <p role="status">Đang kiểm tra phiên đăng nhập…</p>
+          ) : user ? (
+            <>
+              <span className="guest-mode">
+                {user.role === 'ADMIN' ? 'QUẢN TRỊ VIÊN' : 'TÀI KHOẢN CỦA BẠN'}
+              </span>
+              <h2 className="account-name">{user.username}</h2>
+              <button className="guest-secondary" onClick={() => void signOut()} disabled={pending}>
+                {pending ? 'Đang đăng xuất…' : 'Đăng xuất'}
+              </button>
+              {error && <p role="alert">{error}</p>}
+            </>
+          ) : (
+            <>
+              <span className="guest-mode">{failure ? 'CHƯA XÁC MINH PHIÊN' : 'CHẾ ĐỘ KHÁCH'}</span>
+              <h2>Bắt đầu từ một lựa chọn.</h2>
+              <p>Tạo tài khoản để sẵn sàng tham gia những phiên đấu giá bạn yêu thích.</p>
+              <Link to="/login" className="guest-primary">
+                Đăng nhập
+              </Link>
+              <Link to="/register" className="guest-secondary">
+                Tạo tài khoản <span aria-hidden="true">↗</span>
+              </Link>
+            </>
+          )}
+          {failure && (
+            <>
+              <p role="alert">{failure}</p>
+              <button className="guest-secondary" onClick={() => void refresh()}>
+                Thử lại
+              </button>
+            </>
+          )}
         </div>
       </aside>
-      <div className="guest-workspace"><Outlet /></div>
+      <div className="guest-workspace">
+        <Outlet />
+      </div>
     </div>
   );
 }

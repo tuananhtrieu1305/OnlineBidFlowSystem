@@ -54,6 +54,7 @@ class AuctionConfigurationIT {
  }
  Map<String,Object> create(String type,String access){return service.create("admin",AuctionInput.parse(body(type,access,true),true));}
  @Test void fourCombinationsAndAdminHttpContract()throws Exception{
+  var stock=products.update(product,new ProductInput(prefix,null,4,null,"KEEP"),version,null);version=stock.version();
   mvc.perform(get("/api/admin/auctions")).andExpect(status().isUnauthorized());
   mvc.perform(get("/api/admin/auctions").session(session("USER"))).andExpect(status().isForbidden());
   mvc.perform(post("/api/admin/auctions").session(admin).contentType("application/json").content(body("NORMAL","PUBLIC",true).toString())).andExpect(status().isForbidden());

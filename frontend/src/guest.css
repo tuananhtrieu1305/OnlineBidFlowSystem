@@ -15,9 +15,17 @@
 .guest-brand { display:flex; align-items:center; gap:9px; font-size:16px; font-weight:600; letter-spacing:-.7px; }
 .guest-brand>span { display:grid; place-items:center; background:#145c53; color:#fff; width:32px; height:36px; border-radius:8px; font-size:28px; letter-spacing:-3px; padding-right:3px; }
 .guest-nav-label { font-size:9px; letter-spacing:1.4px; color:#66716b; margin:51px 9px 16px; }
-.guest-nav { display:flex; align-items:center; gap:12px; padding:12px; border-radius:8px; font-size:13px; }
-.guest-nav>span { font-size:21px; line-height:1; }
+.guest-sidebar nav { display:grid; gap:4px; }
+.guest-nav { display:flex; align-items:center; gap:11px; min-height:44px; padding:11px 12px; border-radius:8px; font-size:13px; line-height:1.6; }
+.guest-nav>span { min-width:0; }
+.guest-nav-icon { flex:0 0 18px; width:18px; height:18px; opacity:.8; }
+.guest-nav:hover { background:#e5e9e1; color:#145c53; }
 .guest-nav.active { background:#dce6df; color:#145c53; font-weight:600; }
+.guest-nav.active>.guest-nav-icon { opacity:1; }
+.guest-nav-group.is-active>.guest-nav { color:#145c53; }
+.guest-subnav { display:grid; gap:4px; margin:5px 0 8px 20px; padding-left:10px; border-left:1px solid #cfd9cf; }
+.guest-nav-sub { min-height:38px; padding:9px 8px; gap:8px; font-size:11px; }
+.guest-nav-sub>.guest-nav-icon { flex-basis:16px; width:16px; height:16px; }
 .guest-account { margin-top:auto; padding-top:40px; }
 .guest-mode { display:block; font-size:9px; letter-spacing:1.6px; color:#66716b; padding-top:22px; border-top:1px solid #d8dcd3; }
 .guest-account h2 { font-size:14px; font-weight:600; margin:12px 0 8px; line-height:1.6; }

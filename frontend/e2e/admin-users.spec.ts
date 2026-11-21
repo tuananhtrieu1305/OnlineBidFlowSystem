@@ -1,9 +1,10 @@
+import { stubLivestreamCatalog } from './fixtures/livestream';
 import {_electron as electron,expect,test,type ElectronApplication,type Page} from '@playwright/test';
 import path from 'node:path';
 let app:ElectronApplication,page:Page;
 test.beforeEach(async({},info)=>{
  const env=Object.fromEntries(Object.entries(process.env).filter((e):e is [string,string]=>e[1]!==undefined));delete env.ELECTRON_RUN_AS_NODE;delete env.ELECTRON_DEV_URL;
- app=await electron.launch({args:[path.resolve('.'),`--user-data-dir=${info.outputPath('profile')}`],env});page=await app.firstWindow();
+ app=await electron.launch({args:[path.resolve('.'),`--user-data-dir=${info.outputPath('profile')}`],env});page=await app.firstWindow(); await stubLivestreamCatalog(page);
  await page.route('**/api/auth/me',r=>r.fulfill({json:{id:1,username:'admin',role:'ADMIN'}}));
  await page.route('**/api/admin/users?*',r=>r.fulfill({json:{items:[{id:'42',username:'alice',role:'USER'}],page:0,totalPages:1,totalElements:'1'}}));
  await page.route('**/api/admin/users/42',r=>r.fulfill({json:{id:'42',username:'alice',role:'USER',walletState:'AVAILABLE',wallet:{walletId:'8',availableBalance:'9007199254740993',lockedBalance:'100',updatedAt:'2026-10-01T00:00:00Z'}}}));

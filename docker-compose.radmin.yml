@@ -1,0 +1,68 @@
+services:
+  mysql:
+    image: mysql:8.4.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: auction_db
+      MYSQL_USER: auction_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+    volumes:
+      - livestream_mysql:/var/lib/mysql
+    healthcheck:
+      test: [CMD-SHELL, 'mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent']
+      interval: 5s
+      retries: 30
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_NAME: auction_db
+      DB_USERNAME: auction_user
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      FRONTEND_ORIGINS: app://auction
+      PRODUCT_IMAGE_DIR: /data/product-images
+      TURN_HOST: ${RADMIN_SERVER_IP:?Set RADMIN_SERVER_IP}
+      TURN_SECRET: ${TURN_SECRET:?Set TURN_SECRET}
+    volumes:
+      - livestream_products:/data/product-images
+  caddy:
+    image: caddy:2.9.1-alpine
+    restart: unless-stopped
+    depends_on: [backend]
+    environment:
+      RADMIN_SERVER_IP: ${RADMIN_SERVER_IP:?Set RADMIN_SERVER_IP}
+    ports:
+      - '${RADMIN_SERVER_IP}:8443:8443/tcp'
+    volumes:
+      - ./deploy/livestream/Caddyfile:/etc/caddy/Caddyfile:ro
+      - livestream_caddy:/data
+  turn:
+    image: coturn/coturn:4.6.3
+    restart: unless-stopped
+    environment:
+      RADMIN_SERVER_IP: ${RADMIN_SERVER_IP:?Set RADMIN_SERVER_IP}
+      TURN_SECRET: ${TURN_SECRET:?Set TURN_SECRET}
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - 'exec turnserver --log-file=stdout --listening-port=3478 --listening-ip=0.0.0.0 --relay-ip=172.30.98.10 --external-ip=$$RADMIN_SERVER_IP/172.30.98.10 --min-port=49160 --max-port=49259 --use-auth-secret --static-auth-secret=$$TURN_SECRET --realm=onlinebidflow --fingerprint --no-cli --no-tls --no-dtls --no-multicast-peers --no-loopback-peers --user-quota=32 --total-quota=128 --max-allocate-lifetime=3600'
+    ports:
+      - '${RADMIN_SERVER_IP}:3478:3478/tcp'
+      - '${RADMIN_SERVER_IP}:3478:3478/udp'
+      - '${RADMIN_SERVER_IP}:49160-49259:49160-49259/udp'
+    networks:
+      default:
+        ipv4_address: 172.30.98.10
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.98.0/24
+volumes:
+  livestream_mysql:
+  livestream_products:
+  livestream_caddy:

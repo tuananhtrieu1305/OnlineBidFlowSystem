@@ -1,3 +1,4 @@
+import { stubLivestreamCatalog } from './fixtures/livestream';
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test';
 import path from 'node:path';
 
@@ -9,7 +10,7 @@ test.beforeEach(async ({}, info) => {
   delete env.ELECTRON_DEV_URL;
   const executablePath = process.env.E2E_EXECUTABLE;
   app = await electron.launch({ ...(executablePath ? { executablePath } : {}), args: [...(executablePath ? [] : [path.resolve('.')]), `--user-data-dir=${info.outputPath('profile')}`], env });
-  page = await app.firstWindow();
+  page = await app.firstWindow(); await stubLivestreamCatalog(page);
   await page.goto('app://auction/#/register');
 });
 test.afterEach(async () => { await app?.close(); });

@@ -1,9 +1,10 @@
+import { stubLivestreamCatalog } from './fixtures/livestream';
 import {_electron as electron,expect,test,type ElectronApplication,type Page} from '@playwright/test';
 import path from 'node:path';
 let app:ElectronApplication,page:Page;
 test.beforeEach(async({},info)=>{
  const env=Object.fromEntries(Object.entries(process.env).filter((e):e is [string,string]=>e[1]!==undefined));delete env.ELECTRON_RUN_AS_NODE;delete env.ELECTRON_DEV_URL;
- app=await electron.launch({args:[path.resolve('.'),`--user-data-dir=${info.outputPath('profile')}`],env});page=await app.firstWindow();
+ app=await electron.launch({args:[path.resolve('.'),`--user-data-dir=${info.outputPath('profile')}`],env});page=await app.firstWindow(); await stubLivestreamCatalog(page);
  await page.route('**/api/auth/me',r=>r.fulfill({json:{id:1,username:'admin',role:'ADMIN'}}));
  await page.route('**/api/admin/system-wallet',r=>r.fulfill({json:{walletId:'15',availableBalance:'100',lockedBalance:'0',totalReceivedCoin:'18446744073709551614',updatedAt:'2030-01-01T00:00:00Z',readAt:'2030-01-01T00:00:00Z'}}));
  await page.route('**/api/admin/system-wallet/transactions?*',r=>r.fulfill({json:{items:[{id:'5',auctionId:'12',type:'PAYMENT',availableDelta:'100',lockedDelta:'0',createdAt:'2030-01-01T00:00:00Z'}],nextCursor:null}}));

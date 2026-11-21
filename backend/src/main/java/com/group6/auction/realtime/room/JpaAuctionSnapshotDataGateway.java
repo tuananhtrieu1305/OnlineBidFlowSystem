@@ -46,6 +46,7 @@ public class JpaAuctionSnapshotDataGateway implements AuctionSnapshotDataGateway
             return Optional.empty();
         }
         return auctions.findById(auctionId)
+                .filter(auction -> auction.getAuctionType() != com.group6.auction.auction.entity.AuctionType.LIVESTREAM)
                 .flatMap(auction -> products.findById(auction.getProductId())
                         .map(product -> toSnapshotAuction(auction, product)));
     }

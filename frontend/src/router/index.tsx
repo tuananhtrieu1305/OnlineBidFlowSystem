@@ -11,14 +11,26 @@ import AdminAuctionsPage from '../features/auctions/configuration/AdminAuctionsP
 import AdminUsersPage from '../features/admin/users/AdminUsersPage';
 import SystemWalletPage from '../features/admin/system-wallet/SystemWalletPage';
 import {DiscoveryDetail} from '../features/auctions/discovery/Discovery';
+import { LivestreamDetailPage, LivestreamListPage, LivestreamPurchasesPage } from '../features/livestream/LivestreamPages';
+import { HostLivestreamCreatePage, HostLivestreamListPage, HostLivestreamResultsPage } from '../features/livestream/HostLivestreamPages';
+import LivestreamRoomPage from '../features/livestream/LivestreamRoomPage';
 
 export default createHashRouter([
   { path: '/register', element: <RegisterPage /> },
   { path: '/login', element: <LoginPage /> },
   { element: <AppLayout />, children: [
     { path: '/', element: <HomePage /> },
+    { path: '/livestream', element: <LivestreamListPage /> },
+    { path: '/livestream/registrations', element: <LivestreamListPage registered /> },
+    { path: '/livestream/purchases', element: <LivestreamPurchasesPage /> },
+    { path: '/livestream/:id', element: <LivestreamDetailPage /> },
+    { path: '/livestream/:id/room', element: <LivestreamRoomPage /> },
     { path: '/auctions/:id', element: <DiscoveryDetail /> },
     { path: '/admin', element: <AdminPage /> },
+    { path: '/admin/livestream', element: <HostLivestreamListPage /> },
+    { path: '/admin/livestream/new', element: <HostLivestreamCreatePage /> },
+    { path: '/admin/livestream/:id', element: <LivestreamRoomPage host /> },
+    { path: '/admin/livestream/:id/results', element: <HostLivestreamResultsPage /> },
     { path: '/admin/system-wallet', element: <SystemWalletPage /> },
     { path: '/admin/users', element: <AdminUsersPage /> },
     { path: '/admin/users/:id', element: <AdminUsersPage /> },

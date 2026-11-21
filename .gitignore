@@ -29,3 +29,6 @@ docs/realtime/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local livestream run logs
+.runtime-*.log

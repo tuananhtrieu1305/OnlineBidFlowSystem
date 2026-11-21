@@ -1,3 +1,4 @@
+import { stubLivestreamCatalog } from './fixtures/livestream';
 import { _electron as electron, expect, test } from '@playwright/test';
 import path from 'node:path';
 
@@ -7,7 +8,7 @@ test('guest discovers the app and can register without diagnostic screens', asyn
   delete env.ELECTRON_DEV_URL;
   const app = await electron.launch({ args: [path.resolve('.'), `--user-data-dir=${info.outputPath('profile')}`], env });
   try {
-    const page = await app.firstWindow();
+    const page = await app.firstWindow(); await stubLivestreamCatalog(page);
     await expect(page.getByRole('heading', { name: 'Món đồ đặc biệt. Lựa chọn của bạn.' })).toBeVisible();
     await page.route('**/api/auth/me', route => route.fulfill({ status: 401, json: { code: 'UNAUTHENTICATED' } }));
     await page.route('**/api/discovery/auctions?*', route => route.fulfill({ json: { items: [], page: 0, totalPages: 0, totalElements: '0' } }));

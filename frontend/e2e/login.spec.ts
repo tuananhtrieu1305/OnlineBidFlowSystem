@@ -1,3 +1,4 @@
+import { stubLivestreamCatalog } from './fixtures/livestream';
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test';
 import path from 'node:path';
 
@@ -7,7 +8,7 @@ test.beforeEach(async ({}, info) => {
   const env = Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined));
   delete env.ELECTRON_RUN_AS_NODE; delete env.ELECTRON_DEV_URL;
   app = await electron.launch({ args: [path.resolve('.'), `--user-data-dir=${info.outputPath('profile')}`], env });
-  page = await app.firstWindow();
+  page = await app.firstWindow(); await stubLivestreamCatalog(page);
   await page.route('**/api/auth/me', route => route.fulfill({ status: 401, json: {} }));
   await page.route('**/api/auth/csrf', route => route.fulfill({ json: { token: 'csrf-test' } }));
   await page.goto('app://auction/#/login');

@@ -12,6 +12,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     org.springframework.data.domain.Page<Product> search(@org.springframework.data.repository.query.Param("pattern") String pattern,
         @org.springframework.data.repository.query.Param("exactId") long exactId, org.springframework.data.domain.Pageable pageable);
 
+    @org.springframework.data.jpa.repository.Query(
+        value="SELECT p.* FROM products p WHERE " + ProductStockSql.AVAILABLE_FILTER,
+        countQuery="SELECT COUNT(*) FROM products p WHERE " + ProductStockSql.AVAILABLE_FILTER,
+        nativeQuery=true)
+    org.springframework.data.domain.Page<Product> searchAvailable(@org.springframework.data.repository.query.Param("pattern") String pattern,
+        @org.springframework.data.repository.query.Param("exactId") long exactId, org.springframework.data.domain.Pageable pageable);
+
     @org.springframework.data.jpa.repository.Query(value="select distinct product_id from auctions where product_id in (:ids)", nativeQuery=true)
     java.util.List<Long> usedIds(@org.springframework.data.repository.query.Param("ids") java.util.Collection<Long> ids);
 }

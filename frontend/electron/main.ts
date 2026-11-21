@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, net, protocol, session } from 'electron';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { resolveAsset } from './asset-path';
+import { allowsHostMedia } from './livestream-media';
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }
@@ -13,6 +14,7 @@ function createWindow() {
     backgroundColor: '#f8fafc', autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
+      autoplayPolicy: 'no-user-gesture-required',
       contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true
     }
   });
@@ -28,8 +30,15 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
-  session.defaultSession.setPermissionCheckHandler(() => false);
+  const development = !app.isPackaged && process.env.ELECTRON_DEV_URL === 'http://localhost:5173';
+  session.defaultSession.setPermissionRequestHandler((contents, permission, callback, details) => {
+    const media = permission === 'media' && 'mediaTypes' in details && details.mediaTypes?.length &&
+      details.mediaTypes.every(type => type === 'video' || type === 'audio');
+    callback(Boolean(media && allowsHostMedia(contents.getURL(), details.requestingUrl, details.isMainFrame, development)));
+  });
+  session.defaultSession.setPermissionCheckHandler((contents, permission, origin, details) =>
+    permission === 'media' &&
+    allowsHostMedia(contents?.getURL() ?? '', details.requestingUrl ?? origin, details.isMainFrame, development));
   protocol.handle('app', (request) => {
     const file = resolveAsset(request.url, path.join(__dirname, '../dist'));
     if (!file || request.method !== 'GET') return new Response('Not found', { status: 404 });

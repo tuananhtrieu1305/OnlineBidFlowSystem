@@ -14,6 +14,7 @@ export default function AdminPage() {
       <div className="guest-empty"><h2>Quản lý người dùng</h2><p>Tra cứu tài khoản, ví và lịch sử Coin.</p><Link to="/admin/users">Xem người dùng →</Link></div>
       <div className="guest-empty"><h2>Ví hệ thống</h2><p>Xem số dư và lịch sử nhận Coin từ đấu giá.</p><Link to="/admin/system-wallet">Xem ví hệ thống →</Link></div>
       <div className="guest-empty"><h2>Cấu hình phiên đấu giá</h2><p>Chuẩn bị loại phiên, quyền vào phòng, giá và lịch.</p><Link to="/admin/auctions">Quản lý phiên →</Link></div>
+      <div className="guest-empty"><h2>Phiên livestream</h2><p>Chuẩn bị hàng, xem trước camera và trải nghiệm điều hành đấu giá trực tiếp.</p><Link to="/admin/livestream">Quản lý livestream →</Link></div>
     </section>
   </main>;
 }
