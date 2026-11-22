@@ -12,6 +12,7 @@ WORKDIR /app/backend
 COPY backend/pom.xml ./
 RUN mvn -B dependency:go-offline
 COPY backend/src ./src
+COPY deploy/render/V3__blind_clue_pool.sql ./src/main/resources/db/migration/V3__blind_clue_pool.sql
 COPY --from=web /app/frontend/dist ./src/main/resources/static
 RUN mvn -B -DskipTests package
 

@@ -21,3 +21,4 @@ backend/src/test/
 !deploy/
 !deploy/render/
 !deploy/render/start.sh
+!deploy/render/V3__blind_clue_pool.sql
