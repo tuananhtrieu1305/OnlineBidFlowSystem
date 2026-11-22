@@ -7,7 +7,7 @@ import { leadingBid } from '../features/normal/types';
 import { rankBids, roomClock, roomCoin as coin, roomRhythm, rhythmNames, useRoomNotices } from '../features/normal/roomExperience';
 import WinnerCelebration from '../features/normal/WinnerCelebration';
 import PriceTimelineChart from '../features/normal/PriceTimelineChart';
-import ProductImage from '../features/normal/ProductImage';
+import RoomProductPanel from '../features/normal/RoomProductPanel';
 import '../features/normal/normal.css';
 import '../features/normal/normal-room.css';
 
@@ -42,8 +42,8 @@ export default function NormalAuctionPage() {
   const finished = auction?.status === 'SOLD' || auction?.status === 'UNSOLD';
   const running = auction?.status === 'RUNNING';
   const upcoming = auction?.status === 'UPCOMING';
-  const rhythm = auction ? roomRhythm(auction, now) : null;
-  const timing = auction?.normalTiming ?? { closingWindowSeconds: 30, extensionSeconds: 30, leaderboardSeconds: 60 };
+  const timing = auction?.normalTiming ?? { closingWindowSeconds: 10, extensionSeconds: 10, leaderboardSeconds: 60 };
+  const rhythm = auction ? roomRhythm(auction, now, timing.closingWindowSeconds) : null;
   const events = useRoomNotices(auction, username, rhythm?.index ?? 0);
   const realtime = useNormalRealtime(selectedId, Boolean(auction?.joined && api.me?.role === 'USER' && (running || upcoming)), socketCode, api.refresh);
   const leader = auction ? leadingBid(auction) : undefined;
@@ -107,16 +107,13 @@ export default function NormalAuctionPage() {
         <div className="room-rhythm-clock"><small>{finished ? 'Nhịp' : upcoming ? 'Nhịp 1/2 · Chờ mở' : `Nhịp ${(rhythm?.index ?? 0) + 1}/2 · ${rhythmNames[rhythm?.index ?? 0]}`}</small><strong role={finished ? undefined : 'timer'} aria-label="Thời gian nhịp còn lại">{finished ? '2/2' : roomClock(phaseRemaining)}</strong></div>
       </section>
       <div className="room-header-account"><div className="room-account"><span className="room-avatar" aria-hidden="true">{username.slice(0, 1).toUpperCase()}</span><strong title={username}>{username}</strong></div><div className="room-wallet"><div><small>Khả dụng</small><strong data-testid="normal-available" title={api.me?.wallet ? coin(api.me.wallet.available) : ''}>{api.me?.wallet ? coin(api.me.wallet.available) : api.me?.role === 'ADMIN' ? 'Chỉ xem' : '…'}</strong></div><div><small>Đang khóa</small><strong title={api.me?.wallet ? coin(api.me.wallet.locked) : ''}>{api.me?.wallet ? coin(api.me.wallet.locked) : '—'}</strong></div></div></div>
-      <button type="button" ref={chatToggle} className="room-chat-toggle" aria-controls="normal-room-chat" aria-expanded={chatOpen} aria-label={chatOpen ? 'Thu gọn chat' : unread ? `Mở chat, ${unread} tin nhắn mới` : 'Mở chat'} onClick={() => chatOpen ? collapseChat() : setChatOpen(true)}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-8 8H5l-3 3v-11a9 9 0 0 1 18 0Z"/><path d="M7 10h8M7 14h5"/></svg><span>Chat</span>{unread > 0 && <b className="room-chat-unread" aria-hidden="true">{Math.min(unread, 99)}</b>}</button>
       <Link className="room-exit" to="/normal" aria-label="Thoát phòng" title="Thoát phòng"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></Link>
     </header>
 
-    <div className="room-body">
-      <section className="room-product-column" aria-label="Ảnh và thông tin sản phẩm" data-testid="normal-product-panel">
-        <div className="room-product-visual">{selected && <ProductImage product={selected.product} />}</div>
-        <div className="room-product-details"><h2>Thông tin sản phẩm</h2><p title={selected?.product.description}>{selected?.product.description || 'Chưa có mô tả.'}</p></div>
+    <button type="button" ref={chatToggle} className="room-chat-toggle" aria-controls="normal-room-chat" aria-expanded={chatOpen} aria-label={chatOpen ? 'Thu gọn chat' : unread ? `Mở chat, ${unread} tin nhắn mới` : 'Mở chat'} onClick={() => chatOpen ? collapseChat() : setChatOpen(true)}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-8 8H5l-3 3v-11a9 9 0 0 1 18 0Z"/><path d="M7 10h8M7 14h5"/></svg><span>Chat</span>{unread > 0 && <b className="room-chat-unread" aria-hidden="true">{Math.min(unread, 99)}</b>}</button>
 
-      </section>
+    <div className="room-body">
+      <RoomProductPanel key={selectedId} product={auction?.product ?? selected?.product} />
 
       <div className="room-main-column" data-testid="normal-session-column">
         <section className="room-bidding" aria-label="Đặt giá" tabIndex={0}>
@@ -130,7 +127,6 @@ export default function NormalAuctionPage() {
             </form>}
           </>}
           <div className="room-feedback" aria-live="polite" aria-atomic="true">{(api.error || feedback) && <p className={api.error ? 'error' : ''}>{api.error || feedback}{api.error && <button type="button" disabled={api.busy} onClick={() => void api.refresh()}>Tải lại</button>}</p>}</div>
-          <details className="room-rules"><summary>Luật phiên</summary><p>Phiên chia làm nhịp đầu và nhịp cuối. Giá và quyền trả được giữ nguyên khi chuyển nhịp. Ở nhịp cuối, bid trong {timing.closingWindowSeconds}s cuối sẽ gia hạn để còn {timing.extensionSeconds}s trả giá. Vào phòng cần tối thiểu 50% giá khởi điểm; giá được chấp nhận sẽ khóa Coin.</p></details>
         </section>
 
         <section className="room-data-panel" aria-label="Diễn biến đấu giá">

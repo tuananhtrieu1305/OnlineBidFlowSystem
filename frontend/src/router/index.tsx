@@ -1,5 +1,4 @@
-import { createHashRouter } from 'react-router-dom';
-import HomePage from '../pages/HomePage';
+import { createHashRouter, Navigate } from 'react-router-dom';
 import NotFoundPage from '../pages/NotFoundPage';
 import AppLayout from '../AppLayout';
 import RegisterPage from '../features/auth/pages/RegisterPage';
@@ -14,9 +13,9 @@ import {DiscoveryDetail} from '../features/auctions/discovery/Discovery';
 import NormalAuctionPage from '../pages/NormalAuctionPage';
 import NormalAuctionListPage from '../pages/NormalAuctionListPage';
 import BlindRoom from '../features/auctions/blind/BlindRoom';
-import BlindAuctionListPage from '../features/auctions/blind/BlindAuctionListPage';
 import AdminBlindClues from '../features/auctions/blind/AdminBlindClues';
 import BlindReplay from '../features/auctions/blind/BlindReplay';
+import BlindAuctionListPage from '../features/auctions/blind/BlindAuctionListPage';
 import LeaderboardPage from '../features/leaderboard/LeaderboardPage';
 import { LivestreamDetailPage, LivestreamListPage, LivestreamPurchasesPage } from '../features/livestream/LivestreamPages';
 import { HostLivestreamCreatePage, HostLivestreamListPage, HostLivestreamResultsPage } from '../features/livestream/HostLivestreamPages';
@@ -29,7 +28,7 @@ export default createHashRouter([
   { path: '/blind/:id', element: <BlindRoom /> },
   { path: '/auctions/:id/replay', element: <BlindReplay /> },
   { element: <AppLayout />, children: [
-    { path: '/', element: <HomePage /> },
+    { path: '/', element: <Navigate to="/normal" replace /> },
     { path: '/normal', element: <NormalAuctionListPage /> },
     { path: '/leaderboard', element: <LeaderboardPage /> },
     { path: '/livestream', element: <LivestreamListPage /> },

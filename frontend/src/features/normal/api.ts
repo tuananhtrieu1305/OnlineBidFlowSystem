@@ -7,12 +7,12 @@ import { getWallet, type Wallet } from '../wallet/walletApi';
 export type Me = { userId: number; username: string; role: 'USER' | 'ADMIN'; wallet: { available: string; locked: string } | null };
 export const balance = (value: Wallet) => ({ available: value.availableBalance, locked: value.lockedBalance });
 export type Summary = Pick<NormalAuction, 'id' | 'product' | 'access' | 'status' | 'startsAt' | 'endsAt'> & { joined: boolean };
-type ApiProduct = { id: number; name: string; description: string | null; quantity: number; imageUrl: string | null };
+type ApiProduct = { id: number; name: string; description: string | null; quantity: number; imageUrl: string | null; imageUrls?: string[] };
 type ApiSummary = { id: number; product: ApiProduct; access: 'PUBLIC' | 'PRIVATE'; status: NormalAuction['status']; startsAt: string; endsAt: string; joined: boolean };
 type ApiAuction = ApiSummary & { scheduledEndsAt?: string; normalTiming?: NormalAuction['normalTiming']; startingPrice: number; increment: number; bids: NormalAuction['bids']; winner: string | null; winningPrice: number | null; serverTime: string };
 export type LiveAuction = NormalAuction & { joined: boolean; serverTime: number };
 function product(value: ApiProduct): NormalAuction['product'] {
-  return { name: value.name, description: value.description ?? '', quantity: value.quantity, imageUrl: value.imageUrl };
+  return { name: value.name, description: value.description ?? '', quantity: value.quantity, imageUrl: value.imageUrl, imageUrls: value.imageUrls };
 }
 function auction(value: ApiAuction): LiveAuction {
   return { ...value, product: product(value.product), startsAt: Date.parse(value.startsAt), endsAt: Date.parse(value.endsAt),

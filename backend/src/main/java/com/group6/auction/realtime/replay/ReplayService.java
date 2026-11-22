@@ -35,7 +35,8 @@ public class ReplayService {
         boolean blind=auction.auctionType()==AuctionType.BLIND;
         var names=blind?dataGateway.bidderNamesForAuction(auctionId):java.util.Map.<Long,String>of();
         List<ReplayTimelineEvent> events=blind
-                ? timelineBuilder.buildBlind(auction,viewer,bids,dataGateway.clueTradesForAuction(auctionId),names)
+                ? timelineBuilder.buildBlind(auction,viewer,bids,dataGateway.clueTradesForAuction(auctionId),names,
+                        dataGateway.systemCluesForAuction(auctionId,auction.finishedAt()==null?auction.endTime():auction.finishedAt()))
                 : timelineBuilder.build(auction,viewer,bids,dataGateway.chatMessagesForAuction(auctionId));
         List<ReplayTopBid> topBids=null;
         if(blind){

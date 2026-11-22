@@ -7,6 +7,7 @@ import com.group6.auction.wallet.service.ClueTradeTransferService;
 import com.group6.auction.wallet.service.WalletTransferService;
 import java.security.SecureRandom;
 import java.time.Clock;
+import static com.group6.auction.auction.blind.BlindClueRevealSchedule.DISCUSS_SECONDS;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -27,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Profile("!probe")
 public class BlindService {
     private static final int REVEAL_SECONDS = 20;
-    private static final int DISCUSS_SECONDS = 60;
     private final JdbcTemplate jdbc;
     private final Clock clock;
     private final ClueTradeTransferService clueTransfers;
@@ -166,13 +166,15 @@ public class BlindService {
         if(!"UPCOMING".equals(a.status())||opened(id)||
            jdbc.queryForObject("SELECT COUNT(*) FROM auction_participants WHERE auction_id=?",Long.class,id)>0)
             throw BlindException.conflict("CLUES_NOT_EDITABLE");
-        if(contents==null||contents.size()!=a.capacity()||contents.size()>30)throw BlindException.bad("CLUES_INSUFFICIENT");
+        if(contents==null||contents.size()<a.capacity()||contents.size()>100)throw BlindException.bad("CLUES_INSUFFICIENT");
         var cleaned=new ArrayList<String>();
         for(String raw:contents){
             if(raw==null||raw.strip().isEmpty()||raw.strip().length()>500)throw BlindException.bad("INVALID_CLUE");
             cleaned.add(raw.strip());
         }
-        if(Set.copyOf(cleaned).size()!=cleaned.size())throw BlindException.bad("DUPLICATE_CLUE");
+        var unique=Set.copyOf(cleaned);
+        var systemClues=jdbc.queryForList("SELECT content FROM blind_system_clues WHERE auction_id=?",String.class,id);
+        if(unique.size()!=cleaned.size()||systemClues.stream().anyMatch(unique::contains))throw BlindException.bad("DUPLICATE_CLUE");
         jdbc.update("DELETE FROM blind_clues WHERE auction_id=?",id);
         for(int i=0;i<cleaned.size();i++)jdbc.update("INSERT INTO blind_clues(auction_id,slot,content) VALUES(?,?,?)",id,i+1,cleaned.get(i));
         return Map.of("clues",cleaned);
@@ -211,6 +213,7 @@ public class BlindService {
             WHERE p.auction_id=? ORDER BY p.joined_at,p.user_id
             """,(rs,n)->Map.of("userId",rs.getString(1),"username",rs.getString(2),"online",onlineIds.contains(rs.getLong(1))),id):List.of());
         result.put("product",product);result.put("ownedClues",owned);result.put("listings",listings);
+        result.put("systemClues",revealedSystemClues(id,r,time));
         result.put("hasListedClue",jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM blind_clue_listings WHERE auction_id=? AND seller_id=?)",Boolean.class,id,viewer));
         result.put("soldClueIds",jdbc.query("SELECT DISTINCT clue_id FROM blind_clue_trades WHERE auction_id=?",(rs,n)->rs.getString(1),id));
         result.put("ownBid",bids.isEmpty()?null:bids.getFirst());
@@ -233,6 +236,13 @@ public class BlindService {
                 """,(rs,n)->Map.of("userId",rs.getString(1),"username",rs.getString(2),"amount",rs.getString(3),"at",iso(rs.getObject(4,LocalDateTime.class))),id));
         }
         return result;
+    }
+
+    private List<Map<String,Object>> revealedSystemClues(long id,Round round,LocalDateTime time) {
+        if(round==null)return List.of();
+        return BlindClueRevealSchedule.through(jdbc,id,round.tradeEnd(),round.end(),time).stream()
+            .map(clue->Map.<String,Object>of("slot",clue.slot(),"content",clue.content(),"revealedAt",iso(clue.at())))
+            .toList();
     }
 
     private boolean owns(long auctionId,long clueId,long userId) {
@@ -317,7 +327,7 @@ public class BlindService {
            jdbc.queryForObject("SELECT COUNT(*) FROM auction_participants WHERE auction_id=?",Long.class,auctionId)>0)
             throw BlindException.conflict("LOBBY_NOT_OPENABLE");
         long clues=jdbc.queryForObject("SELECT COUNT(*) FROM blind_clues WHERE auction_id=?",Long.class,auctionId);
-        if(clues!=a.capacity())throw BlindException.conflict("CLUES_INSUFFICIENT");
+        if(clues<a.capacity())throw BlindException.conflict("CLUES_INSUFFICIENT");
         LocalDateTime time=now();
         jdbc.update("INSERT INTO blind_settings(auction_id,trade_seconds,bid_seconds) VALUES(?,300,100) ON DUPLICATE KEY UPDATE auction_id=auction_id",auctionId);
         jdbc.update("UPDATE auctions SET start_time=?,end_time=? WHERE id=?",time,time.plusMinutes(5),auctionId);
@@ -335,7 +345,7 @@ public class BlindService {
         if((!expired&&(reserved.size()!=a.capacity()||online.size()!=a.capacity()))||
            (expired&&online.size()<3))return;
         var clues=jdbc.queryForList("SELECT id FROM blind_clues WHERE auction_id=? ORDER BY slot",Long.class,auctionId);
-        if(clues.size()!=a.capacity())return;
+        if(clues.size()<a.capacity())return;
         Collections.shuffle(clues,random);
         var durations=jdbc.query("SELECT trade_seconds,bid_seconds FROM blind_settings WHERE auction_id=?",
             (rs,n)->new int[]{rs.getInt(1),rs.getInt(2)},auctionId);

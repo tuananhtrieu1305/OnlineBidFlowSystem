@@ -10,7 +10,7 @@ import com.group6.auction.wallet.dto.WalletResponse;
 
 public final class NormalDtos {
     private NormalDtos() {}
-    public record Product(long id, String name, String description, int quantity, String imageUrl) {}
+    public record Product(long id, String name, String description, int quantity, String imageUrl, List<String> imageUrls) {}
     public record Bid(long id, long userId, String username, long amount, Instant createdAt) {}
     public record Summary(long id, Product product, String access, String status, Instant startsAt, Instant endsAt, boolean joined) {}
     public record Snapshot(long id, Product product, String access, String status, long startingPrice,

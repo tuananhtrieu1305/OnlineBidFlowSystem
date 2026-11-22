@@ -7,6 +7,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.group6.auction.account.repository.UserRepository;
+import com.group6.auction.auction.blind.BlindClueRevealSchedule;
+import com.group6.auction.auction.blind.BlindClueRevealSchedule.Reveal;
 import com.group6.auction.auction.entity.Auction;
 import com.group6.auction.auction.entity.AuctionParticipantId;
 import com.group6.auction.auction.entity.Bid;
@@ -127,6 +129,21 @@ public class JpaReplayDataGateway implements ReplayDataGateway {
             """,(rs,n)->new ReplayClueTradeData(rs.getLong(1),rs.getInt(2),rs.getString(3),
                 rs.getString(4),rs.getString(5),rs.getLong(6),rs.getObject(7,LocalDateTime.class)),auctionId);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Reveal> systemCluesForAuction(long auctionId, LocalDateTime cutoff) {
+        var rounds = jdbc.query("""
+                SELECT trade_ends_at, CAST(LEAST(bid_locks_at, ends_at) AS DATETIME(6)) AS bid_end
+                FROM blind_rounds WHERE auction_id = ?
+                """, (rs, row) -> new ClueWindow(rs.getObject(1, LocalDateTime.class),
+                        rs.getObject(2, LocalDateTime.class)), auctionId);
+        if (rounds.isEmpty()) return List.of();
+        var round = rounds.getFirst();
+        return BlindClueRevealSchedule.through(jdbc, auctionId, round.tradeEnd(), round.bidEnd(), cutoff);
+    }
+
+    private record ClueWindow(LocalDateTime tradeEnd, LocalDateTime bidEnd) {}
 
     @Override
     @Transactional(readOnly = true)
