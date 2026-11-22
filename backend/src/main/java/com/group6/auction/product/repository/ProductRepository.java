@@ -4,6 +4,16 @@ import com.group6.auction.product.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
+    interface Stock {
+        Long getProductId();
+        long getReserved();
+    }
+
+    @org.springframework.data.jpa.repository.Query(
+        value="SELECT p.id AS productId, " + ProductStockSql.RESERVED_COUNT + " AS reserved FROM products p WHERE p.id IN (:ids)",
+        nativeQuery=true)
+    java.util.List<Stock> stock(@org.springframework.data.repository.query.Param("ids") java.util.Collection<Long> ids);
+
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @org.springframework.data.jpa.repository.Query("select p from Product p where p.id = :id")
     java.util.Optional<Product> findForUpdate(@org.springframework.data.repository.query.Param("id") long id);

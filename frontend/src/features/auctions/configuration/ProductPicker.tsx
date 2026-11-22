@@ -5,9 +5,40 @@ export default function ProductPicker({selected,onSelect,initialId,disabled,adde
  const manualSelection=useRef(false);
  function select(p:Product){manualSelection.current=true;onSelect(p);}
  useEffect(()=>{if(!initialId)return;let alive=true;void getProduct(initialId).then(p=>{if(alive&&!manualSelection.current)onSelect(p);}).catch(()=>{if(alive&&!manualSelection.current)setError('Không tải được sản phẩm đã chọn. Hãy tìm và chọn lại.');});return()=>{alive=false;};},[initialId]);
- useEffect(()=>{const abort=new AbortController();setLoading(true);const timer=setTimeout(()=>{void listProducts(q,page,abort.signal,true).then(data=>{if(!abort.signal.aborted){setItems(data.items);setTotal(data.totalPages);setError('');}}).catch(()=>{if(!abort.signal.aborted)setError('Chưa tải được danh sách sản phẩm.');}).finally(()=>{if(!abort.signal.aborted)setLoading(false);});},300);return()=>{abort.abort();clearTimeout(timer);};},[q,page,retry]);
+ useEffect(()=>{
+  const abort=new AbortController();
+  setLoading(true);
+  const timer=setTimeout(async()=>{
+   try {
+    let data=await listProducts(q,page,abort.signal);
+    if(data.items.some(product=>product.availableQuantity===undefined)){
+     data=await listProducts(q,page,abort.signal,true);
+    }
+    if(!abort.signal.aborted){setItems(data.items);setTotal(data.totalPages);setError('');}
+   } catch {
+    if(!abort.signal.aborted)setError('Chưa tải được danh sách sản phẩm.');
+   } finally {
+    if(!abort.signal.aborted)setLoading(false);
+   }
+  },300);
+  return()=>{abort.abort();clearTimeout(timer);};
+ },[q,page,retry]);
  return <section className="auction-picker"><h2>1. Chọn sản phẩm</h2>{selected&&<div className="auction-selected">{imageSource(selected.imageUrl)&&<img src={imageSource(selected.imageUrl)} alt="Ảnh sản phẩm đã chọn"/>}<div><strong>{selected.name}</strong><p>#{selected.id} · Số lượng {selected.quantity}</p></div></div>}
   <label>Tìm sản phẩm<input value={q} disabled={disabled} maxLength={255} placeholder="Tên hoặc mã sản phẩm" onChange={e=>{setQ(e.target.value);setPage(0);}}/></label>
-  {error?<p role="alert">{error} <button type="button" onClick={()=>setRetry(v=>v+1)}>Thử lại</button></p>:loading?<p role="status">Đang tìm sản phẩm…</p>:<><div className="auction-product-options">{items.map(p=><button type="button" key={p.id} disabled={disabled||addedIds.includes(p.id)} aria-pressed={selected?.id===p.id||addedIds.includes(p.id)} onClick={()=>select(p)}><strong>{p.name}</strong><span>#{p.id} · Số lượng {p.quantity}</span>{addedIds.includes(p.id)&&<small>✓ Đã thêm</small>}</button>)}{!items.length&&<p>Không có sản phẩm còn số lượng khả dụng phù hợp. Hãy thêm hàng hoặc đổi từ khóa.</p>}</div><div className="product-pagination"><button type="button" disabled={disabled||page===0} onClick={()=>setPage(p=>p-1)}>Trước</button><span>{page+1}/{Math.max(total,1)}</span><button type="button" disabled={disabled||page+1>=total} onClick={()=>setPage(p=>p+1)}>Sau</button></div></>}
+  {error?<p role="alert">{error} <button type="button" onClick={()=>setRetry(v=>v+1)}>Thử lại</button></p>:loading?<p role="status">Đang tìm sản phẩm…</p>:<>
+   <div className="auction-product-options">
+    {items.map(p=>{
+     const added=addedIds.includes(p.id);
+     const unavailable=p.availableQuantity===0;
+     return <button type="button" key={p.id} disabled={disabled||added||unavailable} aria-pressed={selected?.id===p.id||added} onClick={()=>select(p)}>
+      <strong>{p.name}</strong>
+      <span>#{p.id} · {p.availableQuantity===undefined?`Số lượng ${p.quantity}`:unavailable?'Hết hàng khả dụng':`Còn ${p.availableQuantity}/${p.quantity} khả dụng`}</span>
+      {added&&<small>✓ Đã thêm</small>}
+     </button>;
+    })}
+    {!items.length&&<p>Không tìm thấy sản phẩm phù hợp.</p>}
+   </div>
+   <div className="product-pagination"><button type="button" disabled={disabled||page===0} onClick={()=>setPage(p=>p-1)}>Trước</button><span>{page+1}/{Math.max(total,1)}</span><button type="button" disabled={disabled||page+1>=total} onClick={()=>setPage(p=>p+1)}>Sau</button></div>
+  </>}
  </section>;
 }

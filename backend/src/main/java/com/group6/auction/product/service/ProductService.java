@@ -30,11 +30,14 @@ public class ProductService {
   String pattern="%"+q.replace("!","!!").replace("%","!%").replace("_","!_")+"%";
   var pageable=PageRequest.of(page,size,Sort.by(Sort.Direction.DESC,"id"));
   var result=availableOnly?products.searchAvailable(pattern,exact,pageable):products.search(pattern,exact,pageable);
-  Set<Long> used=result.isEmpty()?Set.of():new HashSet<>(products.usedIds(result.getContent().stream().map(Product::getId).toList()));
-  return new ProductPage(result.stream().map(p->response(p,used.contains(p.getId()))).toList(),page,size,""+result.getTotalElements(),result.getTotalPages());
+  var ids=result.stream().map(Product::getId).toList();
+  Set<Long> used=ids.isEmpty()?Set.of():new HashSet<>(products.usedIds(ids));
+  Map<Long,Long> reserved=new HashMap<>();
+  if(!ids.isEmpty()) products.stock(ids).forEach(stock->reserved.put(stock.getProductId(),stock.getReserved()));
+  return new ProductPage(result.stream().map(p->response(p,used.contains(p.getId()),reserved.getOrDefault(p.getId(),0L))).toList(),page,size,""+result.getTotalElements(),result.getTotalPages());
  }
  @Transactional(readOnly=true)
- public AdminProductResponse detail(long id){var p=products.findById(id).orElseThrow(()->new ProductException(404,"PRODUCT_NOT_FOUND"));return response(p,used(id));}
+ public AdminProductResponse detail(long id){var p=products.findById(id).orElseThrow(()->new ProductException(404,"PRODUCT_NOT_FOUND"));return response(p,used(id),products.stock(List.of(id)).getFirst().getReserved());}
  @Transactional(readOnly=true)
  public List<String> galleryImages(long id) {
   if(!products.existsById(id))throw new ProductException(404,"PRODUCT_NOT_FOUND");
@@ -51,7 +54,7 @@ public class ProductService {
  public AdminProductResponse create(ProductInput input,ProductImageStorage.Staged image){
   String url=publish(image);
   var product=products.saveAndFlush(Product.create(input.name(),input.description(),input.quantity(),input.price(),url));
-  return response(product,false);
+  return response(product,false,0);
  }
  @Transactional(isolation=Isolation.READ_COMMITTED)
  public AdminProductResponse update(long id,ProductInput input,String expected,ProductImageStorage.Staged image){
@@ -61,7 +64,7 @@ public class ProductService {
   if(!ProductVersion.of(product).equals(expected))throw new ProductException(412,"PRODUCT_CHANGED");
   String url=switch(input.imageAction()){case "REMOVE"->null;case "REPLACE"->publish(image);default->product.getImageUrl();};
   product.update(input.name(),input.description(),input.quantity(),input.price(),url);
-  products.flush();return response(product,false);
+  products.flush();return response(product,false,0);
  }
  private boolean used(long id){return !products.usedIds(List.of(id)).isEmpty();}
  private String publish(ProductImageStorage.Staged staged){
@@ -72,5 +75,8 @@ public class ProductService {
   });
   return images.publish(staged);
  }
- private AdminProductResponse response(Product p,boolean used){return new AdminProductResponse(""+p.getId(),p.getName(),p.getDescription(),p.getQuantity(),p.getEstimatedPrice()==null?null:""+p.getEstimatedPrice(),p.getImageUrl(),!used,used?"PRODUCT_IN_USE":null,ProductVersion.of(p));}
+ private AdminProductResponse response(Product p,boolean used,long reserved){
+  int available=(int)Math.max(0,p.getQuantity()-reserved);
+  return new AdminProductResponse(""+p.getId(),p.getName(),p.getDescription(),p.getQuantity(),available,p.getEstimatedPrice()==null?null:""+p.getEstimatedPrice(),p.getImageUrl(),!used,used?"PRODUCT_IN_USE":null,ProductVersion.of(p));
+ }
 }

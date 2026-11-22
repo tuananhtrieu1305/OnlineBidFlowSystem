@@ -72,7 +72,7 @@ export default function LiveProductCatalog({
           <p role="status">
             {addedIds.length >= 30
               ? 'Đã đủ 30 món cho phiên này.'
-              : notice || 'Chỉ hiển thị hàng còn số lượng khả dụng.'}
+              : notice || 'Chọn sản phẩm còn hàng khả dụng.'}
           </p>
         </div>
         <button type="button" className="live-primary" onClick={onClose}>

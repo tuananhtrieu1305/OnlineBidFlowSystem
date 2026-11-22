@@ -1,7 +1,7 @@
 import client, { serverConfig } from '../../api/axiosClient';
 import { csrfHeaders } from '../auth/api/sessionApi';
 import { resolveProductImage } from './imageSource';
-export type Product = { id: string; name: string; description: string|null; quantity: number; estimatedPrice: string|null; imageUrl: string|null; editable: boolean; editBlockedReason: string|null; version: string };
+export type Product = { id: string; name: string; description: string|null; quantity: number; availableQuantity?: number; estimatedPrice: string|null; imageUrl: string|null; editable: boolean; editBlockedReason: string|null; version: string };
 export type ProductPage = { items: Product[]; page: number; size: number; totalElements: string; totalPages: number };
 export async function listProducts(q: string, page: number, signal?: AbortSignal, availableOnly = false) { return (await client.get<ProductPage>('/api/admin/products', { params: { q, page, size: 20, ...(availableOnly ? { availableOnly: true } : {}) }, signal })).data; }
 export async function getProduct(id: string) { return (await client.get<Product>('/api/admin/products/'+id)).data; }
