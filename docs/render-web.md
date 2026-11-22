@@ -9,6 +9,8 @@ Dùng một Render Web Service chạy Docker để phục vụ cả React và Sp
 3. Đặt `VITE_API_BASE_URL` và `FRONTEND_ORIGINS` cùng bằng địa chỉ HTTPS Render cấp cho service, không thêm đường dẫn, ví dụ `https://onlinebidflow.onrender.com`. Dùng địa chỉ thật của service khi tạo. Nếu đổi domain, cập nhật hai biến và build lại.
 4. Đặt `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` theo MySQL 8 dành riêng cho bản deploy. Nếu MySQL kết nối qua internet, cấu hình `SPRING_DATASOURCE_URL` với TLS xác minh máy chủ, theo hướng dẫn của nhà cung cấp. Mật khẩu đặt trong biến bí mật trên Render. Cấu hình profile mặc định, vì profile `demo` phục vụ chứng chỉ Radmin trên máy Windows.
 
+Nếu nhà cung cấp dùng CA riêng, thêm CA đã xác minh vào **Environment → Secret Files** với tên `mysql-ca.pem`. Docker entrypoint tạo truststore riêng cho MySQL từ file này. Nếu chứng chỉ máy chủ khớp hostname, giữ `sslMode=VERIFY_IDENTITY`. Với Clever Cloud DEV trả chứng chỉ MySQL tự tạo không có hostname của dịch vụ, dùng `sslMode=VERIFY_CA` cùng CA riêng của nhà cung cấp. Không dùng chứng chỉ CA tải từ một endpoint chưa xác thực làm nguồn tin duy nhất.
+
 ## Dữ liệu và ảnh
 
 - Dùng MySQL 8. Dự án sử dụng cú pháp MySQL, nên Render Postgres không thay thế trực tiếp được.

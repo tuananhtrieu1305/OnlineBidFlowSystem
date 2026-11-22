@@ -18,5 +18,6 @@ RUN mvn -B -DskipTests package
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=backend /app/backend/target/auction-backend-0.1.0.jar app.jar
+COPY deploy/render/start.sh /app/start.sh
 EXPOSE 10000
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["/bin/sh", "/app/start.sh"]
