@@ -27,15 +27,21 @@ export const lotLabels = {
 export function LivePage({
   children,
   host = false,
-  showRules = true
+  showRules = true,
+  immersive = false
 }: {
   children: ReactNode;
   host?: boolean;
   showRules?: boolean;
+  immersive?: boolean;
 }) {
   const { state, connectionStatus } = useLivestream();
   return (
-    <main id="main-content" className="guest-home live-page" tabIndex={-1}>
+    <main
+      id="main-content"
+      className={'guest-home live-page' + (immersive ? ' is-immersive' : '')}
+      tabIndex={-1}
+    >
       <header className="guest-topbar">
         <Link to={host ? '/admin/livestream' : '/livestream'}>
           {host ? 'Không gian quản trị / Livestream' : 'Khám phá / Livestream'}
@@ -176,10 +182,12 @@ export function ProductThumbnail({ lot }: { lot: Pick<LiveLot, 'imageUrl' | 'nam
 export function LotQueue({
   session,
   onReopen,
+  onPreview,
   disabled = false
 }: {
   session: LiveSession;
   onReopen?: (lotId: string) => void;
+  onPreview?: (lotId: string) => void;
   disabled?: boolean;
 }) {
   return (
@@ -194,7 +202,20 @@ export function LotQueue({
           <span className="live-lot-number">{index + 1}</span>
           <ProductThumbnail lot={lot} />
           <div>
-            <strong>{lot.name}</strong>
+            <strong>
+              {onPreview ? (
+                <button
+                  className="live-lot-detail"
+                  type="button"
+                  onClick={() => onPreview(lot.id)}
+                  aria-label={'Xem chi tiết ' + lot.name}
+                >
+                  {lot.name}
+                </button>
+              ) : (
+                lot.name
+              )}
+            </strong>
             <p>
               {lot.status === 'SOLD'
                 ? lot.leaderName + ' · ' + coin(lot.currentPrice)

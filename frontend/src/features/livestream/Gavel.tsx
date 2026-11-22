@@ -16,7 +16,6 @@ export default function Gavel({ resultId, winnerName, amount, productName }: Pro
   const [phase, setPhase] = useState<'striking' | 'holding' | 'leaving'>('striking');
   const audio = useRef<AudioContext>();
   const previous = useRef(resultId);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   function playKnocks() {
     const context = audio.current;
@@ -51,18 +50,25 @@ export default function Gavel({ resultId, winnerName, amount, productName }: Pro
   useEffect(() => {
     if (resultId && previous.current !== resultId && !playedResults.has(resultId)) {
       playedResults.add(resultId);
-      timers.current.forEach(clearTimeout);
       // Capture the committed sale so moving to the next lot cannot change this announcement.
       setSale({ id: resultId, winnerName, amount, productName });
       setPhase('striking');
-      timers.current = [
-        setTimeout(() => setPhase('holding'), strikeDuration),
-        setTimeout(() => setPhase('leaving'), strikeDuration + holdDuration),
-        setTimeout(() => setSale(null), strikeDuration + holdDuration + exitDuration)
-      ];
     }
     previous.current = resultId;
   }, [resultId, winnerName, amount, productName]);
+
+  useEffect(() => {
+    if (!sale) return;
+    // Let the CSS animation finish all three strikes. The fallback also handles
+    // reduced motion and hidden documents where animationend may not arrive.
+    const timer =
+      phase === 'striking'
+        ? setTimeout(() => setPhase('holding'), strikeDuration + 500)
+        : phase === 'holding'
+          ? setTimeout(() => setPhase('leaving'), holdDuration)
+          : setTimeout(() => setSale(null), exitDuration);
+    return () => clearTimeout(timer);
+  }, [sale?.id, phase]);
 
   useEffect(() => {
     // Electron permits autoplay; browsers unlock audio on the first room interaction.
@@ -80,7 +86,6 @@ export default function Gavel({ resultId, winnerName, amount, productName }: Pro
     return () => {
       document.removeEventListener('pointerdown', unlockAudio, true);
       document.removeEventListener('keydown', unlockAudio, true);
-      timers.current.forEach(clearTimeout);
       const context = audio.current;
       audio.current = undefined;
       void context?.close().catch(() => {});
@@ -153,7 +158,15 @@ export default function Gavel({ resultId, winnerName, amount, productName }: Pro
                 aria-label="Búa gỗ gõ ba lần khi chốt người thắng"
               >
                 <img className="live-gavel-base" src={base} alt="" />
-                <img className="live-gavel-hammer" src={hammer} alt="" />
+                <img
+                  className="live-gavel-hammer"
+                  src={hammer}
+                  alt=""
+                  onAnimationEnd={(event) => {
+                    if (event.animationName === 'live-gavel-strike' && phase === 'striking')
+                      setPhase('holding');
+                  }}
+                />
                 <span className="live-gavel-impact" aria-hidden="true" />
                 <span className="live-gavel-ripple" aria-hidden="true" />
               </div>

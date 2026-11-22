@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { LiveSession } from './liveState';
 
 function Chair({ occupied, rear = false }: { occupied: boolean; rear?: boolean }) {
@@ -7,20 +7,28 @@ function Chair({ occupied, rear = false }: { occupied: boolean; rear?: boolean }
     <svg className="live-chair" viewBox="0 0 120 128" aria-hidden="true">
       <defs>
         <linearGradient id={id + 'wood'} x2="1" y2="1">
-          <stop stopColor="#b17b47" />
-          <stop offset=".5" stopColor="#774827" />
-          <stop offset="1" stopColor="#4d2e1d" />
+          <stop stopColor={rear ? '#976b43' : '#b17b47'} />
+          <stop offset=".5" stopColor={rear ? '#60432e' : '#774827'} />
+          <stop offset="1" stopColor={rear ? '#32251c' : '#4d2e1d'} />
         </linearGradient>
         <linearGradient id={id + 'fabric'} x2="0" y2="1">
-          <stop stopColor={occupied ? '#3a8a7b' : '#d7c9b5'} />
-          <stop offset="1" stopColor={occupied ? '#14574e' : '#a99a84'} />
+          <stop stopColor={occupied ? '#4a9075' : rear ? '#38634c' : '#d7c9b5'} />
+          <stop offset=".4" stopColor={occupied ? '#35745b' : rear ? '#254b38' : '#c7b89f'} />
+          <stop offset="1" stopColor={occupied ? '#1c5542' : rear ? '#132f24' : '#a99a84'} />
         </linearGradient>
         <linearGradient id={id + 'seat'} x2="0" y2="1">
           <stop stopColor={occupied ? '#6cab99' : '#e7dac7'} />
           <stop offset="1" stopColor={occupied ? '#28695c' : '#b5a68e'} />
         </linearGradient>
       </defs>
-      <ellipse cx="60" cy="119" rx="46" ry="6" fill="#50371f" opacity=".14" />
+      <ellipse
+        cx="60"
+        cy="120"
+        rx="43"
+        ry="4"
+        fill={rear ? '#050b07' : '#50371f'}
+        opacity={rear ? '.48' : '.14'}
+      />
       {rear ? (
         <>
           <g fill={'url(#' + id + 'wood)'}>
@@ -33,7 +41,7 @@ function Chair({ occupied, rear = false }: { occupied: boolean; rear?: boolean }
           <path
             d="M30 30q0-12 12-12h36q12 0 12 12l-3 64H33z"
             fill={'url(#' + id + 'fabric)'}
-            stroke={occupied ? '#1a5148' : '#9c8c74'}
+            stroke={occupied ? '#b69c65' : '#9b81534d'}
           />
           <path
             d="M36 33q0-8 9-8h30q9 0 9 8l-2 53H38z"
@@ -41,8 +49,15 @@ function Chair({ occupied, rear = false }: { occupied: boolean; rear?: boolean }
             stroke="#f9e8c4"
             opacity=".18"
           />
+          <path
+            d="M27 30q0-16 14-16h38q14 0 14 16"
+            fill="none"
+            stroke="#d5af73"
+            strokeWidth="1.5"
+            opacity=".35"
+          />
           <path d="M30 98h60" stroke="#c59b6c" opacity=".5" />
-          <g fill={occupied ? '#174d42' : '#a2937a'}>
+          <g fill={occupied ? '#d3b676' : '#b394595e'}>
             <circle cx="47" cy="38" r="1.4" />
             <circle cx="73" cy="38" r="1.4" />
             <circle cx="47" cy="76" r="1.4" />
@@ -92,7 +107,27 @@ export default function Grandstand({
   leaderId: string | null;
   integrated?: boolean;
 }) {
-  const seats = session.participants.slice(0, 10);
+  const floor = useRef<HTMLDivElement>(null);
+  const [columns, setColumns] = useState(5);
+  useLayoutEffect(() => {
+    const element = floor.current;
+    if (!integrated || !element) return;
+    const resize = () => {
+      const spacing = matchMedia('(max-width: 1050px)').matches ? 72 : 90;
+      const next = Math.max(5, Math.min(18, Math.floor(element.clientWidth / spacing)));
+      setColumns((current) => (current === next ? current : next));
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(element);
+    window.addEventListener('resize', resize);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', resize);
+    };
+  }, [integrated]);
+  const seatCount = integrated ? columns * 3 : 10;
+  const seats = session.participants.slice(0, seatCount);
   return (
     <section className={'live-grandstand' + (integrated ? ' is-integrated' : ' live-panel')}>
       <div className="live-section-title">
@@ -105,18 +140,41 @@ export default function Grandstand({
           {session.participants.length} người
         </span>
       </div>
-      <div className="live-audience-floor">
+      <div className="live-audience-floor" ref={floor}>
         <div className="live-audience-stage" aria-hidden="true">
           <span>HƯỚNG SÂN KHẤU</span>
         </div>
-        <ol aria-label="Chỗ ngồi của người tham gia">
-          {Array.from({ length: 10 }, (_, index) => {
+        {integrated && (
+          <div className="live-audience-terraces" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </div>
+        )}
+        <ol
+          aria-label="Chỗ ngồi của người tham gia"
+          style={integrated ? ({ '--audience-columns': columns } as CSSProperties) : undefined}
+        >
+          {Array.from({ length: seatCount }, (_, index) => {
             const person = seats[index];
             const leading = !!person && person.id === leaderId;
+            const row = Math.floor(index / (integrated ? columns : 5));
+            const column = (index % columns) - (columns - 1) / 2;
+            const perspective = column / Math.max(1, (columns - 1) / 2);
             return (
               <li
                 key={person?.id ?? 'empty-' + index}
                 className={(person ? 'is-occupied' : 'is-empty') + (leading ? ' is-leading' : '')}
+                data-row={integrated ? row : undefined}
+                style={
+                  integrated
+                    ? ({
+                        '--seat-column': column,
+                        '--seat-arc': perspective * perspective * 6 + 'px',
+                        '--seat-turn': -perspective * 10 + 'deg'
+                      } as CSSProperties)
+                    : undefined
+                }
                 aria-label={person ? undefined : 'Ghế trống'}
               >
                 <div className="live-seat-art">
@@ -127,9 +185,11 @@ export default function Grandstand({
                     </span>
                   )}
                 </div>
-                <span className="live-seat-name" title={person?.username}>
-                  {person?.username ?? 'Ghế trống'}
-                </span>
+                {(person || !integrated) && (
+                  <span className="live-seat-name" title={person?.username}>
+                    {person?.username ?? 'Ghế trống'}
+                  </span>
+                )}
                 {leading && <small>Đang dẫn</small>}
               </li>
             );
@@ -146,8 +206,10 @@ export default function Grandstand({
           Ghế trống
         </span>
       </div>
-      {session.participants.length > 10 && (
-        <p className="live-muted">Cùng {session.participants.length - 10} người khác đang xem.</p>
+      {session.participants.length > seatCount && (
+        <p className="live-muted">
+          Cùng {session.participants.length - seatCount} người khác đang xem.
+        </p>
       )}
     </section>
   );

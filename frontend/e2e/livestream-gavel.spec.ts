@@ -143,7 +143,7 @@ test.afterEach(async () => {
   await app?.close();
 });
 
-test('gallery rotates the real image under a spotlight and preserves camera controls across views', async ({}, info) => {
+test('immersive camera keeps a draggable lit podium and retains video while drawers open', async ({}, info) => {
   await page.route('**/api/product-images/gallery-keyboard.svg', (route) =>
     route.fulfill({
       contentType: 'image/svg+xml',
@@ -160,15 +160,25 @@ test('gallery rotates the real image under a spotlight and preserves camera cont
   const room = page.getByTestId('auction-room');
   await expect(room.locator('.live-grandstand.is-integrated')).toHaveCount(1);
   const continuity = await room.evaluate((element) => {
-    const stage = element.querySelector('.showcase-stage')!.getBoundingClientRect();
-    const audience = element.querySelector('.showcase-room-audience')!.getBoundingClientRect();
+    const video = element.querySelector('.showcase-feed')!.getBoundingClientRect();
+    const rowTops = [...element.querySelectorAll('.live-grandstand li')]
+      .map((seat) => seat.getBoundingClientRect().top)
+      .sort((a, b) => a - b);
     return {
-      gap: audience.top - stage.bottom,
+      platformSeam:
+        element.querySelector('.showcase-theatre-platform')!.getBoundingClientRect().top -
+        video.bottom,
+      rows: rowTops.filter((top, index) => index === 0 || top - rowTops[index - 1] > 20).length,
       floor: getComputedStyle(element.querySelector('.live-audience-floor')!).backgroundColor,
       image: getComputedStyle(element).backgroundImage
     };
   });
-  expect(Math.abs(continuity.gap)).toBeLessThan(1);
+  expect(Math.abs(continuity.platformSeam)).toBeLessThan(8);
+  expect(continuity.rows).toBe(3);
+  await expect(room.locator('.showcase-curtain')).toHaveCount(2);
+  await expect(room.getByTestId('host-theatre')).toBeVisible();
+  await expect(page.locator('.guest-sidebar')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Toàn màn hình', exact: true })).toBeVisible();
   expect(continuity.floor).toBe('rgba(0, 0, 0, 0)');
   expect(continuity.image).toContain('auction-salon-v1');
   const picture = stage.locator('.showcase-photo-front img');
@@ -252,20 +262,28 @@ test('gallery rotates the real image under a spotlight and preserves camera cont
   await expect(stage).toHaveAttribute('data-paused', 'false');
   await page.keyboard.down('Enter');
   await expect(stage).toHaveAttribute('data-paused', 'true');
-  await page.getByRole('button', { name: 'Camera host', exact: true }).focus();
+  await page.getByRole('button', { name: 'Toàn màn hình', exact: true }).focus();
   await page.keyboard.up('Enter');
   await expect(stage).toHaveAttribute('data-paused', 'false');
-  await expect(stage.locator('.showcase-light-beam')).toHaveCount(1);
+  await expect(room.locator('.showcase-product-light .showcase-light-beam')).toHaveCount(1);
   await expect(stage.locator('.showcase-pedestal')).toHaveCount(1);
   const camera = page.locator('video[aria-label="Livestream từ host"]');
   await camera.evaluate((e) => {
     e.dataset.retained = 'same-video';
   });
-  await page.getByRole('button', { name: 'Camera host', exact: true }).click();
-  await expect(stage).toHaveClass(/is-camera-focused/);
+  await page.getByRole('button', { name: /Trò chuyện/ }).click();
+  const chat = page.getByRole('region', { name: 'Trò chuyện', exact: true });
+  await expect(chat).toBeVisible();
   await expect(camera).toHaveAttribute('data-retained', 'same-video');
-  await page.getByRole('button', { name: 'Sản phẩm', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Đặt giá', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(chat).toHaveCount(0);
+  await page.getByRole('button', { name: /Sản phẩm/ }).click();
+  await expect(
+    page.getByRole('region', { name: 'Sản phẩm trong phiên', exact: true })
+  ).toBeVisible();
   await expect(camera).toHaveAttribute('data-retained', 'same-video');
+  await page.keyboard.press('Escape');
   await page.locator('.live-room-grid').screenshot({ path: info.outputPath('gallery-room.png') });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('.showcase-motion-hint')).toHaveCount(0);
@@ -276,6 +294,213 @@ test('gallery rotates the real image under a spotlight and preserves camera cont
   ).toBe('none');
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(820, 650));
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+});
+
+test('mini podium previews keep bidding available, and fit desktop and compact windows', async ({}, info) => {
+  session = {
+    ...session,
+    version: '2',
+    lots: [
+      session.lots[0],
+      ...['Máy ảnh', 'Đèn bàn', 'Tai nghe'].map((name, index) => ({
+        ...session.lots[0],
+        id: String(80002 + index),
+        name,
+        description: 'Sản phẩm xem trước',
+        status: 'QUEUED' as const
+      }))
+    ]
+  };
+  update('COMMAND');
+  const video = page.locator('video');
+  await video.evaluate((element) => {
+    element.dataset.retained = 'camera-still-mounted';
+  });
+  await expect(page.locator('.showcase-mini')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Xem sản phẩm Máy ảnh', exact: true }).click();
+  const products = page.getByRole('region', { name: 'Sản phẩm trong phiên', exact: true });
+  await expect(products.getByRole('heading', { name: 'Máy ảnh', exact: true })).toBeVisible();
+  await expect(
+    products.getByRole('button', { name: 'Đưa sản phẩm này lên', exact: true })
+  ).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Bàn phím cơ', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Đặt giá', exact: true })).toBeEnabled();
+  await expect(video).toHaveAttribute('data-retained', 'camera-still-mounted');
+  const boundary = await products.evaluate((element) => ({
+    drawerRight: element.getBoundingClientRect().right,
+    bidLeft: document.querySelector('.live-bid-column')!.getBoundingClientRect().left
+  }));
+  expect(boundary.drawerRight).toBeLessThan(boundary.bidLeft);
+  await page.keyboard.press('Escape');
+  await expect(products).toHaveCount(0);
+  for (const [width, height] of [
+    [1366, 768],
+    [1920, 1080],
+    [820, 650],
+    [820, 600]
+  ]) {
+    await app.evaluate(
+      ({ BrowserWindow }, size) => BrowserWindow.getAllWindows()[0].setSize(size[0], size[1]),
+      [width, height]
+    );
+    await expect(page.getByRole('button', { name: 'Đặt giá', exact: true })).toBeInViewport({
+      ratio: 1
+    });
+    const layout = await page.evaluate(() => {
+      const rect = (selector: string) => document.querySelector(selector)!.getBoundingClientRect();
+      const camera = rect('.showcase-feed'),
+        podium = rect('.showcase-stage'),
+        bid = rect('.live-bid-column');
+      const rowTops = [...document.querySelectorAll('.live-grandstand li')]
+        .map((seat) => seat.getBoundingClientRect().top)
+        .sort((a, b) => a - b);
+      return {
+        overflow:
+          document.documentElement.scrollWidth > innerWidth ||
+          document.documentElement.scrollHeight > innerHeight,
+        surfaceHeight: rect('.showcase-theatre-platform > i').height,
+        onPlatform: [...document.querySelectorAll('.showcase-pedestal, .showcase-mini-plinth')]
+          .filter((element) => (element as HTMLElement).offsetParent !== null)
+          .every((element) => {
+            const base = element.getBoundingClientRect(),
+              surface = rect('.showcase-theatre-platform > i');
+            return (
+              base.left >= surface.left &&
+              base.right <= surface.right &&
+              base.bottom >= surface.top &&
+              base.bottom <= surface.bottom
+            );
+          }),
+        lampClear:
+          rect('.showcase-photo-position').top >= rect('.showcase-light-fixture > span').bottom + 4,
+        lampOnCeiling: rect('.showcase-light-fixture').top - rect('.showcase-theatre').top,
+        lightAligned: Math.abs(
+          (rect('.showcase-light-fixture').left + rect('.showcase-light-fixture').right) / 2 -
+            (rect('.showcase-pedestal').left + rect('.showcase-pedestal').right) / 2
+        ),
+        lightConnected: Math.abs(
+          rect('.showcase-light-beam').top - rect('.showcase-light-fixture > span').bottom
+        ),
+        lightOnWood:
+          rect('.showcase-light-beam').bottom >= rect('.showcase-pedestal-top').top &&
+          rect('.showcase-light-beam').bottom <= rect('.showcase-pedestal-top').bottom,
+        cameraFraction: camera.width / innerWidth,
+        cameraHeight: camera.height,
+        rowCount: rowTops.filter((top, index) => index === 0 || top - rowTops[index - 1] > 20)
+          .length,
+        fillsAuditorium:
+          Math.abs(rect('.live-audience-floor').width - rect('.showcase-room-audience').width) < 1,
+        seatCount: document.querySelectorAll('.live-grandstand li').length,
+        spread: (() => {
+          const chairs = document.querySelectorAll(
+            '.live-grandstand li[data-row="2"] .live-seat-art'
+          );
+          return (
+            (chairs[chairs.length - 1].getBoundingClientRect().right -
+              chairs[0].getBoundingClientRect().left) /
+            rect('.live-audience-floor').width
+          );
+        })(),
+        clusterCenter: Math.abs(
+          (rect('.live-audience-floor').left + rect('.live-audience-floor').right) / 2 -
+            (rect('.showcase-theatre').left + rect('.showcase-theatre').right) / 2
+        ),
+        stageClear:
+          rect('.showcase-theatre-platform').bottom <=
+          rect('.live-grandstand .live-section-title').top,
+
+        podiumClear: podium.right < bid.left,
+        seats: [...document.querySelectorAll('.live-grandstand li')].every(
+          (seat) => seat.getBoundingClientRect().bottom <= innerHeight
+        ),
+        captionClear:
+          rect('.showcase-lot-caption').bottom <= rect('.live-grandstand .live-section-title').top,
+        dock: rect('.live-room-dock').top >= bid.bottom
+      };
+    });
+    expect(layout.overflow).toBe(false);
+    expect(layout.cameraFraction).toBeGreaterThan(0.25);
+    expect(layout.cameraFraction).toBeLessThan(0.65);
+    expect(layout.cameraHeight).toBeGreaterThan(100);
+    expect(layout.lampOnCeiling).toBeGreaterThanOrEqual(0);
+    expect(layout.lampOnCeiling).toBeLessThan(16);
+    expect(layout.lightAligned).toBeLessThan(1);
+    expect(layout.lightConnected).toBeLessThan(3);
+    expect(layout.lightOnWood).toBe(true);
+    expect(layout.lampClear).toBe(true);
+    await expect(page.locator('.showcase-light-fixture')).toBeVisible();
+    expect(layout.rowCount).toBe(3);
+    expect(layout.fillsAuditorium).toBe(true);
+    expect(layout.seatCount).toBeGreaterThan(15);
+    expect(layout.seatCount % 3).toBe(0);
+    expect(layout.spread).toBeGreaterThan(0.85);
+    expect(layout.clusterCenter).toBeLessThan(2);
+    expect(layout.stageClear).toBe(true);
+    expect(layout.surfaceHeight).toBeGreaterThanOrEqual(70);
+    expect(layout.onPlatform, JSON.stringify({ width, height, ...layout })).toBe(true);
+    expect(
+      layout.podiumClear && layout.seats && layout.dock && layout.captionClear,
+      JSON.stringify({ width, height, ...layout })
+    ).toBe(true);
+    if (width === 820) await expect(page.locator('.showcase-mini').nth(1)).toBeHidden();
+    await page.screenshot({ path: info.outputPath(`immersive-${width}x${height}.png`) });
+  }
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(1366, 768));
+  await page.getByRole('button', { name: 'Toàn màn hình', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
+  await page.getByRole('button', { name: 'Thoát toàn màn hình', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
+});
+
+test('bids and chat work through the floating controls without closing the camera', async () => {
+  await page.route('**/api/auth/csrf', (route) =>
+    route.fulfill({ json: { token: 'test-csrf', headerName: 'X-CSRF-TOKEN' } })
+  );
+  const received: string[] = [];
+  await page.route('**/api/livestreams/90001/lots/80001/bids', async (route) => {
+    const input = route.request().postDataJSON();
+    expect(route.request().headers()['x-csrf-token']).toBe('test-csrf');
+    expect(input.requestId).toBeTruthy();
+    received.push(input.amount);
+    session = {
+      ...session,
+      version: '2',
+      lots: session.lots.map((item) => ({
+        ...item,
+        currentPrice: input.amount,
+        leaderId: '2',
+        leaderName: 'Minh Anh',
+        deadline: Date.now() + 5000
+      }))
+    };
+    await route.fulfill({ json: snapshot() });
+  });
+  await page.route('**/api/livestreams/90001/chat', async (route) => {
+    const input = route.request().postDataJSON();
+    expect(input.requestId).toBeTruthy();
+    session = {
+      ...session,
+      version: '3',
+      messages: [{ id: '1', userId: '2', username: 'Minh Anh', text: input.text, at: Date.now() }]
+    };
+    await route.fulfill({ json: snapshot() });
+  });
+  await page.getByRole('button', { name: /Trò chuyện/ }).click();
+  const chat = page.getByRole('region', { name: 'Trò chuyện', exact: true });
+  await chat
+    .getByRole('textbox', { name: 'Tin nhắn', exact: true })
+    .fill('Chào host, mình đang xem!');
+  await page.getByRole('textbox', { name: 'Giá của bạn (Coin)', exact: true }).fill('150');
+  await page.getByRole('button', { name: 'Đặt 150 Coin', exact: true }).click();
+  await expect.poll(() => received).toEqual(['150']);
+  await expect(page.getByTestId('live-current-price')).toHaveText('150 Coin');
+  await expect(page.getByRole('button', { name: 'Bạn đang dẫn đầu', exact: true })).toBeDisabled();
+  await expect(chat.getByRole('textbox')).toHaveValue('Chào host, mình đang xem!');
+  await chat.getByRole('button', { name: 'Gửi', exact: true }).click();
+  await expect(chat.getByText('Chào host, mình đang xem!', { exact: true })).toBeVisible();
+  await expect(chat.getByRole('textbox')).toHaveValue('');
+  await page.keyboard.press('Escape');
+  await expect(chat).toHaveCount(0);
 });
 
 test('gallery handles missing/broken product photos and updates the displayed product', async () => {
@@ -446,7 +671,7 @@ test('hides the gavel until a committed sale, shows a large centered overlay for
   expect(await page.evaluate(() => (window as any).gavelImpacts.length)).toBe(0);
 });
 
-test('renders ten upholstered chairs, fills occupied seats, and keeps usernames on one line', async ({}, info) => {
+test('renders responsive rows of upholstered chairs, fills occupied seats, and keeps usernames on one line', async ({}, info) => {
   session = {
     ...session,
     version: '2',
@@ -464,12 +689,20 @@ test('renders ten upholstered chairs, fills occupied seats, and keeps usernames 
   };
   update('BID');
   const grandstand = page.locator('.live-grandstand');
-  await expect(grandstand.locator('svg.live-chair')).toHaveCount(10);
+  await expect.poll(() => grandstand.locator('svg.live-chair').count()).toBeGreaterThan(15);
+  const totalSeats = await grandstand.locator('svg.live-chair').count();
+  expect(totalSeats % 3).toBe(0);
   await expect(grandstand.locator('.is-occupied')).toHaveCount(3);
-  await expect(grandstand.getByRole('listitem', { name: 'Ghế trống', exact: true })).toHaveCount(7);
+  await expect(grandstand.locator('.is-empty .live-seat-name')).toHaveCount(0);
+  await expect(grandstand.getByRole('listitem', { name: 'Ghế trống', exact: true })).toHaveCount(
+    totalSeats - 3
+  );
   await expect(grandstand.getByText('Đang dẫn', { exact: true })).toBeVisible();
   await grandstand.scrollIntoViewIfNeeded();
   await grandstand.screenshot({ path: info.outputPath('grandstand.png') });
+  await grandstand
+    .locator('.live-audience-floor')
+    .screenshot({ path: info.outputPath('auditorium-compact.png') });
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(820, 650));
   const layout = await grandstand
     .locator('.live-seat-name')

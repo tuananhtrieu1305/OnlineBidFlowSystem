@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, net, protocol, session } from 'electron';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { resolveAsset } from './asset-path';
-import { allowsHostMedia } from './livestream-media';
+import { allowsHostMedia, allowsRoomFullscreen } from './livestream-media';
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }
@@ -34,11 +34,13 @@ app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((contents, permission, callback, details) => {
     const media = permission === 'media' && 'mediaTypes' in details && details.mediaTypes?.length &&
       details.mediaTypes.every(type => type === 'video' || type === 'audio');
-    callback(Boolean(media && allowsHostMedia(contents.getURL(), details.requestingUrl, details.isMainFrame, development)));
+    const fullscreen = permission === 'fullscreen' && allowsRoomFullscreen(contents.getURL(), details.requestingUrl, details.isMainFrame, development);
+    callback(Boolean(fullscreen || (media && allowsHostMedia(contents.getURL(), details.requestingUrl, details.isMainFrame, development))));
   });
   session.defaultSession.setPermissionCheckHandler((contents, permission, origin, details) =>
     permission === 'media' &&
-    allowsHostMedia(contents?.getURL() ?? '', details.requestingUrl ?? origin, details.isMainFrame, development));
+    allowsHostMedia(contents?.getURL() ?? '', details.requestingUrl ?? origin, details.isMainFrame, development) ||
+    permission === 'fullscreen' && allowsRoomFullscreen(contents?.getURL() ?? '', details.requestingUrl ?? origin, details.isMainFrame, development));
   protocol.handle('app', (request) => {
     const file = resolveAsset(request.url, path.join(__dirname, '../dist'));
     if (!file || request.method !== 'GET') return new Response('Not found', { status: 404 });
