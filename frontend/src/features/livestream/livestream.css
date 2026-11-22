@@ -2285,3 +2285,35 @@ body.live-screen-impact-active {
     flex-basis: 100%;
   }
 }
+
+/* Configuration stays within the existing live panel layout. */
+.live-setup-fields { border:0; padding:0; margin:0; min-width:0; display:contents; }
+.live-mystery-setup fieldset { border:1px solid var(--live-border, #767676); border-radius:8px; padding:12px; margin-block:12px; min-width:0; }
+.live-mystery-choice { display:flex; align-items:center; gap:10px; margin-block:8px; }
+.live-page .live-mystery-choice input, .live-page #live-mystery-enabled { width:20px; min-height:20px; flex-shrink:0; }
+.live-mystery-choice label { margin:0; overflow-wrap:anywhere; }
+
+.live-mystery-toggle, #live-mystery-config { grid-column:1/-1; }
+.live-page .live-mystery-choice label { margin-top:0; }
+
+.live-mystery-toggle { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+.live-page .live-mystery-toggle label { margin:0; }
+.live-mystery-toggle p { flex-basis:100%; margin:0; }
+.live-mission-groups { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+@media(max-width:700px) { .live-mission-groups { grid-template-columns:1fr; } }
+
+.live-mission-panel { overflow-wrap:anywhere; }
+.live-mission-panel progress { inline-size:100%; accent-color:#286049; }
+.live-mission-panel p { margin-block:8px; font-size:13px; line-height:1.5; }
+.live-mission-panel details { font-size:13px; }
+.live-mission-panel summary { cursor:pointer; }
+.live-mission-panel ul { padding-inline-start:20px; }
+
+.live-final-panel p, .live-mystery-rules p { font-size:13px; line-height:1.5; margin-block:8px; }
+.live-final-panel .live-product-image { inline-size:64px; block-size:64px; object-fit:contain; }
+.live-final-panel strong { display:block; overflow-wrap:anywhere; }
+.live-secret-box { display:inline-grid; place-items:center; inline-size:64px; block-size:64px; border:1px solid currentColor; border-radius:12px; font-size:32px; }
+.live-mystery-rules { margin-block:12px; }
+.live-mystery-rules summary { cursor:pointer; font-size:13px; }
+
+.live-round-summary { font-size:12px; line-height:1.5; margin:0 0 12px; overflow-wrap:anywhere; }

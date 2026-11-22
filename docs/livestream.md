@@ -52,3 +52,39 @@ On a new empty installation, first register an account through the app. Then the
 Local verification in this workspace covered new and existing MySQL migration paths, wallet/auction regression, Electron host plus two viewers, native video decoding/audio RTP, forced TURN relay, ten-connection admission, chat, automatic payment, pause/resume and gavel replay suppression. Synthetic canvas/audio tracks replace physical camera and microphone in automated tests. Two-machine Radmin, physical devices and Windows CA/firewall deployment remain deployment checks.
 
 For the isolated Electron harness, the current fixture container is named onlinebidflow-livestream-test on 127.0.0.1:33309, backend 18081. It must contain an Admin named admin with the development test password Password@123. The test creates uniquely named viewer accounts using that fixture hash and funds them through the wallet deposit API. Set LIVESTREAM_FORCE_RELAY=true to require a nominated relay candidate and run with coturn configured through TURN_HOST and TURN_SECRET.
+
+## Mystery ticket mode — configuration
+
+On `/admin/livestream/new`, enable **Săn vé bí ẩn**, add 3–30 distinct available catalog products, select one as the secret, and configure mission templates using two groups of regular products. Every template must admit a pair of different products. Prices, the secret choice and templates are locked on save. Ordinary livestream creation remains unchanged.
+
+**Cấu hình nhanh phiên Săn vé bí ẩn demo** fills the form from up to five available real catalog products, their current versions and estimated prices (100 Coin if no positive estimate), with one secret and up to three mission templates. Review and save explicitly. At least three available products are required. This does not create fake inventory or deposit Coin.
+
+V4 adds the configuration and future mission/ticket storage. Only Admin responses contain the secret identity before reveal; public/viewer responses contain a placeholder. The mode is now playable: missions and final-round access are implemented. Existing ordinary livestreams remain playable. See [the three-phase plan](livestream-mystery-plan.md).
+
+Known existing setup limitation: a fresh Flyway-only install currently fails in V3 because V0 does not create `blind_clues`. Phase 1 leaves those historical migrations unchanged. Tests use the documented isolated database initialized from `database/init.sql`; V4 upgrading an existing livestream schema is covered separately. Never run that initializer on the main database.
+
+## Mystery ticket mode — private missions
+
+On a USER's first room join in SCHEDULED/LIVE, the server assigns a persisted random template with a feasible pair of distinct remaining regular products. It resolves overdue sales and host lease expiry first. Rejoining retains the original assignment, even if opponents later buy the required goods. If no template is feasible, the viewer receives an unavailable state and can still watch/chat; no impossible mission is saved.
+
+The actor-specific room snapshot has a separate `mission` object with session/user/revision, status, task title, two groups of valid products, paid progress and ticket status. Public catalog/detail/state responses do not contain assigned missions. Admin room snapshots contain no personal mission, and Admin session data includes only the total issued ticket count alongside the existing configuration.
+
+After a committed regular sale, progress checks the winner's PAYMENT ledger in the same session. Two different matching products issue one nontransferable ticket in the settlement transaction. Payment/ticket errors roll back together, and retry or concurrent commands cannot duplicate a ticket. The viewer's room panel shows progress, eligible products and ticket status; the host sees the ticket count. Changing accounts or rooms clears cached personal mission data.
+
+START is enabled for configured mystery sessions. Some mission-focused tests stage lots directly in their isolated fixtures; final-round integration tests use the normal START/SELECT/OPEN/BID commands without a production bypass.
+
+## Mystery ticket mode — final round
+
+After the last regular payment commits, a session with at least one ticket automatically reveals the preselected secret item and its starting price. The current lot remains on the completed regular sale so its gavel effect can finish. The host clicks **Đưa món bí mật lên** (or selects the revealed lot), introduces it, then clicks **Mở đấu giá sản phẩm**. Before OPEN, no final bids are accepted. The backend checks the user's own session ticket before inserting a final bid or holding Coin. Unticketed viewers may keep watching and chatting.
+
+The final auction uses the existing five-second bid deadline, Coin holds, automatic payment, pause/resume and timeout handling. Even a sole ticket holder must bid explicitly and can decline. Ending without eligibility sets finalState=SKIPPED and keeps the item hidden in all viewer results. Ending after reveal without a sale retains REVEALED and the product remains public; a successful sale sets SOLD. Host results distinguish the unopened final lot.
+
+The bid panel remains first in the room sidebar, with a short task/ticket summary. Detailed mission and final-round panels follow it, preserving access to the bid input, camera and chat.
+
+### Isolated real mystery E2E
+
+Use only a disposable MySQL test container named `onlinebidflow-mystery-test` with local test credentials, and a separate schema named `auction_mystery_e2e` or beginning with `auction_mystery_e2e_`. Initialize that schema from `database/init.sql` with the database name changed to the dedicated schema before starting the backend; never import that initializer into the main database. Run the new backend at localhost:18082 against this schema with the normal livestream scheduler enabled. The seed Admin test account must retain the documented development password for this opt-in suite. The test creates uniquely named viewers, funds them through the wallet API, and creates actual products via the Admin API.
+
+Build frontend with `VITE_API_BASE_URL=http://localhost:18082`, then set `LIVESTREAM_MYSTERY_E2E=true`, `LIVESTREAM_API_URL=http://localhost:18082`, and `LIVESTREAM_TEST_DATABASE=<dedicated schema>` before running `npx playwright test e2e/livestream-mystery-real.spec.ts`. It launches Admin and two USER Electron windows and tests paid mission completion, reveal, rejection of an unticketed bid, chat, final settlement and wallet balances. Canvas replaces the physical host camera; HTTP/WebSocket/scheduler/payment are real. Restore the frontend's regular API origin after testing.
+
+Phase 3 verification passed 49 livestream/wallet backend tests, 11 frontend unit tests, 16 fixture Electron tests and this real E2E. Existing NORMAL/BLIND suites still have seven failures reproduced on a separate HEAD checkout (H2 gallery schema and BLIND JSON/start assertions); no unrelated fixes were included.

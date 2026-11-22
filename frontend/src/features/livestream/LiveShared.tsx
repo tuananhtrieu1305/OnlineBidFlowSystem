@@ -160,7 +160,7 @@ export function SessionProductImage({ session }: { session: LiveSession }) {
   );
 }
 
-export function ProductThumbnail({ lot }: { lot: Pick<LiveLot, 'imageUrl' | 'name'> }) {
+export function ProductThumbnail({ lot }: { lot: Pick<LiveLot, 'imageUrl' | 'name'> & { hidden?: boolean } }) {
   const src = imageSource(lot.imageUrl);
   const [failed, setFailed] = useState<string | null>(null);
   return src && src !== failed ? (
@@ -174,7 +174,7 @@ export function ProductThumbnail({ lot }: { lot: Pick<LiveLot, 'imageUrl' | 'nam
     />
   ) : (
     <span className="live-product-placeholder" aria-hidden="true">
-      ◇
+      {lot.hidden ? '?' : '◇'}
     </span>
   );
 }
@@ -217,7 +217,7 @@ export function LotQueue({
               )}
             </strong>
             <p>
-              {lot.status === 'SOLD'
+              {lot.hidden ? 'Chỉ tiết lộ khi bán hết hàng thường và có người nhận vé' : lot.status === 'SOLD'
                 ? lot.leaderName + ' · ' + coin(lot.currentPrice)
                 : lotLabels[lot.status] + ' · Khởi điểm ' + coin(lot.startingPrice)}
             </p>

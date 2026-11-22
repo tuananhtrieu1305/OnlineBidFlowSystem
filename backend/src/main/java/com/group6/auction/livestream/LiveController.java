@@ -18,9 +18,9 @@ public class LiveController {
     public LiveController(LiveService service,LiveQueries queries,RealtimeAuthService auth,LivePresence presence,Clock clock){this.service=service;this.queries=queries;this.auth=auth;this.presence=presence;this.clock=clock;}
     private RealtimePrincipal actor(Authentication a){return auth.authenticate(a).orElseThrow(()->new LiveException(401,"UNAUTHENTICATED","Cần đăng nhập."));}
     @GetMapping("/api/livestreams") public Object list(){return queries.list();}
-    @GetMapping("/api/admin/livestreams") public Object adminList(){return queries.list();}
-    @GetMapping("/api/admin/livestreams/{id}") public Object adminDetail(@PathVariable long id){return queries.session(id,true);}
-    @GetMapping("/api/livestreams/{id:[0-9]+}") public Object detail(@PathVariable long id){return queries.session(id,false);}
+    @GetMapping("/api/admin/livestreams") public Object adminList(){return queries.list(true);}
+    @GetMapping("/api/admin/livestreams/{id}") public Object adminDetail(@PathVariable long id){return queries.session(id,true,true);}
+    @GetMapping("/api/livestreams/{id:[0-9]+}") public Object detail(@PathVariable long id,Authentication a){return queries.session(id,false,a!=null&&actor(a).role()==RealtimePrincipal.Role.ADMIN);}
     @GetMapping("/api/livestreams/state") public Object state(Authentication a){return queries.state(actor(a));}
     @GetMapping("/api/livestreams/purchases") public Object purchases(Authentication a){return queries.purchases(actor(a));}
     @GetMapping("/api/livestreams/{id}/snapshot") public Object snapshot(@PathVariable long id,Authentication a){return queries.snapshot(id,actor(a));}

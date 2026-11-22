@@ -8,7 +8,8 @@ const empty = (): LiveState => ({
   sessions: [],
   orders: [],
   wallet: null,
-  registrations: {}
+  registrations: {},
+  mission: null
 });
 let snapshot = empty();
 let actorId = '';
@@ -89,11 +90,15 @@ export function useLiveRoom(id?: string) {
   useEffect(() => {
     if (!id) return;
     roomId = id;
+    snapshot = { ...snapshot, mission: null };
+    emit();
     joined = false;
     sendLive({ type: 'JOIN', sessionId: id });
     return () => {
       sendLive({ type: 'LEAVE' });
       roomId = null;
+      snapshot = { ...snapshot, mission: null };
+      emit();
       joined = false;
     };
   }, [id]);
@@ -200,6 +205,10 @@ export function useLivestream() {
         body = {
           ...action,
           requestId,
+          mystery: action.mystery ? {
+            secretLot: { productId: action.mystery.secretLot.productId, productVersion: action.mystery.secretLot.productVersion, startingPrice: action.mystery.secretLot.startingPrice },
+            missions: action.mystery.missions
+          } : undefined,
           lots: action.lots.map((l) => ({
             productId: l.productId,
             productVersion: l.productVersion,

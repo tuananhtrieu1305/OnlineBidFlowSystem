@@ -6,6 +6,8 @@ import { availableCoin } from './liveState';
 import { useLiveNow, useLivestream, useLiveRoom, liveSaleEffect } from './useLivestream';
 import { coin, LiveAccess, LivePage, LotQueue } from './LiveShared';
 import Gavel from './Gavel';
+import LiveMissionPanel from './LiveMissionPanel';
+import LiveFinalPanel from './LiveFinalPanel';
 import LiveCamera from './LiveCamera';
 import { useLiveVideo, RemoteLiveVideo } from './useLiveVideo';
 import EndLiveDialog from './EndLiveDialog';
@@ -103,11 +105,12 @@ function Room({ host = false }: { host?: boolean }) {
   const ownLeader = lot.leaderId === String(user?.id);
   const won = !host && sold && ownLeader;
   const minimum = lot.leaderId ? (BigInt(lot.currentPrice) + 1n).toString() : lot.startingPrice;
+  const hasTicket = state.mission?.sessionId === session.id && state.mission.userId === String(user?.id) && state.mission.ticket;
   const canBid =
-    connected && !host && user?.role === 'USER' && isOpen && !ownLeader && remaining > 0;
+    connected && !host && user?.role === 'USER' && isOpen && !ownLeader && remaining > 0 && (lot.kind !== 'SECRET' || (session.finalState === 'OPEN' && hasTicket));
   const resultId = sold ? liveSaleEffect(session.id, lot.id) : null;
   const selectableLots = session.lots.filter(
-    (item) => item.id !== lot.id && (item.status === 'QUEUED' || item.status === 'UNSOLD')
+    (item) => item.id !== lot.id && (item.status === 'QUEUED' || item.status === 'UNSOLD') && (item.kind !== 'SECRET' || session.finalState === 'REVEALED')
   );
   const selection = selectableLots.some((item) => item.id === selectedLotId) ? selectedLotId : '';
   const endedViewer = !host && session.status === 'ENDED';
@@ -277,7 +280,7 @@ function Room({ host = false }: { host?: boolean }) {
                 Phiên đã kết thúc. Các kết quả đã chốt được lưu bên dưới.
               </LiveNotice>
             )}
-            {session.status === 'SCHEDULED' && (
+                        {session.status === 'SCHEDULED' && (
               <LiveNotice title={host ? 'Chuẩn bị lên sóng' : 'Đang chờ bắt đầu'}>
                 {host
                   ? 'Kiểm tra camera và danh sách hàng trước khi mở live.'
@@ -337,6 +340,7 @@ function Room({ host = false }: { host?: boolean }) {
             </div>
             <aside className="live-bid-column">
               <section className="live-panel live-bid-panel">
+                {session.mysteryEnabled && <p className="live-round-summary">{host ? `Săn vé bí ẩn · Đã phát ${session.ticketCount ?? 0} vé` : lot.kind === 'SECRET' ? `${lot.name} · ${hasTicket ? 'Bạn có vé vòng cuối' : 'Cần vé để đặt giá; vẫn được xem và chat'}` : state.mission?.status === 'ASSIGNED' ? `${state.mission.title} · ${hasTicket ? 'Đã có vé' : `${state.mission.progress}/2`}` : 'Săn vé bí ẩn · Xem nhiệm vụ của bạn bên dưới'}</p>}
                 <div className="live-price-heading">
                   <p>{sold ? 'Giá chốt' : lot.leaderId ? 'Giá hiện tại' : 'Giá khởi điểm'}</p>
                   <strong key={lot.id + ':' + lot.currentPrice} data-testid="live-current-price">
@@ -540,6 +544,8 @@ function Room({ host = false }: { host?: boolean }) {
                   </Link>
                 )}
               </section>
+              <LiveMissionPanel session={session} mission={state.mission} userId={String(user?.id)} host={host} />
+              <LiveFinalPanel session={session} host={host} ticket={!!hasTicket} pending={pending} connected={connected} onSelect={lotId => void act({ type: 'SELECT', sessionId: session.id, lotId })} />
               <details className="live-panel live-bid-history">
                 <summary>Lịch sử trả giá ({lot.bids.length})</summary>
                 {!lot.bids.length ? (
@@ -619,7 +625,7 @@ function Room({ host = false }: { host?: boolean }) {
                     <span>XEM TRƯỚC SẢN PHẨM</span>
                     <h3>{preview.name}</h3>
                     <p>{preview.description}</p>
-                    <strong>Giá khởi điểm · {coin(preview.startingPrice)}</strong>
+                    <strong>Giá khởi điểm · {preview.hidden ? 'Chưa tiết lộ' : coin(preview.startingPrice)}</strong>
                     {host && (
                       <button
                         className="live-primary"
@@ -629,6 +635,7 @@ function Room({ host = false }: { host?: boolean }) {
                           !connected ||
                           inProgress ||
                           !['LIVE', 'SCHEDULED'].includes(session.status) ||
+                          (preview.kind === 'SECRET' && session.finalState !== 'REVEALED') ||
                           !['QUEUED', 'UNSOLD'].includes(preview.status) ||
                           preview.id === lot.id
                         }
