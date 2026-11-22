@@ -336,14 +336,6 @@ body {
 }
 .guest-shell .live-session-cover {
   background: radial-gradient(ellipse at 50% 20%, #fff9e8, #e5e6d6);
-  border-bottom: 1px solid #e3dfce;
-}
-.guest-shell .live-session-cover img {
-  padding: 25px;
-  filter: drop-shadow(0 12px 8px #28331a18);
-}
-.guest-shell .live-session-body {
-  padding: 22px 23px;
 }
 .guest-shell .live-session-body h2 {
   color: #294e36;
