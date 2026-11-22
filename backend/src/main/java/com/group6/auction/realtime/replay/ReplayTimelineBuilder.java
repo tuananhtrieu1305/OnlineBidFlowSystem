@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.group6.auction.auction.entity.AuctionType;
+import com.group6.auction.auction.blind.BlindClueRevealSchedule.Reveal;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -38,7 +39,8 @@ public class ReplayTimelineBuilder {
     }
 
     public List<ReplayTimelineEvent> buildBlind(ReplayAuctionData auction, ReplayViewer viewer,
-            List<ReplayBidData> bids, List<ReplayClueTradeData> trades, Map<Long,String> bidderNames) {
+            List<ReplayBidData> bids, List<ReplayClueTradeData> trades, Map<Long,String> bidderNames,
+            List<Reveal> systemClues) {
         var events=new ArrayList<TimedReplayEvent>();
         events.add(new TimedReplayEvent(auction.startTime(),0,"AUCTION_STARTED",auctionStartedPayload(auction)));
         var previous=new HashMap<Long,Long>();
@@ -56,7 +58,11 @@ public class ReplayTimelineBuilder {
             payload.put("seller",trade.seller());payload.put("buyer",trade.buyer());payload.put("price",trade.price());
             events.add(new TimedReplayEvent(trade.createdAt(),2,"CLUE_TRADED",payload));
         }
-        events.add(new TimedReplayEvent(finishedAt(auction),3,"AUCTION_FINISHED",finishedPayload(auction)));
+        for(var clue:systemClues){
+            var payload=Map.of("slot",clue.slot(),"content",clue.content());
+            events.add(new TimedReplayEvent(clue.at(),3,"SYSTEM_CLUE_REVEALED",payload));
+        }
+        events.add(new TimedReplayEvent(finishedAt(auction),4,"AUCTION_FINISHED",finishedPayload(auction)));
         return events.stream().sorted(Comparator.comparing(TimedReplayEvent::at).thenComparingInt(TimedReplayEvent::order))
             .map(event->new ReplayTimelineEvent(event.type(),iso(event.at()),event.payload())).toList();
     }

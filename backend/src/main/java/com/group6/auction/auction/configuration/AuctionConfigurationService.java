@@ -71,9 +71,18 @@ public class AuctionConfigurationService {
   return detail(id);
  }
  private void saveBlindSetup(long id,AuctionInput.BlindSetup setup){
+  if(setup.systemClues()==null&&systemClues(id).stream().anyMatch(setup.clues()::contains))
+   throw error(400,"DUPLICATE_CLUE");
   jdbc.update("INSERT INTO blind_settings(auction_id,trade_seconds,bid_seconds) VALUES(?,?,?) ON DUPLICATE KEY UPDATE trade_seconds=VALUES(trade_seconds),bid_seconds=VALUES(bid_seconds)",id,setup.tradeSeconds(),setup.bidSeconds());
   jdbc.update("DELETE FROM blind_clues WHERE auction_id=?",id);
   for(int i=0;i<setup.clues().size();i++)jdbc.update("INSERT INTO blind_clues(auction_id,slot,content) VALUES(?,?,?)",id,i+1,setup.clues().get(i));
+  if(setup.systemClues()!=null){
+   jdbc.update("DELETE FROM blind_system_clues WHERE auction_id=?",id);
+   for(int i=0;i<setup.systemClues().size();i++)jdbc.update("INSERT INTO blind_system_clues(auction_id,slot,content) VALUES(?,?,?)",id,i+1,setup.systemClues().get(i));
+  }
+ }
+ private List<String> systemClues(long id){
+  return jdbc.queryForList("SELECT content FROM blind_system_clues WHERE auction_id=? ORDER BY slot",String.class,id);
  }
  private void future(AuctionInput input){if(!input.start().isAfter(LocalDateTime.ofInstant(clock.instant(),ZoneOffset.UTC)))throw error(409,"START_TIME_PASSED");}
  private String code(){String alphabet="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";StringBuilder code=new StringBuilder();for(int i=0;i<12;i++)code.append(alphabet.charAt(random.nextInt(alphabet.length())));return code.toString();}
@@ -87,7 +96,8 @@ public class AuctionConfigurationService {
   if("BLIND".equals(v.get("auctionType"))){
    long id=rs.getLong("id");var setup=jdbc.query("SELECT trade_seconds,bid_seconds,opened_at FROM blind_settings WHERE auction_id=?",(row,n)->Map.of("tradeSeconds",row.getInt(1),"bidSeconds",row.getInt(2),"opened",row.getObject(3)!=null),id);
    Map<String,Object> blind=new LinkedHashMap<>(setup.isEmpty()?Map.of("tradeSeconds",300,"bidSeconds",100,"opened",false):setup.getFirst());
-   blind.put("clues",jdbc.queryForList("SELECT content FROM blind_clues WHERE auction_id=? ORDER BY slot",String.class,id));v.put("blindSetup",blind);
+   blind.put("clues",jdbc.queryForList("SELECT content FROM blind_clues WHERE auction_id=? ORDER BY slot",String.class,id));
+   blind.put("systemClues",systemClues(id));v.put("blindSetup",blind);
   }
   try{v.put("version","\""+HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(json.writeValueAsBytes(v)))+"\"");}catch(Exception ex){throw new IllegalStateException(ex);}
   Map<String,Object> product=new LinkedHashMap<>();product.put("id",rs.getString("product_id"));product.put("name",rs.getString("product_name"));product.put("imageUrl",rs.getString("product_image"));v.put("product",product);

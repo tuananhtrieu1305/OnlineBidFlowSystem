@@ -16,12 +16,12 @@ describe('auction time and validation',()=>{
   expect(validateAuction({...fields,endTime:fields.startTime},now)).toHaveProperty('endTime');
   expect(validateAuction(fields,new Date('2031-01-01').getTime())).toHaveProperty('startTime');
  });
- it('requires one distinct clue per player',()=>{
+ it('requires a pool of distinct clues that covers the room capacity',()=>{
   const blind={...fields,auctionType:'BLIND' as const,maxParticipants:'4'};
   const now=new Date('2029-01-01').getTime();
   expect(validateAuction(blind,now)).toEqual({});
   expect(validateAuction({...blind,blindClues:['A','B','C']},now)).toHaveProperty('blindClues');
   expect(validateAuction({...blind,blindClues:['A','A','B','C']},now)).toHaveProperty('blindClues');
-  expect(validateAuction({...blind,blindClues:['A','B','C','D','E']},now)).toHaveProperty('blindClues');
+  expect(validateAuction({...blind,blindClues:['A','B','C','D','E']},now)).toEqual({});
  });
 });

@@ -5,7 +5,7 @@ import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 public record AuctionInput(Long productId,String productVersion,AuctionType type,AuctionAccessType access,long price,Long increment,Integer capacity,LocalDateTime start,LocalDateTime end,NormalTimingRepository.Timing normalTiming,BlindSetup blindSetup) {
- public record BlindSetup(List<String> clues,int tradeSeconds,int bidSeconds) {}
+ public record BlindSetup(List<String> clues,int tradeSeconds,int bidSeconds,List<String> systemClues) {}
  public static AuctionInput parse(JsonNode node,boolean create){
   try{
    if(node==null||!node.isObject())throw new IllegalArgumentException();
@@ -37,15 +37,25 @@ public record AuctionInput(Long productId,String productVersion,AuctionType type
    BlindSetup blind=null;var setup=node.get("blindSetup");
    if(type==AuctionType.BLIND&&setup!=null&&!setup.isNull()){
     if(!setup.isObject())throw new IllegalArgumentException();
-    setup.fieldNames().forEachRemaining(key->{if(!Set.of("clues","tradeSeconds","bidSeconds").contains(key))throw new IllegalArgumentException();});
-    var raw=setup.get("clues");if(raw==null||!raw.isArray()||raw.size()!=capacity)throw new IllegalArgumentException();
-    List<String> clues=new ArrayList<>();
-    for(var item:raw){if(!item.isTextual())throw new IllegalArgumentException();String clue=item.textValue().strip();if(clue.isEmpty()||clue.length()>500)throw new IllegalArgumentException();clues.add(clue);}
-    if(new HashSet<>(clues).size()!=capacity)throw new IllegalArgumentException();
-    blind=new BlindSetup(List.copyOf(clues),seconds(setup,"tradeSeconds"),seconds(setup,"bidSeconds"));
+    setup.fieldNames().forEachRemaining(key->{if(!Set.of("clues","systemClues","tradeSeconds","bidSeconds").contains(key))throw new IllegalArgumentException();});
+    var seen=new HashSet<String>();
+    var clues=clues(setup.get("clues"),capacity,100,seen);
+    var systemClues=setup.has("systemClues")?clues(setup.get("systemClues"),0,10,seen):null;
+    blind=new BlindSetup(clues,seconds(setup,"tradeSeconds"),seconds(setup,"bidSeconds"),systemClues);
    }else if(type!=AuctionType.BLIND&&setup!=null&&!setup.isNull())throw new IllegalArgumentException();
    return new AuctionInput(create?amount(node.get("productId")):null,version,type,access,price,increment,capacity,start,end,timing,blind);
   }catch(RuntimeException ex){throw new AuctionConfigurationException(400,"INVALID_AUCTION_CONFIGURATION");}
+ }
+ private static List<String> clues(JsonNode raw,int minimum,int maximum,Set<String> seen) {
+  if(raw==null||!raw.isArray()||raw.size()<minimum||raw.size()>maximum)throw new IllegalArgumentException();
+  List<String> values=new ArrayList<>();
+  for(var item:raw){
+   if(!item.isTextual())throw new IllegalArgumentException();
+   String clue=item.textValue().strip();
+   if(clue.isEmpty()||clue.length()>500||!seen.add(clue))throw new IllegalArgumentException();
+   values.add(clue);
+  }
+  return List.copyOf(values);
  }
  private static int seconds(JsonNode n,String key){var v=n.get(key);if(v==null||!v.isIntegralNumber()||!v.canConvertToInt()||v.intValue()<1||v.intValue()>3600)throw new IllegalArgumentException();return v.intValue();}
  private static String text(JsonNode n,String key){var v=n.get(key);if(v==null||!v.isTextual())throw new IllegalArgumentException();return v.textValue();}
