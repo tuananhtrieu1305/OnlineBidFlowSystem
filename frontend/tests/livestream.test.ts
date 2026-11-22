@@ -121,3 +121,31 @@ describe('server snapshots for livestream', () => {
     ).toBeNull();
   });
 });
+
+
+describe('private livestream missions', () => {
+  const mission = (sessionId = '5', userId = '2', version = '8') => ({ sessionId, userId, version, status: 'ASSIGNED' as const, title: 'Private pair', progress: 1, ticket: false });
+  it('accepts actor-specific mission with the matching room revision and clears explicit null', () => {
+    const current = mergeLiveState(empty(), { session: session('5','8'), mission: mission() }, '2','5');
+    expect(current.mission?.title).toBe('Private pair');
+    expect(mergeLiveState(current, { session: session('5','9'), mission: null }, '2','5').mission).toBeNull();
+  });
+  it('rejects stale mission with the whole old sale snapshot', () => {
+    const current = mergeLiveState(empty(), { session: session('5','9'), mission: { ...mission('5','2','9'), progress: 2, ticket: true } }, '2','5');
+    expect(mergeLiveState(current, { session: session('5','8'), mission: mission() }, '2','5')).toBe(current);
+    expect(current.mission?.ticket).toBe(true);
+  });
+  it('does not accept another account, room or revision and never takes private data from catalog alone', () => {
+    for (const incoming of [mission('5','3'),mission('6'),mission('5','2','7')]) {
+      expect(mergeLiveState(empty(), { session: session('5','8'), mission: incoming }, '2','5').mission).toBeNull();
+    }
+    expect(mergeLiveState(empty(), { sessions: [session('5','8')], mission: mission() }, '2','5').mission).toBeUndefined();
+    expect(mergeLiveState(empty(), { session: session('5','8'), mission: mission() }, '2','6').mission).toBeUndefined();
+  });
+  it('clears a previous account or room mission but preserves it on matching public catalog refresh', () => {
+    const current = { ...empty(), mission: mission(), sessions: [session('5','8')] };
+    expect(mergeLiveState(current, {}, '3','5').mission).toBeNull();
+    expect(mergeLiveState(current, {}, '2','6').mission).toBeNull();
+    expect(mergeLiveState(current, { sessions: [session('5','8')] }, '2','5').mission).toEqual(mission());
+  });
+});

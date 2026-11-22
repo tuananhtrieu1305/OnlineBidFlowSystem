@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { coin, lotLabels, ProductThumbnail } from './LiveShared';
+import LiveFinalPanel from './LiveFinalPanel';
 import type { LiveSession } from './liveState';
 
 export default function ViewerLiveSummary({
@@ -62,6 +63,7 @@ export default function ViewerLiveSummary({
         </div>
       </div>
 
+      <LiveFinalPanel session={session} host={false} ticket={false} pending={false} connected={false} onSelect={() => {}} />
       <div className="live-ended-overview">
         <dl className="live-ended-stats" aria-label="Tổng kết phiên">
           <div>
@@ -116,9 +118,9 @@ export default function ViewerLiveSummary({
                   <span
                     className={'live-ended-lot-status' + (lot.status === 'SOLD' ? ' is-sold' : '')}
                   >
-                    {own ? '✓ Bạn đã thắng' : lotLabels[lot.status]}
+                    {lot.hidden ? 'Không mở' : own ? '✓ Bạn đã thắng' : lotLabels[lot.status]}
                   </span>
-                  <h3>{lot.name}</h3>
+                  <h3>{lot.name}{lot.kind === 'SECRET' && !lot.hidden ? ' · Món cuối' : ''}</h3>
                   {lot.status === 'SOLD' ? (
                     <>
                       <p className="live-ended-product-price">{coin(lot.currentPrice)}</p>
@@ -129,7 +131,7 @@ export default function ViewerLiveSummary({
                       </p>
                     </>
                   ) : (
-                    <p>Giá khởi điểm {coin(lot.startingPrice)}</p>
+                    <p>{lot.hidden ? 'Món bí mật chưa được tiết lộ.' : 'Giá khởi điểm ' + coin(lot.startingPrice)}</p>
                   )}
                 </div>
               </li>

@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import LiveProductCatalog from './LiveProductCatalog';
-import type { Product } from '../products/productApi';
-import { type NewLiveLot } from './liveState';
+import { listProducts, getProduct, type Product } from '../products/productApi';
+import LiveMysterySetup from './LiveMysterySetup';
+import { toLiveLot, demoMissions, missionFloor } from './mysterySetup';
+import { type LiveMissionTemplate, type NewLiveLot } from './liveState';
 import { useLivestream, useLiveSession } from './useLivestream';
 import {
   coin,
@@ -90,6 +92,36 @@ function CreateSession() {
   const [lots, setLots] = useState<NewLiveLot[]>([]);
   const [showProducts, setShowProducts] = useState(false);
   const [notice, setNotice] = useState('');
+  const [mysteryEnabled, setMysteryEnabled] = useState(false);
+  const [secretId, setSecretId] = useState('');
+  const [missions, setMissions] = useState<LiveMissionTemplate[]>([]);
+  const [setupError, setSetupError] = useState('');
+  const [demoBusy, setDemoBusy] = useState(false);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const reads = useRef<AbortController | null>(null);
+  const demoSending = useRef(false);
+  useEffect(() => () => reads.current?.abort(), []);
+  async function configureDemo() {
+    if (demoSending.current) return;
+    demoSending.current = true; setDemoBusy(true); setSetupError('');
+    const controller = new AbortController(); reads.current = controller;
+    try {
+      const page = await listProducts('', 0, controller.signal, true);
+      const candidates = [...page.items].sort((a, b) => Number(!!b.imageUrl) - Number(!!a.imageUrl)).slice(0, 5);
+      if (candidates.length < 3) throw new Error('Cần ít nhất ba sản phẩm khác nhau còn khả dụng. Hãy bổ sung tồn kho rồi thử lại.');
+      const products = await Promise.all(candidates.map(p => getProduct(p.id)));
+      if (controller.signal.aborted) return;
+      const selected = products.map(toLiveLot);
+      setLots(selected); setSecretId(selected[selected.length - 1].productId);
+      setMissions(demoMissions(selected.slice(0, -1))); setMysteryEnabled(true);
+      setTitle('Demo Săn vé bí ẩn');
+      setDescription('Mua đủ hai sản phẩm theo nhiệm vụ để nhận một vé. Bán hết hàng thường và có vé mới mở món bí mật. Giữ Coin để đấu vòng cuối.');
+      setStartsAt(localDateTime(Date.now() + 3600000));
+      setNotice('Đã điền cấu hình demo từ hàng thực tế, dùng giá ước tính làm giá khởi điểm. Kiểm tra rồi bấm Lưu phiên livestream.');
+    } catch (e) {
+      if (!controller.signal.aborted) setSetupError(e instanceof Error && !('isAxiosError' in e) ? e.message : 'Không tải được sản phẩm. Kiểm tra kết nối và thử lại.');
+    } finally { demoSending.current = false; if (!controller.signal.aborted) setDemoBusy(false); }
+  }
 
   function add(product: Product) {
     const lot: NewLiveLot = {
@@ -116,12 +148,21 @@ function CreateSession() {
   }
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    setSetupError('');
+    const regular = lots.filter(l => l.productId !== secretId);
+    const secretLot = lots.find(l => l.productId === secretId);
+    if (mysteryEnabled && (!secretLot || regular.length < 2 || !missions.length || missions.some(m => !m.title.trim() || missionFloor(m, regular) === null || [...m.groupA, ...m.groupB].some(id => !regular.some(l => l.productId === id))))) {
+      setSetupError('Chọn một món bí mật, ít nhất hai món thường và mẫu nhiệm vụ gồm hai nhóm ghép được hai sản phẩm khác nhau.');
+      requestAnimationFrame(() => errorRef.current?.focus());
+      return;
+    }
     const id = await act({
       type: 'CREATE',
       title,
       description,
       startsAt: Date.parse(startsAt),
-      lots
+      lots: mysteryEnabled ? regular : lots,
+      mystery: mysteryEnabled && secretLot ? { secretLot, missions } : undefined
     });
     if (typeof id === 'string') navigate('/admin/livestream/' + id);
   }
@@ -137,7 +178,16 @@ function CreateSession() {
           <p>Chọn hàng, sắp xếp thứ tự và đặt giá khởi điểm cho từng món.</p>
         </div>
       </div>
+      <div className="live-actions">
+        <button type="button" className="live-secondary" disabled={pending || demoBusy} aria-busy={demoBusy} onClick={() => void configureDemo()}>{demoBusy ? 'Đang tải hàng thực tế…' : 'Cấu hình nhanh phiên Săn vé bí ẩn demo'}</button>
+        <p>Điền lại biểu mẫu từ tối đa 5 sản phẩm còn hàng; kiểm tra rồi lưu.</p>
+      </div>
+      {notice && <p role="status" className="live-notice">{notice}</p>}
+      {setupError && <p ref={errorRef} tabIndex={-1} role="alert" className="live-error">{setupError}</p>}
       <form onSubmit={(event) => void submit(event)} className="live-setup">
+        <fieldset disabled={pending || demoBusy} className="live-setup-fields">
+          <legend className="live-sr-only">Cấu hình phiên livestream</legend>
+        <section className="live-panel live-mystery-toggle"><input id="live-mystery-enabled" type="checkbox" checked={mysteryEnabled} onChange={e => setMysteryEnabled(e.target.checked)} aria-controls="live-mystery-config" aria-expanded={mysteryEnabled} /><label htmlFor="live-mystery-enabled">Bật Săn vé bí ẩn</label><p>Tắt để tạo livestream thường như hiện tại.</p></section>
         <section className="live-panel">
           <h2>Thông tin phiên</h2>
           <label htmlFor="live-title">Tên phiên</label>
@@ -246,7 +296,11 @@ function CreateSession() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setLots((items) => items.filter((item) => item.id !== lot.id))}
+                    onClick={() => {
+                      setLots(items => items.filter(item => item.id !== lot.id));
+                      if (secretId === lot.productId) setSecretId('');
+                      setMissions(items => items.map(m => ({ ...m, groupA: m.groupA.filter(id => id !== lot.productId), groupB: m.groupB.filter(id => id !== lot.productId) })));
+                    }}
                   >
                     Bỏ khỏi phiên
                   </button>
@@ -255,6 +309,7 @@ function CreateSession() {
             ))}
           </div>
         </section>
+        {mysteryEnabled && <div id="live-mystery-config"><LiveMysterySetup lots={lots} secretId={secretId} missions={missions} onSecret={id => { setSecretId(id); setMissions(missions.map(m => ({ ...m, groupA: m.groupA.filter(p => p !== id), groupB: m.groupB.filter(p => p !== id) }))); }} onMissions={setMissions} /></div>}
         {error && (
           <p className="live-error" role="alert">
             {error}
@@ -264,16 +319,17 @@ function CreateSession() {
           <Link className="live-secondary" to="/admin/livestream">
             Về danh sách
           </Link>
-          <button className="live-primary" type="submit" disabled={pending}>
+          <button className="live-primary" type="submit" disabled={pending || demoBusy}>
             {pending ? 'Đang lưu…' : 'Lưu phiên livestream'}
           </button>
         </div>
+        </fieldset>
       </form>
       {showProducts && (
         <LiveProductCatalog
           addedIds={lots.map((lot) => lot.productId)}
           notice={notice}
-          disabled={pending}
+          disabled={pending || demoBusy}
           onAdd={add}
           onClose={() => setShowProducts(false)}
         />
@@ -442,7 +498,7 @@ function Results() {
                       <div>
                         <strong>{lot.name}</strong>
                         <small>
-                          Món {index + 1} · #{lot.productId}
+                          {lot.kind === 'SECRET' ? 'Món bí mật cuối phiên' : 'Món ' + (index + 1)} · #{lot.productId}
                         </small>
                       </div>
                     </div>
@@ -469,7 +525,7 @@ function Results() {
                   </td>
                   <td>
                     <span className={'live-result-status is-' + lot.status.toLowerCase()}>
-                      {lotLabels[lot.status]}
+                      {lot.kind === 'SECRET' && session.finalState === 'SKIPPED' ? 'Không mở' : lotLabels[lot.status]}
                     </span>
                   </td>
                 </tr>

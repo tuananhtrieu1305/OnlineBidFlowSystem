@@ -20,10 +20,10 @@ import java.util.*;
 public class LiveService {
     private final JdbcTemplate db; private final Clock clock; private final ProductRepository products;
     private final WalletTransferService wallets; private final AuctionWalletIntegration settlement;
-    private final ApplicationEventPublisher events; private final LivePresence presence;
+    private final ApplicationEventPublisher events; private final LivePresence presence; private final LiveMissionService missions; private final LiveFinalService finals;
     public LiveService(JdbcTemplate db,Clock clock,ProductRepository products,WalletTransferService wallets,
-                       AuctionWalletIntegration settlement,ApplicationEventPublisher events,LivePresence presence) {
-        this.db=db;this.clock=clock;this.products=products;this.wallets=wallets;this.settlement=settlement;this.events=events;this.presence=presence;
+                       AuctionWalletIntegration settlement,ApplicationEventPublisher events,LivePresence presence,LiveMissionService missions,LiveFinalService finals) {
+        this.db=db;this.clock=clock;this.products=products;this.wallets=wallets;this.settlement=settlement;this.events=events;this.presence=presence;this.missions=missions;this.finals=finals;
     }
     private LocalDateTime time(long millis) { return LocalDateTime.ofInstant(Instant.ofEpochMilli(millis),ZoneOffset.UTC); }
     private long insert(String sql,Object... args) {
@@ -51,17 +51,19 @@ public class LiveService {
         if(ids.isEmpty())return null;
         long id=ids.getFirst();
         boolean same=db.queryForObject("SELECT title,description,starts_at FROM livestream_sessions WHERE id=?",(r,n)->r.getString(1).equals(in.title().strip())&&r.getString(2).equals(in.description().strip())&&Objects.equals(LiveQueries.millis(r,"starts_at"),in.startsAt()),id);
-        var lots=db.query("SELECT a.product_id,a.starting_price FROM livestream_lots l JOIN auctions a ON a.id=l.auction_id WHERE l.session_id=? ORDER BY l.position",(r,n)->Map.entry(r.getLong(1),r.getString(2)),id);
+        var lots=db.query("SELECT a.product_id,a.starting_price FROM livestream_lots l JOIN auctions a ON a.id=l.auction_id WHERE l.session_id=? AND l.lot_kind='REGULAR' ORDER BY l.position",(r,n)->Map.entry(r.getLong(1),r.getString(2)),id);
         var requested=in.lots().stream().map(l->Map.entry(l.productId(),l.startingPrice())).toList();
-        if(!same||!lots.equals(requested))throw LiveException.conflict("Mã yêu cầu đã được dùng để tạo phiên khác.");
+        boolean sameMystery=Objects.equals(db.queryForObject("SELECT mystery_config FROM livestream_sessions WHERE id=?",String.class,id),LiveMysteryConfig.signature(in.mystery()));
+        if(!same||!lots.equals(requested)||!sameMystery)throw LiveException.conflict("Mã yêu cầu đã được dùng để tạo phiên khác.");
         return id;
     }
     public long create(RealtimePrincipal actor,LiveInput.Create in) {
         if(actor.role()!=RealtimePrincipal.Role.ADMIN)throw new LiveException(403,"HOST_REQUIRED","Cần tài khoản Admin.");
+        LiveMysteryConfig.validate(in);
         Long existing=created(actor,in);if(existing!=null)return existing;
-        if(in.startsAt()<clock.millis()||in.lots().stream().map(LiveInput.Lot::productId).distinct().count()!=in.lots().size())throw LiveException.conflict("Lịch phát không hợp lệ hoặc trùng sản phẩm.");
+        if(in.startsAt()<clock.millis()||LiveMysteryConfig.allLots(in).stream().map(LiveInput.Lot::productId).distinct().count()!=LiveMysteryConfig.allLots(in).size())throw LiveException.conflict("Lịch phát không hợp lệ hoặc trùng sản phẩm.");
         var locked=new ArrayList<com.group6.auction.product.entity.Product>();
-        for(var item:in.lots().stream().sorted(Comparator.comparing(LiveInput.Lot::productId)).toList()) {
+        for(var item:LiveMysteryConfig.allLots(in).stream().sorted(Comparator.comparing(LiveInput.Lot::productId)).toList()) {
             LivePolicy.amount(item.startingPrice());
             var p=products.findForUpdate(item.productId()).orElseThrow(()->LiveException.conflict("Sản phẩm không tồn tại."));
             if(!ProductVersion.of(p).equals(item.productVersion()))throw LiveException.conflict("Sản phẩm đã thay đổi, hãy chọn lại.");
@@ -70,9 +72,20 @@ public class LiveService {
         existing=created(actor,in);if(existing!=null)return existing;
         for(var p:locked)ProductAvailability.requireAvailable(db,p.getId(),p.getQuantity());
         long id=insert("INSERT INTO livestream_sessions(host_id,create_request_id,title,description,starts_at) VALUES(?,?,?,?,?)",actor.userId(),in.requestId().toString(),in.title().strip(),in.description().strip(),time(in.startsAt()));
-        int position=0;for(var item:in.lots()) {
+        if(in.mystery()!=null)db.update("UPDATE livestream_sessions SET mystery_enabled=TRUE,final_state='LOCKED',mystery_config=? WHERE id=?",LiveMysteryConfig.signature(in.mystery()),id);
+        var lotIds=new HashMap<Long,Long>();
+        int position=0;for(var item:LiveMysteryConfig.allLots(in)) {
             long auction=insert("INSERT INTO auctions(product_id,created_by,auction_type,access_type,starting_price,start_time,end_time,status) VALUES(?,?,'LIVESTREAM','PUBLIC',?,?,NULL,'UPCOMING')",item.productId(),actor.userId(),LivePolicy.amount(item.startingPrice()),time(in.startsAt()));
-            insert("INSERT INTO livestream_lots(session_id,auction_id,position) VALUES(?,?,?)",id,auction,position++);
+            long lotId=insert("INSERT INTO livestream_lots(session_id,auction_id,position,lot_kind) VALUES(?,?,?,?)",id,auction,position++,in.mystery()!=null&&item==in.mystery().secretLot()?"SECRET":"REGULAR");
+            lotIds.put(item.productId(),lotId);
+        }
+        if(in.mystery()!=null) {
+            int templatePosition=0;
+            for(var mission:in.mystery().missions()) {
+                long template=insert("INSERT INTO livestream_mission_templates(session_id,position,title) VALUES(?,?,?)",id,templatePosition++,mission.title().strip());
+                for(var productId:mission.groupA())db.update("INSERT INTO livestream_mission_choices(template_id,group_key,lot_id) VALUES(?,'A',?)",template,lotIds.get(productId));
+                for(var productId:mission.groupB())db.update("INSERT INTO livestream_mission_choices(template_id,group_key,lot_id) VALUES(?,'B',?)",template,lotIds.get(productId));
+            }
         }
         changed(id,"CREATED");return id;
     }
@@ -83,7 +96,10 @@ public class LiveService {
         changed(id,"REGISTERED");
     }
     public void join(long id,LivePresence.Client client) {
-        Session s=lock(id);boolean host=s.host==client.actor.userId();presence.join(client,id,host);
+        Session s=lock(id);boolean host=s.host==client.actor.userId();
+        // Resolve overdue sales/host lease before choosing the late viewer's available pair.
+        if(!host&&client.actor.role()==RealtimePrincipal.Role.USER&&Boolean.TRUE.equals(db.queryForObject("SELECT mystery_enabled FROM livestream_sessions WHERE id=?",Boolean.class,id)))tick(id,false);
+        presence.join(client,id,host);
         if(host) {
             if(s.status.equals("LIVE"))pause(s,clock.millis());
             db.update("UPDATE livestream_sessions SET host_socket_id=?,host_last_seen=?,publisher_ready=FALSE,media_generation=media_generation+1 WHERE id=?",client.socket.getId(),time(clock.millis()),id);
@@ -91,6 +107,7 @@ public class LiveService {
             var seats=db.queryForList("SELECT seat_number FROM livestream_participants WHERE session_id=? AND user_id=?",Integer.class,id,client.actor.userId());
             if(seats.isEmpty()) { int seat=db.queryForObject("SELECT COALESCE(MAX(seat_number),0)+1 FROM livestream_participants WHERE session_id=?",Integer.class,id);db.update("INSERT INTO livestream_participants(session_id,user_id,seat_number) VALUES(?,?,?)",id,client.actor.userId(),seat); }
         }
+        if(!host)missions.assign(id,client.actor);
         changed(id,"JOINED");
     }
     public void heartbeat(long id,LivePresence.Client c) {Session s=lock(id);owner(s,c.actor);if(!Objects.equals(s.socket,c.socket.getId()))throw LiveException.conflict("Kết nối host đã thay đổi.");db.update("UPDATE livestream_sessions SET host_last_seen=? WHERE id=?",time(clock.millis()),id);}
@@ -102,6 +119,7 @@ public class LiveService {
         if(!prior.isEmpty()){if(prior.getFirst()!=amount)throw LiveException.conflict("Mã yêu cầu đã dùng cho giá khác.");return;}
         if(a.role()!=RealtimePrincipal.Role.USER||!presence.joined(id,a.userId()))throw new LiveException(403,"JOIN_REQUIRED","Hãy vào phòng bằng tài khoản người dùng.");
         if(l.id!=lotId||!s.status.equals("LIVE")||!l.phase.equals("OPEN")||!s.ready||!healthy(s,clock.millis()))throw LiveException.conflict("Lượt đấu chưa mở hoặc đang tạm dừng.");
+        finals.requireTicket(id,l.id,a.userId());
         Leader previous=leader(l);LivePolicy.validateBid(l.floor,previous==null?null:previous.amount,amount,l.deadline==null?null:Instant.ofEpochMilli(l.deadline),clock.instant());
         db.update("INSERT IGNORE INTO auction_participants(auction_id,user_id,joined_at) VALUES(?,?,?)",l.auction,a.userId(),time(clock.millis()));
         insert("INSERT INTO bids(auction_id,user_id,amount,created_at,request_id) VALUES(?,?,?,?,?)",l.auction,a.userId(),amount,time(clock.millis()),in.requestId().toString());
@@ -111,8 +129,8 @@ public class LiveService {
         LivePolicy.validateBid(l.floor,previous==null?null:previous.amount,amount,l.deadline==null?null:Instant.ofEpochMilli(l.deadline),clock.instant());
         db.update("UPDATE auctions SET end_time=? WHERE id=?",time(clock.millis()+5000),l.auction);changed(id,"BID_ACCEPTED");
     }
-    private void sold(Session s,Lot l) {Leader winner=leader(l);if(winner==null)return;settlement.finishSold(l.auction,winner.user,winner.amount);db.update("UPDATE livestream_lots SET phase='SOLD' WHERE id=?",l.id);changed(s.id,"LOT_SOLD");}
-    private void unsold(Lot l) {if(l.phase.equals("SOLD")||l.phase.equals("UNSOLD"))return;if(l.phase.equals("OPEN"))settlement.finishUnsold(l.auction);else db.update("UPDATE auctions SET status='UNSOLD',finished_at=? WHERE id=?",time(clock.millis()),l.auction);db.update("UPDATE livestream_lots SET phase='UNSOLD' WHERE id=?",l.id);}
+    private void sold(Session s,Lot l) {Leader winner=leader(l);if(winner==null)return;settlement.finishSold(l.auction,winner.user,winner.amount);db.update("UPDATE livestream_lots SET phase='SOLD' WHERE id=?",l.id);missions.afterPaid(s.id,winner.user);finals.sold(s.id,l.id);changed(s.id,"LOT_SOLD");}
+    private void unsold(Lot l) {if(l.phase.equals("SOLD")||l.phase.equals("UNSOLD"))return;if(l.phase.equals("OPEN"))settlement.finishUnsold(l.auction);else db.update("UPDATE auctions SET status='UNSOLD',finished_at=? WHERE id=?",time(clock.millis()),l.auction);db.update("UPDATE livestream_lots SET phase='UNSOLD' WHERE id=?",l.id);finals.unsold(l.id);}
     private void pause(Session s,long at) {
         Lot l=lot(s);if(l.phase.equals("OPEN")&&l.deadline!=null&&l.deadline<=at)sold(s,l);
         Long remaining=l.phase.equals("OPEN")&&l.deadline!=null?Math.max(0,l.deadline-at):null;
@@ -123,6 +141,9 @@ public class LiveService {
         var prior=db.queryForList("SELECT command,lot_id FROM livestream_commands WHERE session_id=? AND user_id=? AND request_id=?",id,a.userId(),in.requestId().toString());
         if(!prior.isEmpty()){Object recorded=prior.getFirst().get("lot_id");Long recordedId=recorded==null?null:Long.valueOf(recorded.toString());if(!command.equals(prior.getFirst().get("command"))||!Objects.equals(in.lotId(),recordedId))throw LiveException.conflict("Mã yêu cầu bị dùng lại.");return;}
         Lot l=lot(s);
+        if(command.equals("select")||command.equals("reopen")) {
+            if(in.lotId()!=null)finals.requireReady(id,in.lotId(),false);
+        } else if(command.equals("open")||command.equals("start"))finals.requireReady(id,l.id,false);
         if(command.equals("reopen")&&in.lotId()!=null&&in.lotId()!=l.id) {
             if(l.phase.equals("OPEN")&&leader(l)!=null)throw LiveException.conflict("Chờ chốt sản phẩm hiện tại.");
             var positions=db.queryForList("SELECT position FROM livestream_lots WHERE session_id=? AND id=? AND phase='UNSOLD'",Integer.class,id,in.lotId());
@@ -137,8 +158,8 @@ public class LiveService {
             case "select" -> selectLot(s,l,in.lotId());
             case "start" -> {if(!s.status.equals("SCHEDULED")||!s.ready||!healthy(s,clock.millis()))throw LiveException.conflict("Host cần kết nối và bật camera trước khi phát.");db.update("UPDATE livestream_sessions SET status='LIVE' WHERE id=?",id);db.update("UPDATE livestream_lots SET phase='PRESENTING' WHERE id=?",l.id);db.update("INSERT IGNORE INTO livestream_notifications(session_id,user_id,created_at) SELECT session_id,user_id,? FROM livestream_registrations WHERE session_id=?",time(clock.millis()),id);}
             case "resume" -> {if(!s.status.equals("PAUSED")||s.pause==null||s.pause<=clock.millis()||!s.ready||!healthy(s,clock.millis()))throw LiveException.conflict("Kiểm tra camera và kết nối trước khi tiếp tục.");if(l.phase.equals("OPEN")&&s.remaining!=null)db.update("UPDATE auctions SET end_time=? WHERE id=?",time(clock.millis()+s.remaining),l.auction);db.update("UPDATE livestream_sessions SET status='LIVE',remaining_ms=NULL,pause_until=NULL WHERE id=?",id);}
-            case "open" -> {if(!s.status.equals("LIVE")||!l.phase.equals("PRESENTING")||!healthy(s,clock.millis())||!s.ready)throw LiveException.conflict("Chưa thể mở đấu.");db.update("UPDATE auctions SET status='RUNNING',start_time=?,end_time=NULL WHERE id=?",time(clock.millis()),l.auction);db.update("UPDATE livestream_lots SET phase='OPEN' WHERE id=?",l.id);}
-            case "next" -> {if(!s.status.equals("LIVE")||l.phase.equals("OPEN")&&leader(l)!=null)throw LiveException.conflict("Chờ server chốt lượt đang đấu.");var next=db.queryForList("SELECT position FROM livestream_lots WHERE session_id=? AND phase='QUEUED' ORDER BY position LIMIT 1",Integer.class,id);if(next.isEmpty())throw LiveException.conflict("Đã đến sản phẩm cuối.");unsold(l);db.update("UPDATE livestream_sessions SET current_lot_index=? WHERE id=?",next.getFirst(),id);db.update("UPDATE livestream_lots SET phase='PRESENTING' WHERE session_id=? AND position=?",id,next.getFirst());}
+            case "open" -> {if(!s.status.equals("LIVE")||!l.phase.equals("PRESENTING")||!healthy(s,clock.millis())||!s.ready)throw LiveException.conflict("Chưa thể mở đấu.");db.update("UPDATE auctions SET status='RUNNING',start_time=?,end_time=NULL WHERE id=?",time(clock.millis()),l.auction);db.update("UPDATE livestream_lots SET phase='OPEN' WHERE id=?",l.id);finals.opened(id,l.id);}
+            case "next" -> {if(!s.status.equals("LIVE")||l.phase.equals("OPEN")&&leader(l)!=null)throw LiveException.conflict("Chờ server chốt lượt đang đấu.");var next=db.queryForList("SELECT position FROM livestream_lots WHERE session_id=? AND phase='QUEUED' AND (lot_kind='REGULAR' OR EXISTS(SELECT 1 FROM livestream_sessions s WHERE s.id=livestream_lots.session_id AND s.final_state='REVEALED')) ORDER BY position LIMIT 1",Integer.class,id);if(next.isEmpty())throw LiveException.conflict("Đã đến sản phẩm cuối.");finals.requireReady(id,lot(new Session(s.id,s.host,s.status,next.getFirst(),s.socket,s.seen,s.ready,s.remaining,s.pause)).id,false);unsold(l);db.update("UPDATE livestream_sessions SET current_lot_index=? WHERE id=?",next.getFirst(),id);db.update("UPDATE livestream_lots SET phase='PRESENTING' WHERE session_id=? AND position=?",id,next.getFirst());}
             case "reopen" -> {if(!s.status.equals("LIVE")||!l.phase.equals("UNSOLD"))throw LiveException.conflict("Chỉ đấu lại món chưa bán.");db.update("UPDATE auctions SET status='UPCOMING',finished_at=NULL,end_time=NULL WHERE id=?",l.auction);db.update("UPDATE livestream_lots SET phase='PRESENTING' WHERE id=?",l.id);}
             case "end" -> {if(l.phase.equals("OPEN")&&leader(l)!=null)throw LiveException.conflict("Chờ chốt sản phẩm đang có người dẫn đầu.");end(s);}
             default -> throw new LiveException(400,"INVALID_COMMAND","Lệnh không hợp lệ.");
@@ -161,7 +182,7 @@ public class LiveService {
         db.update("UPDATE livestream_sessions SET current_lot_index=? WHERE id=?",position,s.id);
         db.update("UPDATE livestream_lots SET phase=? WHERE id=?",s.status.equals("LIVE")?"PRESENTING":"QUEUED",target.id);
     }
-    private void end(Session s) {for(int index:db.queryForList("SELECT position FROM livestream_lots WHERE session_id=? ORDER BY position",Integer.class,s.id)){unsold(lot(new Session(s.id,s.host,s.status,index,s.socket,s.seen,s.ready,s.remaining,s.pause)));}db.update("UPDATE livestream_sessions SET status='ENDED',publisher_ready=FALSE,remaining_ms=NULL,pause_until=NULL WHERE id=?",s.id);changed(s.id,"ENDED");}
-    public void tick(long id,boolean restart) {Session s=lock(id);long now=clock.millis();if(s.status.equals("LIVE")){if(restart||!healthy(s,now))pause(s,Math.min(now,s.seen==null?now:s.seen+3000));else {Lot l=lot(s);if(l.phase.equals("OPEN")&&l.deadline!=null&&l.deadline<=now)sold(s,l);}}else if(s.status.equals("PAUSED")&&s.pause!=null&&s.pause<=now)end(s);}
+    private void end(Session s) {for(int index:db.queryForList("SELECT position FROM livestream_lots WHERE session_id=? ORDER BY position",Integer.class,s.id)){unsold(lot(new Session(s.id,s.host,s.status,index,s.socket,s.seen,s.ready,s.remaining,s.pause)));}db.update("UPDATE livestream_sessions SET status='ENDED',publisher_ready=FALSE,remaining_ms=NULL,pause_until=NULL WHERE id=?",s.id);finals.ended(s.id);changed(s.id,"ENDED");}
+    public void tick(long id,boolean restart) {Session s=lock(id);long now=clock.millis();if(s.status.equals("LIVE")){if(restart||!healthy(s,now))pause(s,Math.min(now,s.seen==null?now:s.seen+3000));else {Lot l=lot(s);if(l.phase.equals("OPEN")&&l.deadline!=null&&l.deadline<=now)sold(s,l);}}else if(s.status.equals("PAUSED")&&s.pause!=null&&s.pause<=now)end(s);if(finals.reveal(id))changed(id,"FINAL_REVEALED");}
     public void chat(long id,RealtimePrincipal a,LiveInput.Chat in) {lock(id);if(!presence.joined(id,a.userId()))throw new LiveException(403,"JOIN_REQUIRED","Hãy vào phòng trước khi chat.");var prior=db.queryForList("SELECT content FROM livestream_chat WHERE session_id=? AND user_id=? AND request_id=?",String.class,id,a.userId(),in.requestId().toString());if(!prior.isEmpty()){if(!prior.getFirst().equals(in.text().strip()))throw LiveException.conflict("Mã yêu cầu đã dùng.");return;}Long recent=db.queryForObject("SELECT COUNT(*) FROM livestream_chat WHERE session_id=? AND user_id=? AND sent_at>?",Long.class,id,a.userId(),time(clock.millis()-1000));if(recent>0)throw new LiveException(429,"CHAT_RATE_LIMIT","Vui lòng đợi một giây.");db.update("INSERT INTO livestream_chat(session_id,user_id,request_id,content,sent_at) VALUES(?,?,?,?,?)",id,a.userId(),in.requestId().toString(),in.text().strip(),time(clock.millis()));changed(id,"CHAT");}
 }

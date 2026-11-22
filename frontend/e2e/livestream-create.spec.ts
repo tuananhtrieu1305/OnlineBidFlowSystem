@@ -157,3 +157,29 @@ test('keeps catalog actions visible at small window sizes and enforces thirty di
     .click();
   await expect(page.getByRole('button', { name: '＋ Thêm sản phẩm', exact: true })).toBeEnabled();
 });
+
+
+test('fills a mystery demo from real catalog data and submits separate secret and mission groups', async ({}, info) => {
+  await page.route('**/api/admin/products/*', r => {
+    const id = new URL(r.request().url()).pathname.split('/').pop();
+    return r.fulfill({ json: products.find(p => p.id === id) });
+  });
+  let submitted: any;
+  await page.route('**/api/admin/livestreams', async r => {
+    submitted = r.request().postDataJSON();
+    await r.fulfill({ json: { id: '1' } });
+  });
+  await page.getByRole('button', { name: 'Cấu hình nhanh phiên Săn vé bí ẩn demo' }).click();
+  await expect(page.getByLabel('Tên phiên', { exact: true })).toHaveValue('Demo Săn vé bí ẩn');
+  await expect(page.getByLabel('Bật Săn vé bí ẩn')).toBeChecked();
+  await expect(page.getByRole('radio', { checked: true })).toHaveCount(1);
+  await expect(page.locator('.live-selected-lot')).toHaveCount(5);
+  await expect(page.getByLabel('Mô tả nhiệm vụ (bắt buộc)')).toHaveCount(3);
+  await page.screenshot({ path: info.outputPath('mystery-demo.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Lưu phiên livestream' }).click();
+  await expect.poll(() => submitted).toBeTruthy();
+  expect(submitted.lots.map((l: any) => l.productId)).toEqual(['1', '2', '3', '4']);
+  expect(submitted.mystery.secretLot).toEqual({ productId: '5', productVersion: 'v5', startingPrice: '104' });
+  expect(submitted.mystery.missions).toHaveLength(3);
+  expect(submitted.mystery.missions[0]).toEqual({ title: 'Mua Sản phẩm 01 và Sản phẩm 02', groupA: ['1'], groupB: ['2'] });
+});

@@ -1,5 +1,16 @@
 export type LiveBid = { id: string; userId: string; username: string; amount: string; at: number };
+export type LiveMissionTemplate = { title: string; groupA: string[]; groupB: string[] };
+export type LiveMissionChoice = { productId: string; name: string; purchased: boolean };
+export type LivePersonalMission = {
+  sessionId: string; userId: string; version: string;
+  status: 'ASSIGNED' | 'UNAVAILABLE' | 'WAITING' | 'CLOSED';
+  title?: string; groupA?: LiveMissionChoice[]; groupB?: LiveMissionChoice[];
+  progress: number; ticket: boolean;
+};
+export type LiveMysterySetup = { secretLot: NewLiveLot; missions: LiveMissionTemplate[] };
 export type LiveLot = {
+  kind?: 'REGULAR' | 'SECRET';
+  hidden?: boolean;
   id: string;
   productId: string;
   auctionId: string;
@@ -22,6 +33,10 @@ export type LiveMessage = {
   at: number;
 };
 export type LiveSession = {
+  ticketCount?: number;
+  mysteryEnabled?: boolean;
+  finalState?: 'DISABLED' | 'LOCKED' | 'REVEALED' | 'OPEN' | 'SOLD' | 'SKIPPED';
+  missionTemplates?: LiveMissionTemplate[];
   id: string;
   title: string;
   description: string;
@@ -52,6 +67,7 @@ export type LiveOrder = {
   paid: boolean;
 };
 export type LiveState = {
+  mission?: LivePersonalMission | null;
   serverNow?: number;
   wallet: { availableBalance: string; lockedBalance: string } | null;
   sessions: LiveSession[];
@@ -70,6 +86,7 @@ export type LiveAction =
       description: string;
       startsAt: number;
       lots: NewLiveLot[];
+      mystery?: LiveMysterySetup;
     }
   | {
       type: 'REGISTER' | 'START' | 'OPEN' | 'NEXT' | 'END' | 'RESUME';
@@ -83,6 +100,7 @@ export const availableCoin = (state: LiveState, _userId: string) =>
   state.wallet?.availableBalance ?? '0';
 
 export type LivePayload = {
+  mission?: LivePersonalMission | null;
   sessions?: LiveSession[];
   session?: LiveSession;
   orders?: LiveOrder[];
@@ -116,8 +134,15 @@ export function mergeLiveState(
     if (current && !sessions.some((s) => s.id === current.id)) sessions.push(current);
   }
   if (data.session) sessions = [...sessions.filter((s) => s.id !== data.session!.id), data.session];
+  let mission = state.mission;
+  if (mission && (mission.userId !== actorId || mission.sessionId !== roomId)) mission = null;
+  if (data.session?.id === roomId && data.mission !== undefined) {
+    const incoming = data.mission;
+    mission = incoming && incoming.userId === actorId && incoming.sessionId === roomId && incoming.version === data.session.version ? incoming : null;
+  }
   return {
     ...state,
+    mission,
     sessions,
     serverNow: data.serverNow ?? state.serverNow,
     wallet: data.wallet === undefined ? state.wallet : data.wallet,

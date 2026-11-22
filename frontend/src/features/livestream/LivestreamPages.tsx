@@ -1,3 +1,4 @@
+import MysteryRules from './MysteryRules';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
@@ -135,6 +136,7 @@ export function LivestreamDetailPage() {
           {error}
         </p>
       )}
+      {session.mysteryEnabled && <MysteryRules />}
       <div className="live-detail-grid">
         <div>
           <div className="live-stage live-product-stage">

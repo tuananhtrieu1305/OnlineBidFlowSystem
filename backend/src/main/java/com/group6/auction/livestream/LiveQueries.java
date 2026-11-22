@@ -16,16 +16,19 @@ public class LiveQueries {
     private final JdbcTemplate jdbc;
     private final Clock clock;
     private final LivePresence presence;
-    public LiveQueries(JdbcTemplate jdbc, Clock clock, LivePresence presence) { this.jdbc=jdbc; this.clock=clock; this.presence=presence; }
+    private final LiveMissionService missions;
+    public LiveQueries(JdbcTemplate jdbc, Clock clock, LivePresence presence, LiveMissionService missions) { this.jdbc=jdbc; this.clock=clock; this.presence=presence; this.missions=missions; }
     static Long millis(ResultSet rs, String column) throws SQLException {
         var time=rs.getObject(column, LocalDateTime.class);
         return time==null?null:time.toInstant(ZoneOffset.UTC).toEpochMilli();
     }
-    public List<Map<String,Object>> list() {
+    public List<Map<String,Object>> list() { return list(false); }
+    public List<Map<String,Object>> list(boolean admin) {
         return jdbc.queryForList("SELECT id FROM livestream_sessions ORDER BY starts_at DESC,id DESC LIMIT 100", Long.class)
-                .stream().map(id -> session(id, false)).toList();
+                .stream().map(id -> session(id, false, admin)).toList();
     }
-    public Map<String,Object> session(long id, boolean room) {
+    public Map<String,Object> session(long id, boolean room) { return session(id,room,false); }
+    public Map<String,Object> session(long id, boolean room, boolean admin) {
         var rows=jdbc.query("""
                 SELECT s.*,u.username FROM livestream_sessions s JOIN users u ON u.id=s.host_id WHERE s.id=?
                 """, (rs,n) -> {
@@ -33,6 +36,7 @@ public class LiveQueries {
             value.put("id",rs.getString("id")); value.put("hostId",rs.getString("host_id")); value.put("hostName",rs.getString("username"));
             value.put("title",rs.getString("title")); value.put("description",rs.getString("description"));
             value.put("startsAt",millis(rs,"starts_at")); value.put("status",rs.getString("status"));
+            value.put("mysteryEnabled",rs.getBoolean("mystery_enabled")); value.put("finalState",rs.getString("final_state"));
             value.put("currentLotIndex",rs.getInt("current_lot_index")); value.put("version",rs.getString("revision"));
             value.put("publisherReady",rs.getBoolean("publisher_ready")); value.put("mediaGeneration",rs.getString("media_generation"));
             value.put("remainingMs",rs.getObject("remaining_ms",Long.class)); value.put("pauseUntil",millis(rs,"pause_until"));
@@ -41,7 +45,7 @@ public class LiveQueries {
         if(rows.isEmpty()) throw new LiveException(404,"LIVE_NOT_FOUND","Không tìm thấy phiên livestream.");
         var value=rows.getFirst();
         var lots=jdbc.query("""
-                SELECT l.id AS lot_id,l.phase,l.position,a.*,p.name,p.description,p.image_url,
+                SELECT l.id AS lot_id,l.phase,l.position,l.lot_kind,a.*,p.name,p.description,p.image_url,
                 (SELECT b.amount FROM bids b WHERE b.auction_id=a.id ORDER BY b.amount DESC,b.id ASC LIMIT 1) AS current_amount,
                 (SELECT b.user_id FROM bids b WHERE b.auction_id=a.id ORDER BY b.amount DESC,b.id ASC LIMIT 1) AS leader_id,
                 (SELECT u.username FROM bids b JOIN users u ON u.id=b.user_id WHERE b.auction_id=a.id ORDER BY b.amount DESC,b.id ASC LIMIT 1) AS leader_name
@@ -49,6 +53,13 @@ public class LiveQueries {
                 WHERE l.session_id=? ORDER BY l.position
                 """,(rs,n) -> {
             Map<String,Object> lot=new LinkedHashMap<>();
+            lot.put("kind",rs.getString("lot_kind"));
+            if("SECRET".equals(rs.getString("lot_kind")) && !admin && Set.of("LOCKED","SKIPPED").contains(value.get("finalState"))) {
+                lot.put("id",rs.getString("lot_id")); lot.put("name","Hộp bí mật"); lot.put("description","");
+                lot.put("imageUrl",null); lot.put("status",rs.getString("phase")); lot.put("hidden",true);
+                lot.put("bids",List.of()); lot.put("deadline",null);
+                return lot;
+            }
             lot.put("id",rs.getString("lot_id")); lot.put("auctionId",rs.getString("id")); lot.put("productId",rs.getString("product_id"));
             lot.put("name",rs.getString("name")); lot.put("description",Objects.requireNonNullElse(rs.getString("description"),""));
             lot.put("imageUrl",rs.getString("image_url")); lot.put("startingPrice",rs.getString("starting_price"));
@@ -65,6 +76,14 @@ public class LiveQueries {
             return lot;
         },id);
         value.put("lots",lots);
+        if(admin && Boolean.TRUE.equals(value.get("mysteryEnabled")))value.put("ticketCount",jdbc.queryForObject("SELECT COUNT(*) FROM livestream_tickets WHERE session_id=?",Long.class,id));
+        if(admin && Boolean.TRUE.equals(value.get("mysteryEnabled"))) {
+            value.put("missionTemplates",jdbc.query("SELECT id,title FROM livestream_mission_templates WHERE session_id=? ORDER BY position",(rs,n) -> {
+                Map<String,Object> mission=new LinkedHashMap<>();mission.put("title",rs.getString("title"));
+                for(String group:List.of("A","B"))mission.put("group"+group,jdbc.queryForList("SELECT a.product_id FROM livestream_mission_choices c JOIN livestream_lots l ON l.id=c.lot_id JOIN auctions a ON a.id=l.auction_id WHERE c.template_id=? AND c.group_key=? ORDER BY a.product_id",String.class,rs.getLong("id"),group));
+                return mission;
+            },id));
+        }
         var clients=room?presence.room(id):List.<LivePresence.Client>of();
         var onlineIds=clients.stream().filter(c -> !c.host).map(c -> c.actor.userId()).collect(java.util.stream.Collectors.toSet());
         value.put("participants",room?jdbc.query("""
@@ -100,7 +119,7 @@ public class LiveQueries {
     }
     public Map<String,Object> state(RealtimePrincipal actor) {
         Map<String,Object> value=new LinkedHashMap<>();
-        value.put("sessions",list()); value.put("orders",purchases(actor)); value.put("wallet",wallet(actor)); value.put("serverNow",clock.millis());
+        value.put("sessions",list(actor.role()==RealtimePrincipal.Role.ADMIN)); value.put("orders",purchases(actor)); value.put("wallet",wallet(actor)); value.put("serverNow",clock.millis());
         value.put("registrations",jdbc.queryForList("SELECT session_id FROM livestream_registrations WHERE user_id=?",String.class,actor.userId()));
         value.put("notifications",jdbc.query("""
                 SELECT n.session_id,s.title FROM livestream_notifications n JOIN livestream_sessions s ON s.id=n.session_id
@@ -110,7 +129,8 @@ public class LiveQueries {
     }
     public Map<String,Object> snapshot(long id, RealtimePrincipal actor) {
         Map<String,Object> result=new LinkedHashMap<>();
-        result.put("session",session(id,true)); result.put("wallet",wallet(actor));
+        var session=session(id,true,actor.role()==RealtimePrincipal.Role.ADMIN);
+        result.put("session",session); result.put("mission",missions.personal(id,actor,session)); result.put("wallet",wallet(actor));
         result.put("orders",purchases(actor)); result.put("serverNow",clock.millis());
         return result;
     }

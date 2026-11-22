@@ -207,7 +207,7 @@ export default function ProductShowcase({
                             (source ? 'Không tải được ảnh' : 'Chưa có ảnh') + ': ' + lot.name
                           }
                         >
-                          <span aria-hidden="true">◇</span>
+                          <span aria-hidden="true">{lot.hidden ? '?' : '◇'}</span>
                           <p>{source ? 'Không tải được ảnh' : 'Chưa có ảnh sản phẩm'}</p>
                         </div>
                       )}
@@ -261,7 +261,7 @@ export default function ProductShowcase({
                       }}
                     />
                   ) : (
-                    <span className="showcase-mini-empty">◇</span>
+                    <span className="showcase-mini-empty">{item.hidden ? '?' : '◇'}</span>
                   )}
                 </span>
                 <i className="showcase-mini-plinth" aria-hidden="true" />
