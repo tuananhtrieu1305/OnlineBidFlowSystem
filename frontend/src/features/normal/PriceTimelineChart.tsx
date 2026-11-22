@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { NormalAuction, NormalBid } from './types';
 import { roomCoin } from './roomExperience';
@@ -19,10 +19,13 @@ function initials(name: string) {
 type Props = { auction: NormalAuction; serverTime: number; username: string; stale: boolean; connected: boolean; visible?: boolean; fullscreenSignal?: number };
 
 function PriceTimelineChart({ auction, serverTime, username, stale, connected, visible = true, fullscreenSignal = 0 }: Props) {
-  const root = useRef<HTMLElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const expandButton = useRef<HTMLButtonElement>(null);
+  const returnFocusToExpand = useRef(false);
   const stage = useRef<HTMLDivElement>(null);
   const pan = useRef<{ pointerId: number; x: number; scroll: number } | null>(null);
-  const replayPositioned = useRef(false);
+  const positionedStage = useRef<HTMLDivElement | null>(null);
+  const replayProgress = useRef(1);
   const handledFullscreenSignal = useRef(0);
   const [dragging, setDragging] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -33,7 +36,21 @@ function PriceTimelineChart({ auction, serverTime, username, stale, connected, v
   const [range, setRange] = useState<'recent' | 'all'>('recent');
   const titleId = useId();
   const descId = useId();
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (!fullscreen) {
+      if (returnFocusToExpand.current) expandButton.current?.focus();
+      returnFocusToExpand.current = false;
+      return;
+    }
+    const element = dialog.current;
+    if (element && !element.open) {
+      element.showModal();
+      expandButton.current?.focus();
+    }
+    return () => { if (element?.open) element.close(); };
+  }, [fullscreen]);
+
+  useLayoutEffect(() => {
     const element = stage.current;
     if (!element) return;
     const measure = () => { if (element.clientWidth > 0 && element.clientHeight > 0) setSize(old => old.width === element.clientWidth && old.height === element.clientHeight ? old : { width: element.clientWidth, height: element.clientHeight }); };
@@ -41,52 +58,25 @@ function PriceTimelineChart({ auction, serverTime, username, stale, connected, v
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const syncFullscreen = () => setFullscreen(document.fullscreenElement === root.current);
-    document.addEventListener('fullscreenchange', syncFullscreen);
-    return () => document.removeEventListener('fullscreenchange', syncFullscreen);
-  }, []);
-
-  useEffect(() => {
-    if (!fullscreen || document.fullscreenElement === root.current) return;
-    const leaveFallback = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setFullscreen(false);
-    };
-    document.addEventListener('keydown', leaveFallback);
-    return () => document.removeEventListener('keydown', leaveFallback);
   }, [fullscreen]);
 
-  const enterFullscreen = useCallback(async () => {
-    const element = root.current;
-    if (!element) return;
-    if (element.requestFullscreen) {
-      try {
-        await element.requestFullscreen();
-        return;
-      } catch {
-        // Use the in-page expanded view if browser fullscreen is unavailable.
-      }
+  function toggleFullscreen() {
+    const element = stage.current;
+    if (finished && element && element.scrollWidth > element.clientWidth) {
+      replayProgress.current = element.scrollLeft / (element.scrollWidth - element.clientWidth);
     }
-    setFullscreen(true);
-  }, []);
-
-  async function toggleFullscreen() {
-    if (!fullscreen) {
-      await enterFullscreen();
-      return;
-    }
-    if (document.fullscreenElement === root.current && document.exitFullscreen) {
-      await document.exitFullscreen().catch(() => setFullscreen(false));
-    } else setFullscreen(false);
+    pan.current = null;
+    setDragging(false);
+    if (!fullscreen) returnFocusToExpand.current = true;
+    setFullscreen(!fullscreen);
   }
 
   useEffect(() => {
     if (!visible || !finished || fullscreenSignal <= handledFullscreenSignal.current) return;
     handledFullscreenSignal.current = fullscreenSignal;
-    void enterFullscreen();
-  }, [fullscreenSignal, visible, finished, enterFullscreen]);
+    replayProgress.current = 1;
+    setFullscreen(true);
+  }, [fullscreenSignal, visible, finished]);
 
   const bids = useMemo(() => auction.bids.filter(bid => Number.isFinite(bid.amount) && Number.isFinite(Date.parse(bid.createdAt))).sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.id - b.id), [auction.bids]);
   const data = useMemo(() => {
@@ -144,12 +134,13 @@ function PriceTimelineChart({ auction, serverTime, username, stale, connected, v
   }, [data, size, finished]);
   const inspectedPoint = inspected === null ? undefined : data.selected.find(bid => bid.id === inspected);
   const current = inspectedPoint ?? data.last;
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = stage.current;
-    if (!element || !visible || !finished || replayPositioned.current || element.clientWidth <= 0) return;
-    element.scrollLeft = element.scrollWidth;
-    replayPositioned.current = true;
-  }, [finished, size.width, geometry.width, visible]);
+    if (!element || (!visible && !fullscreen) || !finished || positionedStage.current === element ||
+        element.clientWidth <= 0 || element.clientWidth !== size.width) return;
+    element.scrollLeft = (element.scrollWidth - element.clientWidth) * replayProgress.current;
+    positionedStage.current = element;
+  }, [finished, fullscreen, size.width, geometry.width, visible]);
 
   function scrollReplay(to: 'start' | 'end') {
     stage.current?.scrollTo({ left: to === 'start' ? 0 : stage.current.scrollWidth, behavior: 'auto' });
@@ -159,7 +150,7 @@ function PriceTimelineChart({ auction, serverTime, username, stale, connected, v
     const currentIndex = group.bids.findIndex(bid => bid.id === inspected);
     setInspected(group.bids[(currentIndex + 1) % group.bids.length].id);
   }
-  const chart = <section ref={root} className={`room-price-chart ${finished ? 'price-chart-replay' : ''} ${fullscreen ? 'price-chart-fullscreen-fallback' : ''}`} aria-label="Biểu đồ giá theo thời gian">
+  const chart = <section className={`room-price-chart ${finished ? 'price-chart-replay' : ''} ${fullscreen ? 'price-chart-expanded' : ''}`} aria-label="Biểu đồ giá theo thời gian">
     <div className="price-chart-toolbar"><span className={stale ? 'price-chart-state stale' : 'price-chart-state'}>{stale ? 'Đang đồng bộ' : finished ? 'Xem lại' : connected ? 'Trực tiếp' : 'Tự cập nhật'}</span>{finished ? <div role="group" aria-label="Di chuyển biểu đồ kết quả"><button type="button" onClick={() => scrollReplay('start')}>Về đầu</button><button type="button" onClick={() => scrollReplay('end')}>Về cuối</button></div> : <div role="group" aria-label="Khoảng dữ liệu biểu đồ"><button type="button" aria-pressed={range === 'recent'} onClick={() => { setRange('recent'); setInspected(null); }}>60 giây</button><button type="button" aria-pressed={range === 'all'} onClick={() => { setRange('all'); setInspected(null); }}>Toàn phiên</button></div>}<small>{data.bids.length} lượt</small><button type="button" className="price-chart-expand" onClick={() => void toggleFullscreen()} aria-label={fullscreen ? 'Thu nhỏ biểu đồ' : 'Xem biểu đồ toàn màn hình'} title={fullscreen ? 'Thu nhỏ' : 'Toàn màn hình'}>{fullscreen ? 'Thu nhỏ' : 'Toàn màn hình'}</button></div>
     <div className="price-chart-readout" aria-live="off"><strong>{current ? current.username === username ? 'Bạn' : current.username : 'Khởi điểm'}</strong><span>{roomCoin(current?.amount ?? data.baseline)}</span><time title={fullTime(inspectedPoint ? Date.parse(inspectedPoint.createdAt) : data.end)}>{auction.status === 'UPCOMING' ? 'Chưa mở' : timeLabel(inspectedPoint ? Date.parse(inspectedPoint.createdAt) : data.end)}</time></div>
     <div className={`price-chart-viewport ${finished ? 'replay' : ''} ${dragging ? 'dragging' : ''}`} ref={stage} tabIndex={finished ? 0 : undefined} role="region" aria-label={finished ? 'Lịch sử biểu đồ, cuộn ngang hoặc dùng phím trái phải để xem lại' : 'Vùng biểu đồ trực tiếp'}
@@ -208,7 +199,13 @@ function PriceTimelineChart({ auction, serverTime, username, stale, connected, v
     </div>
     {finished && <p className="price-chart-replay-hint">Kéo hoặc vuốt ngang để xem lại · Bấm avatar để xem giá</p>}
   </section>;
-  return fullscreen && !document.fullscreenElement ? createPortal(chart, document.body) : chart;
+  return fullscreen ? createPortal(
+    <dialog ref={dialog} className="price-chart-dialog" aria-label="Biểu đồ giá toàn màn hình"
+      onCancel={event => { event.preventDefault(); toggleFullscreen(); }}>
+      {chart}
+    </dialog>,
+    document.body
+  ) : chart;
 }
 
 export default memo(PriceTimelineChart);

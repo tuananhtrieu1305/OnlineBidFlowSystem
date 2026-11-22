@@ -41,6 +41,7 @@ public class SecurityConfig {
             .securityContext(c -> c.securityContextRepository(context))
             .csrf(c -> c.csrfTokenRepository(csrf).ignoringRequestMatchers("/api/auth/register"))
             .authorizeHttpRequests(a -> a
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/", "/index.html", "/assets/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/livestreams", "/api/livestreams/{id:[0-9]+}").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/discovery/auctions", "/api/discovery/auctions/*").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/leaderboard").permitAll()

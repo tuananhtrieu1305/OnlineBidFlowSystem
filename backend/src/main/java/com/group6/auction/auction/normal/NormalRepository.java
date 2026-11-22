@@ -13,13 +13,15 @@ import org.springframework.stereotype.Repository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import com.group6.auction.auction.normal.NormalDtos.*;
+import com.group6.auction.product.repository.ProductGalleryRepository;
 
 @Repository
 @Profile("!probe")
 @ConditionalOnProperty(name = "app.normal.enabled", havingValue = "true", matchIfMissing = true)
 public class NormalRepository {
     private final JdbcTemplate jdbc;
-    public NormalRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    private final ProductGalleryRepository gallery;
+    public NormalRepository(JdbcTemplate jdbc, ProductGalleryRepository gallery) { this.jdbc = jdbc; this.gallery = gallery; }
     public record Account(long id, String username, String role) { public boolean admin() { return "ADMIN".equals(role); } }
     public record Auction(long id, long productId, String type, String access, String roomCode, Integer capacity,
                           long startingPrice, long increment, Instant startsAt, Instant endsAt,
@@ -40,7 +42,7 @@ public class NormalRepository {
                 FROM auctions a JOIN products p ON p.id = a.product_id
                 LEFT JOIN auction_participants ap ON ap.auction_id = a.id AND ap.user_id = ?
                 WHERE a.auction_type = 'NORMAL' ORDER BY a.start_time DESC, a.id DESC
-                """, (rs, row) -> new Summary(rs.getLong("id"), product(rs), rs.getString("access_type"),
+                """, (rs, row) -> new Summary(rs.getLong("id"), product(rs, List.of()), rs.getString("access_type"),
                 rs.getString("status"), instant(rs, "start_time"), instant(rs, "end_time"), rs.getBoolean("joined")), user.id());
     }
 
@@ -58,11 +60,12 @@ public class NormalRepository {
     }
 
     public Product product(long productId) {
+        var imageUrls = gallery.imageUrls(productId);
         return jdbc.queryForObject("SELECT id AS product_id, name, description, quantity, image_url FROM products WHERE id = ?",
-                (rs, row) -> product(rs), productId);
+                (rs, row) -> product(rs, imageUrls), productId);
     }
-    private Product product(ResultSet rs) throws SQLException {
-        return new Product(rs.getLong("product_id"), rs.getString("name"), rs.getString("description"), rs.getInt("quantity"), rs.getString("image_url"));
+    private Product product(ResultSet rs, List<String> imageUrls) throws SQLException {
+        return new Product(rs.getLong("product_id"), rs.getString("name"), rs.getString("description"), rs.getInt("quantity"), rs.getString("image_url"), imageUrls);
     }
     public List<Bid> bids(long id) {
         return jdbc.query("""

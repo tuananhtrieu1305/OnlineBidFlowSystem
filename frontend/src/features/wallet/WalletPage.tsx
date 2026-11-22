@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../auth/AuthProvider';
-import { deposit, getHistory, getWallet, type Entry, type Wallet } from './walletApi';
+import { deposit, getAuctionBids, getHistory, getWallet, type Entry, type Wallet } from './walletApi';
 import { formatCoin, validateAmount } from './validation';
 import './wallet.css';
 
@@ -16,6 +16,7 @@ export default function WalletPage() {
  if(failure) return <main className="guest-home"><p role="alert">Chưa thể xác minh phiên. Hãy thử lại ở thanh bên.</p></main>;
  return <WalletContent key={user.id}/>;
 }
+type AuctionActivity = { product: string; bids: { id: string; amount: string; createdAt: string }[] };
 function WalletContent() {
  const [wallet,setWallet]=useState<Wallet|null>(null);
  const [items,setItems]=useState<Entry[]>([]);
@@ -30,6 +31,10 @@ function WalletContent() {
  const [notice,setNotice]=useState('');
  const [uncertain,setUncertain]=useState(false);
  const [open,setOpen]=useState(false);
+ const [selectedAuction,setSelectedAuction]=useState<string|null>(null);
+ const [auctionActivity,setAuctionActivity]=useState<AuctionActivity|null>(null);
+ const [auctionActivityLoading,setAuctionActivityLoading]=useState(false);
+ const [auctionActivityError,setAuctionActivityError]=useState('');
  const dialog=useRef<HTMLDialogElement>(null);
  const trigger=useRef<HTMLButtonElement>(null);
  const input=useRef<HTMLInputElement>(null);
@@ -37,6 +42,7 @@ function WalletContent() {
  const alive=useRef(true);
  const historyVersion=useRef(0);
  const walletVersion=useRef(0);
+ const activityVersion=useRef(0);
  const loadBalance=useCallback(async()=>{
   const version=++walletVersion.current;
   try{const data=await getWallet();if(alive.current&&version===walletVersion.current){setWallet(data);setWalletError('');}}
@@ -56,6 +62,15 @@ function WalletContent() {
   return()=>window.removeEventListener('focus',focus);},[loadHistory]);
  useEffect(()=>{if(open){dialog.current?.showModal();input.current?.focus();}else if(dialog.current?.open){dialog.current.close();trigger.current?.focus();}},[open]);
  function close(){if(sending.current)return;setOpen(false);trigger.current?.focus();}
+ async function toggleAuction(auctionId:string){
+  if(selectedAuction===auctionId){++activityVersion.current;setAuctionActivityLoading(false);setSelectedAuction(null);return;}
+  const version=++activityVersion.current;setSelectedAuction(auctionId);setAuctionActivity(null);setAuctionActivityError('');setAuctionActivityLoading(true);
+  try{
+   const activity=await getAuctionBids(auctionId);
+   if(alive.current&&version===activityVersion.current)setAuctionActivity({product:activity.productName,bids:activity.bids});
+  }catch{if(alive.current&&version===activityVersion.current)setAuctionActivityError('Chưa tải được bid của bạn trong phiên này.');}
+  finally{if(alive.current&&version===activityVersion.current)setAuctionActivityLoading(false);}
+ }
  async function submit(event:FormEvent){
   event.preventDefault();if(sending.current||uncertain)return;
   const invalid=validateAmount(amount);if(invalid){setDepositError(invalid);input.current?.focus();return;}
@@ -70,6 +85,9 @@ function WalletContent() {
    else setDepositError(status===429?'Bạn đã nạp quá nhiều lần. Vui lòng thử lại sau một phút.':status===409?'Số dư vượt giới hạn cho phép.':status===403?'Phiên xác thực đã thay đổi. Đóng hộp thoại và thử lại.':status===401?'Phiên đăng nhập đã hết hạn.':'Số Coin không hợp lệ. Vui lòng kiểm tra lại.');
   }finally{sending.current=false;if(alive.current)setBusy(false);}
  }
+ const auctionGroups=new Map<string,Entry[]>();const otherEntries:Entry[]=[];
+ for(const item of items){if(item.auctionId){const group=auctionGroups.get(item.auctionId)??[];group.push(item);auctionGroups.set(item.auctionId,group);}else otherEntries.push(item);}
+ const transactionRows=(entries:Entry[])=>entries.map(item=><tr key={item.id}><td><strong>{item.type==='CLUE_TRADE'?(BigInt(item.availableDelta)<0n?'Mua Clue':'Bán Clue'):labels[item.type]}</strong><small>#{item.id}</small></td><td>{new Date(item.createdAt).toLocaleString('vi-VN')}</td><td>{delta(item.availableDelta)}</td><td>{delta(item.lockedDelta)}</td></tr>);
  return <main id="main-content" className="guest-home wallet-page" tabIndex={-1}>
   <header className="guest-topbar"><span>Ví Coin</span><span className="guest-topnote">Sẵn sàng cho lựa chọn tiếp theo.</span></header>
   <section className="wallet-heading"><div><p className="guest-kicker">VÍ CỦA BẠN</p><h1>Coin cho điều bạn thích.</h1><p>Coin giả lập, chỉ có giá trị trong hệ thống.</p></div>
@@ -84,9 +102,13 @@ function WalletContent() {
    <div className="wallet-history-heading"><h2 id="history-title">Lịch sử giao dịch</h2><label>Lọc giao dịch <select value={type} onChange={e=>setType(e.target.value)}>
     <option value="">Tất cả</option>{Object.entries(labels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label></div>
    {historyError&&<p role="alert">{historyError} <button onClick={()=>void loadHistory()}>Thử lại</button></p>}
-   <div className="wallet-table-scroll"><table><thead><tr><th>Giao dịch</th><th>Thời gian</th><th>Phiên</th><th>Khả dụng</th><th>Đang khóa</th></tr></thead><tbody>
-    {items.map(item=><tr key={item.id}><td><strong>{item.type==='CLUE_TRADE'?(BigInt(item.availableDelta)<0n?'Mua Clue':'Bán Clue'):labels[item.type]}</strong><small>#{item.id}</small></td><td>{new Date(item.createdAt).toLocaleString('vi-VN')}</td><td>{item.auctionId?'#'+item.auctionId:'—'}</td><td>{delta(item.availableDelta)}</td><td>{delta(item.lockedDelta)}</td></tr>)}
-   </tbody></table></div>
+   {[...auctionGroups].map(([auctionId,entries])=><section className="wallet-auction-group" key={auctionId}>
+    <button type="button" className="wallet-auction-toggle" aria-expanded={selectedAuction===auctionId} onClick={()=>void toggleAuction(auctionId)}><span><strong>Phiên đấu giá #{auctionId}</strong><small>{entries.length} giao dịch · gần nhất {new Date(entries[0].createdAt).toLocaleString('vi-VN')}</small></span><b>{selectedAuction===auctionId?'Thu gọn':'Xem giao dịch và bid'} <span aria-hidden="true">{selectedAuction===auctionId?'−':'+'}</span></b></button>
+    {selectedAuction===auctionId&&<div className="wallet-auction-details"><div className="wallet-table-scroll"><table><thead><tr><th>Giao dịch</th><th>Thời gian</th><th>Khả dụng</th><th>Đang khóa</th></tr></thead><tbody>{transactionRows(entries)}</tbody></table></div>
+     <section className="wallet-own-bids" aria-label={`Bid của bạn trong phiên ${auctionId}`}><h3>Bid của bạn{auctionActivity?.product?` · ${auctionActivity.product}`:''}</h3>{auctionActivityLoading&&<p role="status">Đang tải bid…</p>}{auctionActivityError&&<p role="alert">{auctionActivityError}</p>}{auctionActivity&&!auctionActivityLoading&&(auctionActivity.bids.length?<div className="wallet-table-scroll"><table><thead><tr><th>Giá đã đặt</th><th>Thời gian</th></tr></thead><tbody>{auctionActivity.bids.map(bid=><tr key={bid.id}><td><strong>{formatCoin(bid.amount)} Coin</strong></td><td>{new Date(bid.createdAt).toLocaleString('vi-VN')}</td></tr>)}</tbody></table></div>:<p>Bạn chưa có bid trong phiên này.</p>)}</section>
+    </div>}
+   </section>)}
+   {otherEntries.length>0&&<section className="wallet-other-entries"><h3>Giao dịch ví</h3><div className="wallet-table-scroll"><table><thead><tr><th>Giao dịch</th><th>Thời gian</th><th>Khả dụng</th><th>Đang khóa</th></tr></thead><tbody>{transactionRows(otherEntries)}</tbody></table></div></section>}
    {!items.length&&!loadingHistory&&!historyError&&<div className="wallet-empty"><span aria-hidden="true">◇</span><h3>Chưa có giao dịch</h3><p>Các lần nạp, khóa và thanh toán Coin sẽ xuất hiện tại đây.</p></div>}
    {loadingHistory&&<p role="status">Đang tải lịch sử…</p>}
    {cursor&&<button className="wallet-more" disabled={loadingHistory} onClick={()=>void loadHistory(cursor)}>Tải thêm</button>}

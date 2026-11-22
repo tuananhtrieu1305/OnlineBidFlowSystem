@@ -53,7 +53,7 @@ public class AuctionConfigurationService {
   future(input);
   var auction=auctions.saveAndFlush(Auction.create(product.getId(),admin.getId(),input.type(),input.access(),input.price(),input.increment(),input.capacity(),input.access()==AuctionAccessType.PRIVATE?code():null,input.start(),input.end()));
   if(input.type()==AuctionType.NORMAL)timings.save(auction.getId(),input.normalTiming(),input.end());
-  else saveBlindSetup(auction.getId(),input.blindSetup());
+  else if(input.blindSetup()!=null)saveBlindSetup(auction.getId(),input.blindSetup());
   return detail(auction.getId());
  }
  @Transactional(isolation=Isolation.READ_COMMITTED)
@@ -67,7 +67,7 @@ public class AuctionConfigurationService {
   String code=input.access()==AuctionAccessType.PUBLIC?null:auction.getRoomCode()==null?code():auction.getRoomCode();
   auction.configure(input.type(),input.access(),input.price(),input.increment(),input.capacity(),code,input.start(),input.end());
   auctions.flush();if(input.type()==AuctionType.NORMAL)timings.save(id,input.normalTiming(),input.end());
-  else saveBlindSetup(id,input.blindSetup());
+  else if(input.blindSetup()!=null)saveBlindSetup(id,input.blindSetup());
   return detail(id);
  }
  private void saveBlindSetup(long id,AuctionInput.BlindSetup setup){

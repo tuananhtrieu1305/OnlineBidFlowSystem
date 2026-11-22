@@ -4,7 +4,7 @@ export type Auction = {
  id:string;productId:string;product:{id:string;name:string;imageUrl:string|null};auctionType:'NORMAL'|'BLIND';accessType:'PUBLIC'|'PRIVATE';
  status:'UPCOMING'|'RUNNING'|'SOLD'|'UNSOLD'|'CANCELLED';startingPrice:string;minBidIncrement:string|null;maxParticipants:number|null;roomCode:string|null;
  normalTiming?:{closingWindowSeconds:number;extensionSeconds:number;leaderboardSeconds:number};
- blindSetup?:{clues:string[];systemClues:string[];tradeSeconds:number;bidSeconds:number;opened:boolean};
+ blindSetup?:{clues:string[];tradeSeconds:number;bidSeconds:number;opened:boolean};
  startTime:string;endTime:string;participantCount:string;editable:boolean;editBlockedReason:string|null;version:string;serverNow:string;
 };
 export type Filters={q:string;status:string;auctionType:string;accessType:string};

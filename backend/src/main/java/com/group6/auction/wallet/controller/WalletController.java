@@ -19,6 +19,7 @@ public class WalletController {
  @GetMapping public Object balance(Authentication auth){return wallets.balance(auth.getName());}
  @GetMapping("/transactions") public Object history(Authentication auth,@RequestParam(required=false) String type,
   @RequestParam(defaultValue="20") int limit,@RequestParam(required=false) String cursor){return wallets.history(auth.getName(),type,limit,cursor);}
+ @GetMapping("/auctions/{auctionId}/bids") public Object auctionBids(Authentication auth,@PathVariable long auctionId){return wallets.auctionBids(auth.getName(),auctionId);}
  @PostMapping("/deposits") public ResponseEntity<?> deposit(Authentication auth,@RequestBody JsonNode body){
   if(body==null||!body.isObject()||body.size()!=1||!body.path("amount").isTextual())throw new WalletException(400,"INVALID_AMOUNT");
   String value=body.get("amount").asText();

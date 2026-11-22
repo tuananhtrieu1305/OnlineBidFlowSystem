@@ -84,6 +84,7 @@ export default function NormalAuctionListPage() {
       {!filtered.length && <p className="normal-catalog-empty">Không có phiên phù hợp với bộ lọc hiện tại.</p>}
       <div className="normal-catalog-grid">{filtered.map(item => {
         const active = ['RUNNING', 'UPCOMING'].includes(item.status);
+        const waitingForStart = item.status === 'UPCOMING';
         const hidden = item.access === 'PRIVATE' && !item.joined && !active && auth.user?.role !== 'ADMIN';
         return <article key={item.id} className="normal-auction-card" aria-label={`Phiên #${item.id} · ${item.product.name}`}>
           <div className="normal-card-badges"><span>NORMAL</span><span className={item.access === 'PRIVATE' ? 'private' : 'public'}>{item.access === 'PRIVATE' ? '▣ ' : ''}{item.access}</span><small>#{item.id}</small></div>
@@ -91,7 +92,7 @@ export default function NormalAuctionListPage() {
           <h2>{item.product.name}</h2><p className="normal-card-description">{item.product.description || 'Chưa có mô tả sản phẩm.'}</p>
           <div className={`normal-card-status ${item.status.toLowerCase()}`}><strong>{statuses[item.status]}</strong>{item.status === 'RUNNING' && <time aria-label="Thời gian còn lại">{countdown(item.endsAt, now)}</time>}</div>
           <dl className="normal-card-facts"><div><dt>{item.status === 'UPCOMING' ? 'Bắt đầu' : 'Kết thúc'}</dt><dd>{date(item.status === 'UPCOMING' ? item.startsAt : item.endsAt)}</dd></div><div><dt>Số lượng</dt><dd>{item.product.quantity}</dd></div></dl>
-          <button type="button" className="normal-enter-button" disabled={busy !== null || hidden} onClick={() => choose(item)}>{busy === item.id ? 'Đang vào phòng…' : hidden ? 'Phòng riêng tư đã kết thúc' : active ? 'Vào phòng' : 'Xem kết quả'}</button>
+          <button type="button" className="normal-enter-button" disabled={busy !== null || hidden || waitingForStart} onClick={() => choose(item)}>{busy === item.id ? 'Đang vào phòng…' : hidden ? 'Phòng riêng tư đã kết thúc' : waitingForStart ? 'Chưa đến giờ mở phòng' : active ? 'Vào phòng' : 'Xem kết quả'}</button>
         </article>;
       })}</div>
     </>}

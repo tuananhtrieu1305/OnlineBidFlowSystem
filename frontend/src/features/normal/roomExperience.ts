@@ -15,10 +15,11 @@ export function rankBids(bids: NormalBid[]) {
   return [...best.values()].sort((a, b) => b.amount - a.amount || a.createdAt.localeCompare(b.createdAt) || a.id - b.id);
 }
 export const rhythmNames = ['Nhịp đầu', 'Nhịp cuối'];
-export function roomRhythm(auction: NormalAuction, now: number) {
+export function roomRhythm(auction: NormalAuction, now: number, closingWindowSeconds = 10) {
   const scheduledEnd = auction.scheduledEndsAt ?? auction.endsAt;
   const duration = Math.max(3, scheduledEnd - auction.startsAt);
-  const boundaries = [auction.startsAt + duration / 2, auction.endsAt];
+  const finalWindow = Math.min(duration, Math.max(1, closingWindowSeconds) * 1000);
+  const boundaries = [scheduledEnd - finalWindow, auction.endsAt];
   const index = now < boundaries[0] ? 0 : 1;
   return { index, boundaries, scheduledEnd };
 }

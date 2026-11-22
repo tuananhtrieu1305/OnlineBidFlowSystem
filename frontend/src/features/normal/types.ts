@@ -1,7 +1,7 @@
 export type NormalBid = { id: number; username: string; amount: number; createdAt: string };
 export type NormalAuction = {
   id: number;
-  product: { name: string; description: string; quantity: number; imageUrl: string | null };
+  product: { name: string; description: string; quantity: number; imageUrl: string | null; imageUrls?: string[] };
   access: 'PUBLIC' | 'PRIVATE';
   status: 'RUNNING' | 'UPCOMING' | 'SOLD' | 'UNSOLD';
   startingPrice: number;

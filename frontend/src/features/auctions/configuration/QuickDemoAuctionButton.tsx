@@ -24,14 +24,13 @@ export default function QuickDemoAuctionButton() {
     try {
       const requestedAt = Date.now();
       const [products, sessions] = await Promise.all([
-        listProducts('', 0, controller.signal),
+        listProducts('', 0, controller.signal, true),
         listAuctions({ q: '', status: '', auctionType: '', accessType: '' }, 0, controller.signal)
       ]);
       const offset = Date.parse(sessions.serverNow) - (requestedAt + Date.now()) / 2;
       if (!Number.isFinite(offset)) throw new Error('Không lấy được thời gian server.');
-      const candidates = products.items.filter(product => product.quantity > 0);
-      const candidate = candidates.find(product => product.imageUrl) ?? candidates[0];
-      if (!candidate) throw new Error('Thêm ít nhất một sản phẩm trước khi tạo phiên demo.');
+      const candidate = products.items.find(product => product.imageUrl) ?? products.items[0];
+      if (!candidate) throw new Error('Hết sản phẩm còn hàng để tạo phiên demo. Hãy thêm sản phẩm hoặc cập nhật tồn kho.');
       const product = await getProduct(candidate.id);
       if (!alive.current || controller.signal.aborted) return;
       const startsAt = Date.now() + offset + 30_000;
@@ -43,12 +42,13 @@ export default function QuickDemoAuctionButton() {
         startingPrice: '1000', minBidIncrement: '100', maxParticipants: null,
         startTime: new Date(startsAt).toISOString(),
         endTime: new Date(startsAt + 180_000).toISOString(),
-        normalTiming: { closingWindowSeconds: 30, extensionSeconds: 30, leaderboardSeconds: 60 }
+        normalTiming: { closingWindowSeconds: 10, extensionSeconds: 10, leaderboardSeconds: 60 }
       });
       if (alive.current) navigate(`/admin/auctions/${auction.id}`, { state: { quickDemo: true } });
     } catch (failure) {
       if (!alive.current || controller.signal.aborted) return;
       const status = axios.isAxiosError(failure) ? failure.response?.status : undefined;
+      const code = axios.isAxiosError(failure) ? failure.response?.data?.code : undefined;
       if (submitted && (!status || status >= 500)) {
         setUncertain(true);
         setError('Chưa xác định kết quả tạo. Tải lại danh sách để kiểm tra trước khi tạo tiếp.');
@@ -56,8 +56,12 @@ export default function QuickDemoAuctionButton() {
         setError('Phiên đăng nhập hoặc quyền quản trị không còn hợp lệ. Đăng nhập lại.');
       } else if (status === 412) {
         setError('Sản phẩm vừa thay đổi. Bấm tạo lại để lấy cấu hình mới.');
+      } else if (code === 'PRODUCT_OUT_OF_STOCK') {
+        setError('Sản phẩm vừa hết hàng khả dụng. Bấm tạo lại để chọn sản phẩm khác.');
+      } else if (code === 'START_TIME_PASSED') {
+        setError('Giờ mở phiên đã qua. Bấm tạo lại để lấy giờ server mới.');
       } else if (status === 400 || status === 409) {
-        setError('Chưa tạo được phiên demo. Kiểm tra cấu hình và thời gian server rồi thử lại.');
+        setError(`Chưa tạo được phiên demo (${code ?? status}).`);
       } else {
         setError(axios.isAxiosError(failure) ? 'Không tải được sản phẩm hoặc cấu hình. Thử lại khi kết nối ổn định.' : failure instanceof Error ? failure.message : 'Không thể tạo phiên demo.');
       }

@@ -2,6 +2,7 @@ package com.group6.auction.product.service;
 import com.group6.auction.product.entity.Product;
 import com.group6.auction.product.dto.AdminProductResponse;
 import com.group6.auction.product.repository.ProductRepository;
+import com.group6.auction.product.repository.ProductGalleryRepository;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.*;
@@ -11,9 +12,11 @@ import java.util.*;
 
 @Service @Profile("!probe")
 public class ProductService {
+ public static final int MAX_GALLERY_IMAGES = 8;
  private final ProductRepository products;
  private final ProductImageStorage images;
- public ProductService(ProductRepository products,ProductImageStorage images){this.products=products;this.images=images;}
+ private final ProductGalleryRepository gallery;
+ public ProductService(ProductRepository products,ProductImageStorage images,ProductGalleryRepository gallery){this.products=products;this.images=images;this.gallery=gallery;}
  public record ProductPage(List<AdminProductResponse> items,int page,int size,String totalElements,int totalPages){}
  @Transactional(readOnly=true)
  public ProductPage list(String query,int page,int size){
@@ -32,6 +35,18 @@ public class ProductService {
  }
  @Transactional(readOnly=true)
  public AdminProductResponse detail(long id){var p=products.findById(id).orElseThrow(()->new ProductException(404,"PRODUCT_NOT_FOUND"));return response(p,used(id));}
+ @Transactional(readOnly=true)
+ public List<String> galleryImages(long id) {
+  if(!products.existsById(id))throw new ProductException(404,"PRODUCT_NOT_FOUND");
+  return gallery.imageUrls(id);
+ }
+ @Transactional(isolation=Isolation.READ_COMMITTED)
+ public List<String> addGalleryImages(long id,List<ProductImageStorage.Staged> staged) {
+  products.findForUpdate(id).orElseThrow(()->new ProductException(404,"PRODUCT_NOT_FOUND"));
+  if(gallery.imageUrls(id).size()+staged.size()>MAX_GALLERY_IMAGES)throw new ProductException(409,"GALLERY_LIMIT");
+  for(var image:staged)gallery.add(id,publish(image));
+  return gallery.imageUrls(id);
+ }
  @Transactional(isolation=Isolation.READ_COMMITTED)
  public AdminProductResponse create(ProductInput input,ProductImageStorage.Staged image){
   String url=publish(image);

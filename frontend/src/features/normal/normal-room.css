@@ -18,7 +18,7 @@
 .room-loading .room-exit { position:absolute; right:24px; top:20px; }
 
 /* All controls share one header; numbers never change its size. */
-.room-header { display:grid; grid-template-columns:minmax(180px,1fr) minmax(180px,auto) auto auto 44px; align-items:center; gap:20px; min-width:0; padding:16px 24px; background:var(--room-surface); border-bottom:1px solid var(--room-border); }
+.room-header { display:grid; grid-template-columns:minmax(180px,1fr) minmax(180px,auto) auto 44px; align-items:center; gap:20px; min-width:0; padding:16px 24px; background:var(--room-surface); border-bottom:1px solid var(--room-border); }
 .room-header>* { min-width:0; }
 .room-identity small { display:block; font-size:12px; color:var(--room-muted); }
 .room-identity h1 { margin:4px 0 0; font-size:20px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -41,7 +41,7 @@
 .room-wallet>div:first-child strong { color:var(--room-accent); }
 .room-exit,.room-chat-toggle,.room-chat-collapse { display:flex; align-items:center; justify-content:center; min-height:44px; border:1px solid var(--room-border); background:white; color:var(--room-text); border-radius:5px; }
 .room-exit { width:44px; text-decoration:none; }
-.room-chat-toggle { position:relative; padding:0 12px; gap:7px; font-size:14px!important; }
+.room-chat-toggle { position:fixed; left:24px; bottom:24px; z-index:26; min-width:104px; padding:0 12px; gap:7px; font-size:14px!important; box-shadow:0 4px 16px #1b382a18; }
 .room-chat-toggle:hover,.room-chat-toggle[aria-expanded=true] { background:var(--room-soft); border-color:#9bb8aa; color:var(--room-accent); }
 .room-exit:hover { background:#f7eeeb; color:#9b4435; }
 .room-chat-unread { display:grid; place-items:center; min-width:20px; height:20px; padding:0 4px; background:var(--room-accent); color:white; font-size:11px; border-radius:10px; }
@@ -52,12 +52,32 @@
 .room-product-column,.room-bidding,.room-data-panel { background:var(--room-surface); border:1px solid var(--room-border); border-radius:6px; overflow:hidden; }
 .room-product-column { display:grid; grid-template-rows:minmax(0,1fr) 100px; height:100%; }
 .room-product-visual { min-height:0; min-width:0; padding:20px; overflow:hidden; }
+.room-product-gallery { position:relative; width:100%; height:100%; }
+.room-gallery-controls { position:absolute; inset:auto 4px 4px; display:flex; align-items:center; justify-content:space-between; gap:2px; }
+.room-gallery-controls button,.room-gallery-controls span { border:1px solid var(--room-border); border-radius:6px; background:#fff; color:var(--room-accent); }
+.room-gallery-controls button { width:44px; height:44px; padding:0; font-size:24px; }
+.room-gallery-controls button:hover { background:var(--room-soft); }
+.room-gallery-controls span { padding:3px 7px; font-size:12px; white-space:nowrap; }
 .room-product-visual .normal-product-image { display:block; width:100%; height:100%; max-height:none; aspect-ratio:auto; border-radius:3px; object-fit:contain; background:#f3f4f1; }
 .room-product-visual .normal-placeholder { display:flex; }
 .room-product-visual .normal-placeholder span { font-size:15px; }
-.room-product-details { height:100px; min-width:0; padding:14px 20px; border-top:1px solid var(--room-border); overflow-y:auto; scrollbar-gutter:stable; }
+.room-product-details { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; height:100px; min-width:0; padding:14px 20px; border-top:1px solid var(--room-border); overflow-y:auto; }
+.room-product-summary { min-width:0; }
 .room-product-details h2 { margin:0; font-size:14px; font-weight:600; }
-.room-product-details>p { margin:5px 0 0; color:var(--room-muted); font-size:15px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.room-product-summary p { margin:5px 0 0; color:var(--room-muted); font-size:15px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+.normal-room .room-product-more { max-width:52%; flex-shrink:0; padding:6px 12px; white-space:normal; }
+.room-product-dialog { margin:auto; width:min(580px,calc(100% - 32px)); max-width:none; max-height:calc(100dvh - 32px); padding:0; border:1px solid var(--room-border); border-radius:10px; background:var(--room-surface); color:var(--room-text); }
+.room-product-dialog::backdrop { background:#16272299; }
+.room-product-dialog header { position:sticky; top:0; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 20px; background:var(--room-surface); border-bottom:1px solid var(--room-border); }
+.room-product-dialog h2 { margin:0; font-size:20px; overflow-wrap:anywhere; }
+.room-product-dialog .room-exit { flex:0 0 44px; font-size:24px; }
+.room-product-dialog p { margin:0; padding:20px; white-space:pre-wrap; overflow-wrap:anywhere; }
+@media(max-width:700px) {
+  .room-product-details { flex-direction:column; align-items:stretch; justify-content:flex-start; gap:5px; }
+  .room-product-summary p { margin:0; -webkit-line-clamp:1; }
+  .normal-room .room-product-more { max-width:none; align-self:flex-end; }
+  .room-gallery-controls span { position:absolute; right:0; bottom:48px; }
+}
 .room-product-chips { display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:10px; }
 .room-product-chips span { font-size:13px; color:var(--room-muted); white-space:nowrap; }
 .room-main-column { display:grid; grid-template-rows:360px minmax(0,1fr); gap:16px; min-height:0; overflow:hidden; }
@@ -92,9 +112,6 @@
 .room-feedback p { margin:3px 0 0; height:29px; padding:3px 8px; background:var(--room-soft); color:var(--room-accent); border-radius:3px; font-size:13px; overflow:auto; }
 .room-feedback .error { color:#983e2e; background:#fbefea; }
 .room-feedback button { text-decoration:underline; margin-left:8px; }
-.room-rules { position:relative; font-size:12px; color:var(--room-muted); }
-.room-rules summary { cursor:pointer; width:max-content; }
-.room-rules p { position:absolute; left:0; right:0; bottom:100%; z-index:3; max-height:160px; overflow:auto; padding:12px; margin:0 0 8px; border:1px solid var(--room-border); background:white; color:var(--room-text); font-size:14px; line-height:1.6; }
 .room-join-form { display:flex; align-items:end; flex-wrap:wrap; gap:8px; padding-top:8px; }
 .room-join-form input { display:block; margin-top:5px; }
 .room-result { display:grid; gap:8px; padding:16px 0; }
@@ -138,7 +155,7 @@
 .room-empty { margin:22px 12px; color:var(--room-muted); font-size:14px; text-align:center; }
 
 /* Chat is a non-modal dock: toggling it never resizes the product or bid frames. */
-.room-chat { position:fixed; right:24px; bottom:24px; z-index:25; display:flex; flex-direction:column; width:min(370px,calc(100vw - 32px)); height:min(580px,calc(100dvh - 132px)); min-height:0; overflow:hidden; background:white; border:1px solid #b9c9bf; border-radius:8px; box-shadow:0 12px 40px #1b382a20; }
+.room-chat { position:fixed; left:24px; bottom:80px; z-index:25; display:flex; flex-direction:column; width:min(370px,calc(100vw - 32px)); height:min(580px,calc(100dvh - 132px)); min-height:0; overflow:hidden; background:white; border:1px solid #b9c9bf; border-radius:8px; box-shadow:0 12px 40px #1b382a20; }
 .room-chat>.room-section-heading { flex:0 0 56px; padding:6px 8px 6px 16px; border-bottom:1px solid var(--room-border); }
 .room-chat>.room-section-heading h2 { font-size:16px; }
 .room-chat>.room-section-heading>span { margin-left:auto; }
@@ -299,6 +316,25 @@
 .price-chart-drop-line { stroke:#b9c7bd; stroke-width:1; stroke-opacity:.5; vector-effect:non-scaling-stroke; }
 .price-chart-selected { fill:var(--room-accent); stroke:white; stroke-width:2; }
 
+/* Keep the chat controls together at the lower-left edge without resizing room panels. */
+.room-chat-toggle { left:24px; right:auto; bottom:24px; width:auto; height:48px; min-width:108px; }
+.room-chat-toggle>span { display:inline; }
+.room-chat { left:24px; right:auto; bottom:82px; }
+@media(min-width:951px) {
+  .room-header { grid-template-columns:minmax(180px,1fr) minmax(180px,auto) auto 44px; }
+  .room-chat-toggle { left:24px; right:auto; bottom:24px; }
+  .room-chat { left:24px; right:auto; bottom:82px; }
+}
+@media(max-width:950px) {
+  .room-chat-toggle { left:16px; right:auto; bottom:16px; width:auto; min-width:108px; }
+  .room-chat-toggle>span { display:inline; }
+  .room-chat { left:16px; right:auto; bottom:74px; }
+}
+@media(max-width:700px) {
+  .room-chat-toggle { left:12px; bottom:12px; }
+  .room-chat { left:12px; right:auto; bottom:70px; }
+}
+
 .room-rhythm-transition { position:fixed; inset:0; z-index:900; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:#050706; color:#f4f6f4; text-align:center; animation:room-rhythm-enter .32s ease-out both; }
 .room-rhythm-transition-icon { display:grid; place-items:center; width:74px; height:74px; margin-bottom:14px; border:1px solid #47776b; border-radius:50%; color:#8fc6b3; animation:room-rhythm-icon 1.2s ease-in-out infinite alternate; }
 .room-rhythm-transition-icon svg { width:42px; height:42px; }
@@ -311,10 +347,22 @@
 
 .price-chart-toolbar>.price-chart-expand { min-height:32px; margin-left:8px; padding:4px 12px; border:1px solid var(--room-border); border-radius:4px; background:white; color:var(--room-accent); font-size:12px; white-space:nowrap; }
 .price-chart-toolbar>.price-chart-expand:hover { background:var(--room-soft); border-color:#9bb8aa; }
-.room-price-chart.price-chart-fullscreen-fallback,.room-price-chart:fullscreen { position:fixed; inset:0; z-index:1000; width:100vw; height:100dvh; min-height:0; padding:16px 24px 12px; grid-template-rows:40px 40px minmax(0,1fr) 26px; overflow:hidden; background:#fff; color:#202b29; font-family:inherit; font-size:16px; line-height:1.45; }
-.room-price-chart.price-chart-fullscreen-fallback :is(button):focus-visible,.room-price-chart:fullscreen :is(button):focus-visible { outline:2px solid #175c52; outline-offset:2px; }
-.room-price-chart:fullscreen { --room-text:#202b29; --room-muted:#56645f; --room-border:#dce2df; --room-accent:#175c52; --room-soft:#edf4f0; border:0; }
-.price-chart-fullscreen-fallback { --room-text:#202b29; --room-muted:#56645f; --room-border:#dce2df; --room-accent:#175c52; --room-soft:#edf4f0; }
-.room-price-chart.price-chart-fullscreen-fallback .price-chart-viewport,.room-price-chart:fullscreen .price-chart-viewport { min-height:0; }
-.room-price-chart.price-chart-fullscreen-fallback .price-chart-replay-hint,.room-price-chart:fullscreen .price-chart-replay-hint { font-size:12px; }
-@media(max-width:700px) { .room-price-chart.price-chart-fullscreen-fallback,.room-price-chart:fullscreen { padding:8px 10px 6px; grid-template-rows:40px 36px minmax(0,1fr) 24px; } }
+.price-chart-dialog { position:fixed; inset:0; box-sizing:border-box; margin:0; padding:0; border:0; width:100%; height:100%; max-width:none; max-height:none; overflow:hidden; background:#fff; }
+.room-price-chart.price-chart-expanded { box-sizing:border-box; padding:12px 24px; grid-template-columns:minmax(0,1fr); grid-template-rows:48px minmax(0,1fr); overflow:hidden; color:#202b29; font-size:16px; line-height:1.45; }
+.price-chart-expanded button:focus-visible { outline:2px solid #175c52; outline-offset:2px; }
+.price-chart-expanded { --room-text:#202b29; --room-muted:#56645f; --room-border:#dce2df; --room-accent:#175c52; --room-soft:#edf4f0; }
+.room-price-chart.price-chart-expanded .price-chart-readout,
+.room-price-chart.price-chart-expanded .price-chart-state,
+.room-price-chart.price-chart-expanded .price-chart-toolbar>small,
+.room-price-chart.price-chart-expanded .price-chart-replay-hint { display:none; }
+.room-price-chart.price-chart-expanded .price-chart-viewport { height:100%; min-height:0; }
+.room-price-chart.price-chart-expanded .price-chart-toolbar { min-height:48px; padding:0 4px; }
+.room-price-chart.price-chart-expanded .price-chart-toolbar button { min-height:44px; padding:7px 14px; font-size:15px; }
+.room-price-chart.price-chart-expanded .price-chart-toolbar>.price-chart-expand { min-height:44px; font-size:15px; }
+.room-price-chart.price-chart-expanded .price-chart-axis-caption { font-size:16px; }
+.room-price-chart.price-chart-expanded .price-chart-tick { font-size:14px; }
+.room-price-chart.price-chart-expanded .price-chart-avatar { width:54px; height:58px; }
+.room-price-chart.price-chart-expanded .price-chart-initials { flex-basis:38px; width:38px; height:38px; font-size:13px; }
+.room-price-chart.price-chart-expanded .price-chart-avatar>small,
+.room-price-chart.price-chart-expanded .price-chart-avatar>b { display:none; }
+@media(max-width:700px) { .room-price-chart.price-chart-expanded { padding:8px 10px; grid-template-rows:48px minmax(0,1fr); } }

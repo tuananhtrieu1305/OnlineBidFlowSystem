@@ -6,7 +6,7 @@ const clock = (seconds: number) => [Math.floor(seconds / 3600), Math.floor(secon
 type Notice = { id: string; text: string; warning?: boolean };
 
 export default function NormalLiveExperience({ auction, now, username, stale }: { auction: NormalAuction & { joined: boolean }; now: number; username: string; stale: boolean }) {
-  const timing = auction.normalTiming ?? { closingWindowSeconds: 30, extensionSeconds: 30, leaderboardSeconds: 60 };
+  const timing = auction.normalTiming ?? { closingWindowSeconds: 10, extensionSeconds: 10, leaderboardSeconds: 60 };
   const running = auction.status === 'RUNNING';
   const finished = ['SOLD', 'UNSOLD'].includes(auction.status);
   const seconds = Math.max(0, Math.ceil((auction.endsAt - now) / 1000));

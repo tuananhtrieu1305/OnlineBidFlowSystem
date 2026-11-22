@@ -19,7 +19,7 @@ export default function LoginPage() {
   const busy = useRef(false);
   const usernameInput = useRef<HTMLInputElement>(null);
   const passwordInput = useRef<HTMLInputElement>(null);
-  if (!auth.loading && auth.user) return <Navigate to={returnTo ?? (auth.user.role === 'ADMIN' ? '/admin' : '/')} replace />;
+  if (!auth.loading && auth.user) return <Navigate to={returnTo ?? (auth.user.role === 'ADMIN' ? '/admin' : '/normal')} replace />;
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (busy.current) return;
@@ -32,7 +32,7 @@ export default function LoginPage() {
     try {
       const user = await auth.login(username, password);
       setPassword('');
-      navigate(returnTo ?? (user.role === 'ADMIN' ? '/admin' : '/'), { replace: true });
+      navigate(returnTo ?? (user.role === 'ADMIN' ? '/admin' : '/normal'), { replace: true });
     } catch (error) {
       const status = axios.isAxiosError(error) ? error.response?.status : undefined;
       setFailure(status === 401 ? 'Tên đăng nhập hoặc mật khẩu không đúng.'

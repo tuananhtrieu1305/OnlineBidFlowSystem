@@ -13,7 +13,7 @@ import java.time.ZoneOffset;
 @Profile("!probe")
 public class NormalTimingRepository {
     public record Timing(int closingWindowSeconds, int extensionSeconds, int leaderboardSeconds) {}
-    public static final Timing DEFAULTS = new Timing(30, 30, 60);
+    public static final Timing DEFAULTS = new Timing(10, 10, 60);
     private final JdbcTemplate jdbc;
 
     public NormalTimingRepository(JdbcTemplate jdbc) {
