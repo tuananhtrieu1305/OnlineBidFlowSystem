@@ -13,5 +13,5 @@
     "isolatedModules": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "electron", "tests", "e2e", "*.config.ts"]
+  "include": ["src", "electron", "vite.config.ts"]
 }
